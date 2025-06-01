@@ -1,0 +1,14 @@
+{
+  "development": {
+    "dialect": "sqlite",
+    "storage": "database/hoa.db"
+  },
+  "test": {
+    "dialect": "sqlite",
+    "storage": "database/hoa.db"
+  },
+  "production": {
+    "dialect": "sqlite",
+    "storage": "database/hoa.db"
+  }
+}
