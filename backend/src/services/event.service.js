@@ -99,22 +99,17 @@ const updateEvent = async (eventId, updateData, adminUserId) => {
     }
 
     // Validate start_date and end_date
-    const { start_date, end_date, ...otherUpdateData } = updateData;
-    let validatedStartDate = event.start_date;
-    let validatedEndDate = event.end_date;
+    const { start_date, end_date } = updateData;
 
-    if (start_date !== undefined) {
-      validatedStartDate = new Date(start_date);
-    }
-    if (end_date !== undefined) {
-      validatedEndDate = new Date(end_date);
-    }
-
-    // If both dates are present (either from input or existing event data), validate them
-    if (validatedStartDate && validatedEndDate && validatedEndDate <= validatedStartDate) {
-      const error = new Error('End date must be after start date.');
-      error.statusCode = 400; // Bad Request
-      throw error;
+    if(start_date !== undefined && end_date !== undefined) {
+      const validatedStartDate = start_date ? new Date(start_date) : event.start_date;
+      const validatedEndDate = end_date ? new Date(end_date) : event.end_date;
+      // If both dates are present (either from input or existing event data), validate them
+      if (validatedStartDate && validatedEndDate && validatedEndDate <= validatedStartDate) {
+        const error = new Error('End date must be after start date.');
+        error.statusCode = 400; // Bad Request
+        throw error;
+      }
     }
     
     // Prepare fields for update, only including those provided in updateData

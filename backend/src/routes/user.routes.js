@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
-const { updateProfileSchema, changePasswordSchema, validate } = require('../validators/user.validator');
+const validate = require('../middlewares/validate.middleware'); // Custom validation middleware
+const { updateProfileSchema, changePasswordSchema } = require('../validators/user.validator');
 
 // Route to get the authenticated user's own profile
 // GET /api/users/me
@@ -17,8 +18,7 @@ router.get(
 router.put(
   '/me',
   authMiddleware.verifyToken, // Protects the route
-  updateProfileSchema,        // Apply validation rules
-  validate,                   // Middleware to handle validation results
+  validate(updateProfileSchema),        // Apply validation rules
   userController.updateOwnProfile
 );
 
@@ -27,8 +27,7 @@ router.put(
 router.put(
   '/me/password',
   authMiddleware.verifyToken,    // Protects the route
-  changePasswordSchema,       // Apply validation rules for password change
-  validate,                   // Middleware to handle validation results
+  validate(changePasswordSchema),
   userController.changeOwnPassword
 );
 

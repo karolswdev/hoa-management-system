@@ -269,7 +269,7 @@ const deleteUser = async (targetUserId, adminUserId) => {
 
     // Handle Associated Documents
     const userDocuments = await Document.findAll({
-      where: { uploaded_by_id: targetUserId },
+      where: { uploaded_by: targetUserId },
       transaction: t,
     });
 

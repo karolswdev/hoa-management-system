@@ -5,7 +5,7 @@
   },
   "test": {
     "dialect": "sqlite",
-    "storage": "database/hoa.db"
+    "storage": "database/test.db"
   },
   "production": {
     "dialect": "sqlite",

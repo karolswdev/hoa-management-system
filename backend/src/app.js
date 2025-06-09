@@ -13,6 +13,7 @@ const userRoutes = require('./routes/user.routes'); // Routes for user self-mana
 const discussionRoutes = require('./routes/discussion.routes');
 const configRoutes = require('./routes/config.routes'); // Routes for admin config management
 const auditRoutes = require('./routes/audit.routes'); // Routes for admin audit log management
+const publicDocumentRoutes = require('./routes/public.document.routes'); // For public document access
 // Public document routes will be separate, e.g., publicDocumentRoutes
 
 const app = express();
@@ -36,7 +37,7 @@ app.use('/api/users', userRoutes); // Mount user self-management routes
 app.use('/api/discussions', discussionRoutes);
 app.use('/api/admin/config', configRoutes); // Mount admin config routes
 app.use('/api/admin/audit-logs', auditRoutes); // Mount admin audit log routes
-// app.use('/api/documents', publicDocumentRoutes); // For public listing/downloading
+app.use('/api/documents', publicDocumentRoutes); // For public listing/downloading
 
 // Global error handler (optional, can be more sophisticated)
 app.use((err, req, res, next) => {

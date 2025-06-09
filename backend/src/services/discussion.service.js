@@ -73,21 +73,19 @@ const listThreads = async (options) => {
         attributes: ['id', 'name'],
       },
     ],
-    attributes: [
-      'id',
-      'title',
-      'content',
-      'created_at',
-      [
-        sequelize.literal(`(
-          SELECT COUNT(*)
-          FROM discussions AS reply
-          WHERE
-            reply.parent_id = discussions.id
-        )`),
-        'reply_count'
+    attributes: {
+      include: [
+        [
+          sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM discussions AS reply
+            WHERE
+              reply.parent_id = Discussion.id
+          )`),
+          'reply_count'
+        ]
       ]
-    ],
+    },
     distinct: true, // Important for correct count with includes
   });
 

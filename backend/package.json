@@ -4,10 +4,16 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "test:integration": "jest --runInBand --bail --testPathPattern=integration/",
+    "test:debugging": "jest --runInBand --bail --testPathPattern=good/",
+    "test:watch": "jest --watch",
     "start": "node src/app.js",
     "db:migrate": "npx sequelize-cli db:migrate",
+    "db:migrate:undo:all": "npx sequelize-cli db:migrate:undo:all",
     "db:seed": "npx sequelize-cli db:seed:all",
-    "db:seed:undo": "npx sequelize-cli db:seed:undo:all"
+    "db:seed:undo:all": "npx sequelize-cli db:seed:undo:all",
+    "db:seed:test": "npx sequelize-cli db:seed:all --seeders-path test/seeders",
+    "db:seed:undo:test:all": "npx sequelize-cli db:seed:undo:all --seeders-path test/seeders"
   },
   "keywords": [],
   "author": "",
@@ -18,17 +24,19 @@
     "dompurify": "^3.2.6",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "express-validator": "^7.0.1",
+    "http-status": "^1.5.0",
     "joi": "^17.13.3",
     "jsdom": "^26.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0",
     "sequelize": "^6.37.7",
-    "sqlite3": "^5.1.7",
-    "express-validator": "^7.0.1",
-    "http-status": "^1.5.0"
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.10",
-    "sequelize-cli": "^6.6.3"
+    "sequelize-cli": "^6.6.3",
+    "supertest": "^7.1.1"
   }
 }

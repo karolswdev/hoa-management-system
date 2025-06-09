@@ -43,7 +43,7 @@ async function getAuditLogs(options) {
     include: [{
       model: User,
       as: 'adminUser', // Ensure this alias matches the association in AuditLog model
-      attributes: ['id', 'name', 'username'], // Select only needed user fields
+      attributes: ['id', 'name'], // Select only needed user fields
     }],
     order: [['created_at', 'DESC']],
     limit: options.limit,
@@ -62,7 +62,7 @@ async function getAuditLogs(options) {
     }
     return {
       id: log.id,
-      admin_name: log.adminUser ? (log.adminUser.name || log.adminUser.username) : 'N/A',
+      admin_name: log.adminUser ? log.adminUser.name : 'N/A',
       action: log.action,
       details: parsedDetails,
       created_at: log.created_at,

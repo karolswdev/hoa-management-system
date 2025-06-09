@@ -1,13 +1,16 @@
 const Joi = require('joi');
 
-const updateConfigSchema = {
-  body: Joi.object().keys({
-    value: Joi.string().min(1).required(),
+const updateConfigSchema = Joi.object({
+  // From req.body
+  value: Joi.string().trim().min(1).required().messages({
+    'string.base': 'Value must be a string.',
+    'string.empty': 'Value cannot be empty.',
+    'string.min': 'Value cannot be empty.',
+    'any.required': 'Value is required.',
   }),
-  params: Joi.object().keys({
-    key: Joi.string().required(),
-  }),
-};
+  // From req.params
+  key: Joi.string().required(),
+});
 
 module.exports = {
   updateConfigSchema,

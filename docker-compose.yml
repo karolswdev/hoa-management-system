@@ -3,34 +3,41 @@ version: '3.8'
 services:
   backend:
     build:
-      context: . # Build context is the project root
-      dockerfile: Dockerfile # Assumes Dockerfile is at the project root
-      # If you named it backend.Dockerfile:
-      # dockerfile: backend.Dockerfile
+      context: .
+      dockerfile: Dockerfile
     container_name: hoa_backend_api
+    user: "${UID:-1000}:${GID:-1000}"
     ports:
-      # Map host port (from .env's APP_PORT or default 3001)
-      # to container's internal PORT (defined in Dockerfile, default 3001)
       - "${APP_PORT:-3001}:${PORT:-3001}"
     volumes:
-      # Mount a volume for persistent SQLite database storage
-      # Maps host's ./backend/database to /usr/src/app/backend/database inside the container
       - ./backend/database:/usr/src/app/backend/database
-      # Mount a volume for persistent file uploads
-      # Maps host's ./backend/uploads to /usr/src/app/backend/uploads inside the container
       - ./backend/uploads:/usr/src/app/backend/uploads
-      # For development with nodemon (OPTIONAL - requires nodemon setup in Dockerfile/entrypoint):
-      # This mounts your local backend source code into the container.
-      # - ./backend:/usr/src/app/backend
-      # This anonymous volume prevents host node_modules from overwriting container's installed node_modules.
-      # - /usr/src/app/backend/node_modules
-    env_file:
-      - .env # Load environment variables from .env file at the project root
     environment:
-      # Override or set additional environment variables here if needed
-      - NODE_ENV=${NODE_ENV:-development} # Default to development if not set in .env
-      # PORT is already set via ARG/ENV in Dockerfile and exposed
+      - NODE_ENV=${NODE_ENV:-development}
+      - DB_PATH=/usr/src/app/backend/database/test.db
+    env_file:
+      - .env
     restart: unless-stopped
+    networks:
+      - hoa-app-network
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: hoa_test_runner
+    user: "${UID:-1000}:${GID:-1000}"
+    depends_on:
+      - backend
+    volumes:
+      - ./backend:/usr/src/app/backend
+      - /usr/src/app/backend/node_modules
+    environment:
+      - NODE_ENV=test
+      - DB_PATH=/usr/src/app/backend/database/test.db
+    env_file:
+      - .env.test
+    command: npm run test:debugging
     networks:
       - hoa-app-network
 
@@ -39,10 +46,6 @@ networks:
     driver: bridge
 
 # Optional: Define named volumes if you prefer them over host mounts
-# If using named volumes, replace the volume definitions above with:
 # volumes:
 #   hoa_db_data:
 #   hoa_uploads_data:
-# And in the service:
-#   - hoa_db_data:/usr/src/app/backend/database
-#   - hoa_uploads_data:/usr/src/app/backend/uploads

@@ -1,0 +1,19 @@
+# Use the same base image
+FROM node:18-alpine
+
+# Set the working directory
+WORKDIR /usr/src/app/backend
+
+# Copy package files
+COPY ./backend/package*.json ./
+
+# Install ALL dependencies, including devDependencies
+# This is the key difference. We need jest, sequelize-cli, etc.
+RUN npm install
+
+# Copy the rest of the application code
+COPY ./backend/ ./
+
+# Command to keep the container running for exec commands, if needed.
+# We will override this with the test command in docker-compose.
+CMD ["tail", "-f", "/dev/null"]

@@ -2,6 +2,7 @@ const express = require('express');
 const documentController = require('../controllers/document.controller');
 const { verifyToken, authorizeRoles, optionalAuth } = require('../middlewares/auth.middleware');
 const upload = require('../middlewares/upload.middleware'); // Multer upload middleware
+const multer = require('multer'); // Ensure multer is imported for error handling
 
 const router = express.Router();
 
@@ -146,149 +147,20 @@ router.delete(
   documentController.adminDeleteDocument
 );
 
-
-// --- Public/User Document Routes ---
-
-// Middleware to make authentication optional for the following routes
-// The controller/service will handle logic based on whether req.user exists
-router.use(optionalAuth);
-
-/**
- * @swagger
- * /api/documents:
- *   get:
- *     summary: List available documents
- *     tags: [Documents]
- *     security:
- *       - bearerAuth: [] # Optional
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Number of documents to return
- *       - in: query
- *         name: offset
- *         schema:
- *           type: integer
- *           default: 0
- *         description: Number of documents to skip
- *     responses:
- *       200:
- *         description: A list of documents.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 count:
- *                   type: integer
- *                 documents:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/DocumentResponse'
- *       500:
- *         $ref: '#/components/responses/InternalServerError'
- */
-router.get('/', documentController.listDocuments);
-
-/**
- * @swagger
- * /api/documents/{documentId}:
- *   get:
- *     summary: Get a specific document's metadata
- *     tags: [Documents]
- *     security:
- *       - bearerAuth: [] # Optional
- *     parameters:
- *       - in: path
- *         name: documentId
- *         required: true
- *         schema:
- *           type: integer
- *         description: The ID of the document
- *     responses:
- *       200:
- *         description: Document metadata.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/DocumentResponse'
- *       400:
- *         description: Invalid document ID format
- *       404:
- *         description: Document not found or access denied
- *       500:
- *         $ref: '#/components/responses/InternalServerError'
- */
-router.get('/:documentId', documentController.getDocumentMetadata);
-
-/**
- * @swagger
- * /api/documents/{documentId}/download:
- *   get:
- *     summary: Download a specific document file
- *     tags: [Documents]
- *     security:
- *       - bearerAuth: [] # Optional, but required for non-public or unapproved (for admin)
- *     parameters:
- *       - in: path
- *         name: documentId
- *         required: true
- *         schema:
- *           type: integer
- *         description: The ID of the document to download
- *     responses:
- *       200:
- *         description: Document file. Content-Type will vary.
- *         content:
- *           application/*: # Represents various file types
- *             schema:
- *               type: string
- *               format: binary
- *       400:
- *         description: Invalid document ID format
- *       401:
- *         description: Authentication required for this document
- *       403:
- *         description: Access denied to this document
- *       404:
- *         description: Document not found
- *       500:
- *         $ref: '#/components/responses/InternalServerError'
- */
-router.get('/:documentId/download', documentController.downloadDocument);
-
-
-// Placeholder for DocumentResponse schema (to be defined in Swagger setup or a common schemas file)
-// components:
-//   schemas:
-//     DocumentResponse:
-//       type: object
-//       properties:
-//         id:
-//           type: integer
-//         title:
-//           type: string
-//         description:
-//           type: string
-//         file_name:
-//           type: string
-//         file_path:
-//           type: string
-//         uploaded_by:
-//           type: integer
-//         uploaded_at:
-//           type: string
-//           format: date-time
-//         approved:
-//           type: boolean
-//         is_public:
-//           type: boolean
-//         updated_at:
-//           type: string
-//           format: date-time
-
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ message: 'File type not allowed.' });
+    }
+    // You can handle other multer errors here as well, e.g., file size limit
+    if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'File is too large.' });
+    }
+    // For any other multer error.
+    return res.status(400).json({ message: err.message });
+  }
+  // If the error is not a Multer error, pass it to the next (global) error handler.
+  next(err);
+});
 
 module.exports = router;
