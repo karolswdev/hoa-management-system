@@ -23,7 +23,7 @@ module.exports = {
         email: adminEmail,
         password: hashedPassword,
         role: 'admin',
-        status: 'active',
+        status: 'approved',
         email_verified: true, // Admin email is considered verified
         is_system_user: true,
         created_at: new Date(),

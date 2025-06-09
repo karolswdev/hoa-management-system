@@ -37,7 +37,10 @@ const fileFilter = (req, file, cb) => {
   if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true); // Accept file
   } else {
-    cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', `File type not allowed. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`), false); // Reject file
+    // Create a proper error for file type rejection
+    const error = new Error(`File type not allowed. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}. Received: ${file.mimetype}`);
+    error.code = 'INVALID_FILE_TYPE';
+    cb(error, false); // Reject file
   }
 };
 

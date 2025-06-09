@@ -150,7 +150,7 @@ router.delete(
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-      return res.status(400).json({ message: 'File type not allowed.' });
+      return res.status(400).json({ message: 'Unexpected field name in file upload.' });
     }
     // You can handle other multer errors here as well, e.g., file size limit
     if (err.code === 'LIMIT_FILE_SIZE') {
@@ -159,6 +159,12 @@ router.use((err, req, res, next) => {
     // For any other multer error.
     return res.status(400).json({ message: err.message });
   }
+  
+  // Handle custom file type validation errors
+  if (err.code === 'INVALID_FILE_TYPE') {
+    return res.status(400).json({ message: err.message });
+  }
+  
   // If the error is not a Multer error, pass it to the next (global) error handler.
   next(err);
 });

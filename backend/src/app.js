@@ -1,7 +1,16 @@
 require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
+const cors = require('cors');
 const path = require('path'); // Required for serving static files if needed later
 const db = require('../models'); // Sequelize instance and models
+
+// Permissive CORS configuration for development
+const corsOptions = {
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  optionsSuccessStatus: 200
+};
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -19,6 +28,7 @@ const publicDocumentRoutes = require('./routes/public.document.routes'); // For 
 const app = express();
 
 // Middleware
+app.use(cors(corsOptions));
 app.use(express.json()); // for parsing application/json
 app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 

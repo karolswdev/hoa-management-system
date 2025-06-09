@@ -21,6 +21,8 @@ const selectUserProfileFields = (user) => {
     email: user.email,
     role: user.role,
     status: user.status,
+    email_verified: user.email_verified,
+    is_system_user: user.is_system_user,
     created_at: user.created_at,
     updated_at: user.updated_at,
   };
@@ -145,7 +147,7 @@ const listNonSystemUsers = async ({ limit = 10, offset = 0 }) => {
       },
       attributes: {
         exclude: ['password'],
-        include: ['id', 'name', 'email', 'role', 'status', 'created_at', 'updated_at'],
+        include: ['id', 'name', 'email', 'role', 'status', 'email_verified', 'is_system_user', 'created_at', 'updated_at'],
       },
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
@@ -172,7 +174,7 @@ const getNonSystemUserById = async (userId) => {
       },
       attributes: {
         exclude: ['password'],
-        include: ['id', 'name', 'email', 'role', 'status', 'created_at', 'updated_at'],
+        include: ['id', 'name', 'email', 'role', 'status', 'email_verified', 'is_system_user', 'created_at', 'updated_at'],
       },
     });
 

@@ -11,7 +11,11 @@ async function listUsers(req, res, next) {
   try {
     const { limit, offset } = req.query; // For pagination
     const result = await userService.listNonSystemUsers({ limit, offset });
-    return res.status(200).json(result);
+    // Transform response to match frontend expectations: { users, count }
+    return res.status(200).json({
+      users: result.rows,
+      count: result.count
+    });
   } catch (err) {
     next(err);
   }
