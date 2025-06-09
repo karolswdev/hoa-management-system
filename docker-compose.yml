@@ -21,6 +21,23 @@ services:
     networks:
       - hoa-app-network
 
+  frontend:
+    build:
+      context: ./frontend # Build context is the frontend directory
+      dockerfile: Dockerfile # Frontend-specific Dockerfile
+    container_name: hoa_frontend_web
+    ports:
+      # Map host port 3000 to container's port 80 (nginx)
+      - "${FRONTEND_PORT:-3000}:80"
+    environment:
+      # API URL for the frontend to connect to backend
+      - VITE_API_BASE_URL=http://localhost:${APP_PORT:-3001}/api
+    depends_on:
+      - backend # Ensure backend starts before frontend
+    restart: unless-stopped
+    networks:
+      - hoa-app-network
+
   test-runner:
     build:
       context: .
