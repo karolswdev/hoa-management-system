@@ -235,3 +235,13 @@ Nginx
 - See [CONTRIBUTING](CONTRIBUTING.md) for guidelines.
 - Review our [SECURITY](SECURITY.md) policy for responsible disclosure.
 - License: [MIT](LICENSE).
+
+---
+
+## Infrastructure
+
+See docs/INFRASTRUCTURE.md for:
+- Cloud/OS details, domains, and TLS
+- Nginx proxying (ports, logs, CSP)
+- Docker/Compose service layout and persistence paths
+- Health endpoints and backup locations
