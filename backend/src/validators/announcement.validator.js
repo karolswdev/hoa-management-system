@@ -16,7 +16,8 @@ const createAnnouncementSchema = Joi.object({
     'date.base': 'Expiration date must be a valid date.',
     'date.format': 'Expiration date must be in ISO 8601 format.',
     'date.greater': 'Expiration date must be in the future.'
-  })
+  }),
+  notify: Joi.boolean().optional(),
 });
 
 const updateAnnouncementSchema = Joi.object({
@@ -32,7 +33,8 @@ const updateAnnouncementSchema = Joi.object({
   expires_at: Joi.date().iso().allow(null).optional().messages({
     'date.base': 'expires_at must be a valid date or null.',
     'date.format': 'expires_at must be a valid ISO 8601 date or null.'
-  })
+  }),
+  notify: Joi.boolean().optional(),
 }).or('title', 'content', 'expires_at').messages({
   'object.missing': 'At least one field (title, content, or expires_at) must be provided for update.'
 });

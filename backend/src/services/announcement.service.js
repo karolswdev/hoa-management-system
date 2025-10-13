@@ -17,9 +17,12 @@ const DOMPurify = createDOMPurify(window);
  * @returns {Promise<object>} The created announcement object.
  * @throws {Error} If there's an error during database interaction.
  */
+const emailService = require('./email.service');
+const { renderTemplate } = require('../emails/render');
+
 async function createAnnouncement(announcementData, userId) {
   try {
-    const { title, content, expiresAt } = announcementData;
+    const { title, content, expiresAt, notify } = announcementData;
 
     const sanitizedContent = DOMPurify.sanitize(content);
 
@@ -45,7 +48,43 @@ async function createAnnouncement(announcementData, userId) {
       console.error('Failed to log admin action for announcement_create:', auditError);
     }
 
-    return newAnnouncement.toJSON(); // Return plain JSON object
+    const created = newAnnouncement.toJSON();
+
+    // Optional: notify members by email
+    if (notify === true) {
+      try {
+        const recipients = await User.findAll({
+          where: {
+            status: 'approved',
+            email_verified: true,
+            is_system_user: false,
+          },
+          attributes: ['email', 'name'],
+        });
+
+        if (recipients.length > 0) {
+          const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+          const html = renderTemplate('announcement.html', {
+            title,
+            content: sanitizedContent,
+            link: `${baseUrl}/announcements`,
+          });
+          const subject = `New Announcement: ${title}`;
+          for (const r of recipients) {
+            await emailService.sendMail({
+              to: r.email,
+              subject,
+              html,
+              text: `A new announcement has been posted: ${title}\n${baseUrl}/announcements`,
+            });
+          }
+        }
+      } catch (notifyErr) {
+        console.warn('Announcement created, but failed to send notifications:', notifyErr.message);
+      }
+    }
+
+    return created; // Return plain JSON object
   } catch (error) {
     // Log the error for server-side debugging if necessary
     // console.error('Error creating announcement:', error);

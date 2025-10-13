@@ -17,6 +17,8 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
+import ResendVerificationPage from './pages/auth/ResendVerificationPage';
 import PublicHomePage from './pages/public/PublicHomePage';
 
 // Member Pages
@@ -84,6 +86,22 @@ const App: React.FC = () => {
                 element={
                   <PublicRoute>
                     <PublicHomePage />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/verify-email"
+                element={
+                  <PublicRoute>
+                    <VerifyEmailPage />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/resend-verification"
+                element={
+                  <PublicRoute>
+                    <ResendVerificationPage />
                   </PublicRoute>
                 }
               />

@@ -96,6 +96,16 @@ class ApiService {
     return response.data;
   }
 
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const response = await this.api.get(`/auth/verify-email`, { params: { token } });
+    return response.data;
+  }
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const response = await this.api.post('/auth/resend-verification', { email });
+    return response.data;
+  }
+
   // User Profile
   async getProfile(): Promise<User> {
     const response: AxiosResponse<User> = await this.api.get('/users/me');

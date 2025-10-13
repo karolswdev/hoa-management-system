@@ -37,6 +37,11 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the HOA Management API!' });
 });
 
+// Lightweight health endpoint for load balancers and Compose healthchecks
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', time: new Date().toISOString() });
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/users', adminUserRoutes);

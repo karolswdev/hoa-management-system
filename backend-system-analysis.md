@@ -10,6 +10,8 @@
 | `/api/auth/forgot-password` | POST | Initiate password reset |
 | `/api/auth/verify-reset-token` | GET | Validate password reset token |
 | `/api/auth/reset-password` | POST | Complete password reset |
+| `/api/auth/verify-email` | GET | Verify email via token |
+| `/api/auth/resend-verification` | POST | Resend email verification |
 
 ### User Profile
 | Endpoint | Method | Description |
@@ -31,6 +33,7 @@
 ### Content Modules
 *(Refer to phase.md for full endpoint details)*
 - Announcements: CRUD operations
+- Announcements notify: optional `notify: true` to email members on creation
 - Events: CRUD operations
 - Documents: Upload/download with approval flow
 - Discussions: Thread/reply management
@@ -109,6 +112,12 @@ sequenceDiagram
 | Member | View content, Manage own profile, Post discussions |
 | Admin | Full user management, Content moderation, System configuration |
 
+Email verification
+- Users must verify email before login. Admin approval now also marks `email_verified=true` to reduce friction.
+
+Rate limiting
+- Forgot-password limited per account to once per hour (configurable via `PASSWORD_RESET_COOLDOWN_MINUTES`). Returns HTTP 429 when exceeded.
+
 ## 4. Key Dependencies
 - **Runtime**: Node.js
 - **Framework**: Express
@@ -117,6 +126,8 @@ sequenceDiagram
 - **Validation**: Joi, express-validator
 - **File Handling**: multer
 - **Security**: dompurify, jsdom
+- **Email**: SendGrid via adapter-based email service
+- **CAPTCHA**: Cloudflare Turnstile (registration)
 
 ## 5. Integration Risks
 1. **File Uploads**: 
@@ -131,6 +142,8 @@ sequenceDiagram
 3. **Security**:
    - JWT storage/refresh strategy needed
    - Content sanitization for rich text fields
+   - Email verification enforcement (now implemented)
+   - Registration protected with Turnstile; ensure keys configured in prod
 
 4. **Pagination**:
    - Inconsistent pagination parameters across endpoints
@@ -139,3 +152,5 @@ sequenceDiagram
 5. **State Management**:
    - Pending user status requires special handling
    - Admin approval flows need UI representation
+6. **Email dispatch load**:
+   - Announcement notify can fan out to many recipients. For larger user bases, introduce a queue (BullMQ/Redis) and apply provider rate limits.
