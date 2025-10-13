@@ -1,5 +1,11 @@
 # HOA Community Hub
 
+[![CI](https://github.com/karolswdev/hoa-management-system/actions/workflows/ci.yml/badge.svg)](https://github.com/karolswdev/hoa-management-system/actions/workflows/ci.yml)
+[![Secret Scan](https://github.com/karolswdev/hoa-management-system/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/karolswdev/hoa-management-system/actions/workflows/gitleaks.yml)
+[![CodeQL](https://github.com/karolswdev/hoa-management-system/actions/workflows/codeql.yml/badge.svg)](https://github.com/karolswdev/hoa-management-system/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen?logo=dependabot)](./.github/dependabot.yml)
+
 Welcome to the HOA Community Hub, a modern, full-stack web application designed to be the central digital point of contact for a Homeowners' Association and its residents. This platform streamlines communication, simplifies document access, manages community events, and provides essential administrative tools.
 
 ## Table of Contents
@@ -16,6 +22,7 @@ Welcome to the HOA Community Hub, a modern, full-stack web application designed 
 7.  [Running Tests](#running-tests)
 8.  [API Documentation](#api-documentation)
 9.  [Deployment (Production)](#deployment-production)
+10. [Contributing & Security](#contributing--security)
 
 ---
 
@@ -210,3 +217,11 @@ Environment (production highlights)
 Nginx
 - Example site config lives on the server; ensure HTTPS, redirect `www` → apex, and a strict CSP that allows `https://challenges.cloudflare.com` for Turnstile.
 - The app’s Docker Compose publishes backend on `127.0.0.1:3001` and frontend on `127.0.0.1:3000`; Nginx proxies `https://<domain>/api/` to backend and `/` to frontend.
+
+---
+
+## Contributing & Security
+
+- See [CONTRIBUTING](CONTRIBUTING.md) for guidelines.
+- Review our [SECURITY](SECURITY.md) policy for responsible disclosure.
+- License: [MIT](LICENSE).
