@@ -8,6 +8,16 @@
 
 Welcome to the HOA Community Hub, a modern, full-stack web application designed to be the central digital point of contact for a Homeowners' Association and its residents. This platform streamlines communication, simplifies document access, manages community events, and provides essential administrative tools.
 
+## Live
+
+- Production: https://sandersoncreekhoa.com/
+- API base: https://sandersoncreekhoa.com/api/
+- Health: https://sandersoncreekhoa.com/api/health
+
+Notes
+- Nginx enforces HTTPS and redirects `www.sandersoncreekhoa.com` → `sandersoncreekhoa.com`.
+- Turnstile is enabled on Registration; SendGrid handles outbound email.
+
 ## Table of Contents
 
 1.  [Vision & Purpose](#vision--purpose)
