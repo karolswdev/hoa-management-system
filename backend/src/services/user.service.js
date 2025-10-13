@@ -2,9 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const { User, Document, sequelize } = require('../../models'); // Adjust path as necessary
 const { Op } = require('sequelize');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const ApiError = require('../utils/ApiError'); // Added for custom error handling
 const auditService = require('./audit.service');
+const emailService = require('./email.service');
+const { renderTemplate } = require('../emails/render');
+const configService = require('./config.service');
 
 /**
  * Selects and returns publicly safe user profile fields.
@@ -208,12 +211,51 @@ const updateUserStatus = async (targetUserId, newStatus, adminUserId) => {
   }
 
   targetUser.status = newStatus;
+  if (newStatus === 'approved' && !targetUser.email_verified) {
+    // On admin approval, consider email verified to allow login
+    targetUser.email_verified = true;
+  }
   await targetUser.save();
 
   try {
     await auditService.logAdminAction(adminUserId, 'user_status_update', { targetUserId: targetUserId, newStatus: newStatus });
   } catch (auditError) {
     console.error('Failed to log admin action for user_status_update:', auditError);
+  }
+
+  // Notify the user on approval/rejection
+  try {
+    const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+    if (newStatus === 'approved') {
+      const loginLink = `${baseUrl}/login`;
+      const html = renderTemplate('account-approved.html', { name: targetUser.name, login_link: loginLink });
+      await emailService.sendMail({
+        to: targetUser.email,
+        subject: 'Your HOA account has been approved',
+        html,
+        text: `Your account is approved. Sign in: ${loginLink}`,
+      });
+      const contactEmail = (await configService.getConfigValue('HOA_CONTACT_EMAIL')) || (await configService.getConfigValue('contact_email'));
+      if (contactEmail) {
+        await emailService.sendMail({
+          to: contactEmail,
+          subject: `User approved: ${targetUser.name}`,
+          html: `<p>User ${targetUser.name} (${targetUser.email}) has been approved.</p>`,
+          text: `User ${targetUser.name} <${targetUser.email}> has been approved.`,
+        });
+      }
+    } else if (newStatus === 'rejected') {
+      const contactEmail = (await configService.getConfigValue('HOA_CONTACT_EMAIL')) || (await configService.getConfigValue('contact_email')) || process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM;
+      const html = renderTemplate('account-rejected.html', { name: targetUser.name, contact_email: contactEmail || '' });
+      await emailService.sendMail({
+        to: targetUser.email,
+        subject: 'Your HOA account application update',
+        html,
+        text: `Your account application could not be approved. Contact: ${contactEmail || ''}`,
+      });
+    }
+  } catch (notifyErr) {
+    console.warn('Status updated, but failed to send notification email:', notifyErr.message);
   }
 
   return selectUserProfileFields(targetUser.toJSON());

@@ -143,6 +143,15 @@ const LoginPage: React.FC = () => {
                 Forgot your password?
               </Link>
             </Typography>
+            <Typography variant="body2">
+              Didn't receive your verification email?{' '}
+              <Link
+                to="/resend-verification"
+                style={{ textDecoration: 'none', fontWeight: 'bold' }}
+              >
+                Resend verification
+              </Link>
+            </Typography>
             
             <Typography variant="body2">
               Don't have an account?{' '}

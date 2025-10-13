@@ -28,7 +28,18 @@ const upsertConfig = async (key, value, adminUserId) => {
   return { key, value };
 };
 
+/**
+ * Returns a single config value by key or null if not present.
+ * @param {string} key
+ * @returns {Promise<string|null>}
+ */
+const getConfigValue = async (key) => {
+  const item = await Config.findByPk(key);
+  return item ? item.value : null;
+};
+
 module.exports = {
   getAllConfigs,
   upsertConfig,
+  getConfigValue,
 };

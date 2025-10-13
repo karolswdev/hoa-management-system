@@ -106,6 +106,7 @@ Initiates the password reset process. If the user exists and is active, a passwo
       "message": "Password reset email sent. Please check your inbox."
     }
     ```
+ -   Rate limiting: This endpoint is limited per account to once every `PASSWORD_RESET_COOLDOWN_MINUTES` (default 60). Exceeding this returns HTTP 429 with a descriptive message.
 
 ### `POST /auth/reset-password`
 
@@ -126,6 +127,31 @@ Resets the user's password using the token from the forgot-password flow.
     }
     ```
 -   **Note:** The `token` is the plain token from the reset link, not a JWT. The new password must meet complexity requirements (min 8 characters, uppercase, lowercase, number, special character).
+
+### `GET /auth/verify-email`
+
+Verifies a user's email using a token sent during registration.
+
+-   **Authorization:** Public
+-   **Query Params:** `token` (string)
+-   **Success Response (200 OK):**
+    ```json
+    { "message": "Email verified successfully." }
+    ```
+
+### `POST /auth/resend-verification`
+
+Resends the verification email to a user who has not yet verified their address.
+
+-   **Authorization:** Public
+-   **Request Body:**
+    ```json
+    { "email": "user@example.com" }
+    ```
+-   **Success Response (200 OK):**
+    ```json
+    { "message": "Verification email sent." }
+    ```
 
 ---
 
@@ -170,6 +196,17 @@ interface Announcement {
   };
 }
 ```
+
+### Announcements API
+
+-   `POST /announcements` (admin): accepts body fields `title`, `content`, optional `expiresAt`, and optional `notify` (boolean). If `notify` is `true`, the system emails the announcement to all approved, verified, non-system users.
+-   `PUT /announcements/{id}` (admin): optional `notify` to trigger a resend (use with care).
+
+Email behavior:
+- Password reset, email verification, admin approval/rejection, and optional announcement notifications are delivered via SendGrid. Configure `EMAIL_PROVIDER`, `SENDGRID_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, and `FRONTEND_BASE_URL`.
+
+CAPTCHA:
+- Registration is protected with Cloudflare Turnstile. Configure `TURNSTILE_SECRET_KEY` (backend) and `VITE_TURNSTILE_SITE_KEY` (frontend).
 
 ### Event Object
 

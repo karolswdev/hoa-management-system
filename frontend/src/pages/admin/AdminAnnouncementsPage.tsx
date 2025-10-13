@@ -53,6 +53,7 @@ const AdminAnnouncementsPage: React.FC = () => {
     title: '',
     content: '',
     expiresAt: null as Date | null,
+    notify: false,
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -118,6 +119,7 @@ const AdminAnnouncementsPage: React.FC = () => {
         title: formData.title.trim(),
         content: formData.content.trim(),
         expiresAt: formData.expiresAt?.toISOString(),
+        notify: formData.notify,
       };
       
       await apiService.createAnnouncement(data);
@@ -366,6 +368,16 @@ const AdminAnnouncementsPage: React.FC = () => {
                   },
                 }}
               />
+              <Box>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.notify}
+                    onChange={(e) => setFormData({ ...formData, notify: e.target.checked })}
+                  />
+                  <Typography variant="body2">Email this announcement to all approved members</Typography>
+                </label>
+              </Box>
             </Box>
           </DialogContent>
           <DialogActions>

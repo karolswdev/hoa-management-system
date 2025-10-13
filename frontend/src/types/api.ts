@@ -126,6 +126,8 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
+  // Optional captcha token (e.g., Turnstile)
+  captchaToken?: string;
 }
 
 export interface RegisterResponse {
@@ -147,6 +149,7 @@ export interface CreateAnnouncementRequest {
   title: string;
   content: string;
   expiresAt?: string;
+  notify?: boolean;
 }
 
 export interface CreateEventRequest {

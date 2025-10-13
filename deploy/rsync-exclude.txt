@@ -1,0 +1,14 @@
+# Exclude persisted data and secrets
+backend/database/
+backend/uploads/
+.env
+deploy/config.env
+
+# Development-only and large, unnecessary paths
+.git/
+**/node_modules/
+**/.turbo/
+**/.next/
+**/dist/**
+**/coverage/
+

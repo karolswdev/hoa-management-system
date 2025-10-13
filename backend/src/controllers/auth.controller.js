@@ -183,4 +183,27 @@ module.exports = {
   forgotPassword,
   verifyResetToken,
   resetPassword,
+  async verifyEmail(req, res) {
+    try {
+      const { token } = req.query;
+      const result = await authService.verifyEmail(token);
+      return res.status(200).json(result);
+    } catch (err) {
+      if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+      return res.status(500).json({ error: 'An unexpected error occurred.' });
+    }
+  },
+  async resendVerification(req, res) {
+    try {
+      const { error, value } = forgotPasswordSchema.validate(req.body); // reuse email schema
+      if (error) {
+        return res.status(400).json({ message: 'Validation failed.', errors: error.details.map(d => d.message) });
+      }
+      const result = await authService.resendVerification(value.email);
+      return res.status(200).json(result);
+    } catch (err) {
+      if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+      return res.status(500).json({ error: 'An unexpected error occurred.' });
+    }
+  }
 };

@@ -23,7 +23,10 @@ const registerSchema = Joi.object({
       'string.min': 'Password must be at least 8 characters long.',
       'string.pattern.base': 'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.',
       'any.required': 'Password is required.'
-    })
+    }),
+  // Accept Turnstile fields but strip them before service layer
+  captchaToken: Joi.string().optional().strip(),
+  'cf-turnstile-response': Joi.string().optional().strip()
   // passwordConfirmation: Joi.string().valid(Joi.ref('password')).required().messages({
   //   'any.only': 'Password confirmation must match password.',
   //   'any.required': 'Password confirmation is required.'

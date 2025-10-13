@@ -5,11 +5,19 @@ FROM node:18-alpine AS build
 # Set working directory
 WORKDIR /usr/src/app
 
+# Accept Vite build-time env as build args and export to ENV so Vite picks them up
+ARG VITE_API_BASE_URL
+ARG VITE_APP_NAME
+ARG VITE_TURNSTILE_SITE_KEY
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_APP_NAME=${VITE_APP_NAME}
+ENV VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY}
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev for build)
+RUN npm ci
 
 # Copy source code
 COPY . .

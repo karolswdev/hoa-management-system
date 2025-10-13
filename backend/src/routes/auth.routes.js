@@ -2,6 +2,7 @@ const express = require('express');
 const authController = require('../controllers/auth.controller');
 const { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } = require('../validators/auth.validator.js');
 const validate = require('../middlewares/validate.middleware');
+const verifyTurnstile = require('../middlewares/captcha.middleware');
 
 const router = express.Router();
 
@@ -66,7 +67,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorServer'
  */
-router.post('/register', validate(registerSchema), authController.register);
+router.post('/register', verifyTurnstile, validate(registerSchema), authController.register);
 
 /**
  * @swagger
@@ -288,6 +289,16 @@ router.get('/verify-reset-token', authController.verifyResetToken);
  *               $ref: '#/components/schemas/ErrorServer'
  */
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
+
+/**
+ * Verify email address
+ */
+router.get('/verify-email', authController.verifyEmail);
+
+/**
+ * Resend verification email
+ */
+router.post('/resend-verification', validate(forgotPasswordSchema), authController.resendVerification);
 
 
 // Placeholder for UserResponse schema (to be defined in Swagger setup)

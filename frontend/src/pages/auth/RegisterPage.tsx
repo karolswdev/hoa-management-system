@@ -15,6 +15,7 @@ import {
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import type { RegisterRequest } from '../../types/api';
+import TurnstileWidget from '../../components/auth/TurnstileWidget';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 
@@ -42,20 +43,23 @@ const validationSchema = Yup.object({
 const RegisterPage: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
   const { register } = useAuth();
   const { showSuccess } = useNotification();
   const navigate = useNavigate();
 
-  const handleSubmit = async (values: RegisterRequest & { confirmPassword: string }) => {
+  const handleSubmit = async (values: RegisterRequest & { confirmPassword: string; captchaToken?: string }) => {
     setError('');
     setIsLoading(true);
 
     try {
       // Remove confirmPassword before sending to API
-      const { confirmPassword, ...registerData } = values;
-      await register(registerData);
+      const { confirmPassword, captchaToken, ...registerData } = values;
+      const payload: any = { ...registerData };
+      if (captchaToken) payload.captchaToken = captchaToken;
+      await register(payload);
       
-      showSuccess('Registration successful. Your account is now pending approval from an administrator.');
+      showSuccess('Registration successful. Please verify your email and wait for admin approval.');
       navigate('/login');
     } catch (err: any) {
       if (err.response?.status === 409) {
@@ -101,11 +105,12 @@ const RegisterPage: React.FC = () => {
               email: '',
               password: '',
               confirmPassword: '',
+              captchaToken: '',
             }}
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
           >
-            {({ errors, touched, isSubmitting }) => (
+            {({ errors, touched, isSubmitting, setFieldValue, values }) => (
               <Form>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <Field
@@ -157,11 +162,23 @@ const RegisterPage: React.FC = () => {
                     fullWidth
                     variant="contained"
                     size="large"
-                    disabled={isLoading || isSubmitting}
+                    disabled={isLoading || isSubmitting || (!!siteKey && !values.captchaToken)}
                     sx={{ mt: 2 }}
                   >
                     {isLoading ? 'Creating Account...' : 'Create Account'}
                   </Button>
+                  {siteKey && (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        This site is protected by Turnstile and the Cloudflare Privacy Policy applies.
+                      </Typography>
+                      <TurnstileWidget
+                        siteKey={siteKey}
+                        onToken={(t) => setFieldValue('captchaToken', t)}
+                        onExpire={() => setFieldValue('captchaToken', '')}
+                      />
+                    </Box>
+                  )}
                 </Box>
               </Form>
             )}
