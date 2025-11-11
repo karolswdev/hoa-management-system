@@ -44,58 +44,7 @@ jobs:
         working-directory: backend
         run: |
           NODE_ENV=test npx sequelize-cli db:migrate
-          # Seed test users for screenshots
-          node -e "
-          const bcrypt = require('bcryptjs');
-          const sqlite3 = require('sqlite3').verbose();
-          const db = new sqlite3.Database('database_test.sqlite');
-
-          const adminPassword = bcrypt.hashSync('Admin123!@#', 10);
-          const memberPassword = bcrypt.hashSync('Member123!@#', 10);
-
-          db.serialize(() => {
-            // Insert admin user
-            db.run(\`INSERT OR REPLACE INTO Users (id, name, email, password, role, status, isVerified, createdAt, updatedAt)
-                     VALUES (1, 'Admin User', 'admin@example.com', ?, 'admin', 'approved', 1, datetime('now'), datetime('now'))\`,
-                   [adminPassword]);
-
-            // Insert member user
-            db.run(\`INSERT OR REPLACE INTO Users (id, name, email, password, role, status, isVerified, createdAt, updatedAt)
-                     VALUES (2, 'Member User', 'member@example.com', ?, 'member', 'approved', 1, datetime('now'), datetime('now'))\`,
-                   [memberPassword]);
-
-            // Insert sample announcements
-            db.run(\`INSERT OR REPLACE INTO Announcements (id, title, content, expiresAt, createdBy, createdAt, updatedAt)
-                     VALUES (1, 'Welcome to Sanderson Creek HOA', 'We are excited to have you as part of our community. This portal allows you to stay connected with HOA announcements, events, and important documents.', datetime('now', '+30 days'), 1, datetime('now'), datetime('now'))\`);
-
-            db.run(\`INSERT OR REPLACE INTO Announcements (id, title, content, expiresAt, createdBy, createdAt, updatedAt)
-                     VALUES (2, 'Pool Opening Schedule', 'The community pool will open for the season on June 1st. Pool hours are 6 AM to 10 PM daily. Please review the pool rules posted at the facility.', datetime('now', '+60 days'), 1, datetime('now'), datetime('now'))\`);
-
-            // Insert sample events
-            db.run(\`INSERT OR REPLACE INTO Events (id, title, description, location, startDate, endDate, createdBy, createdAt, updatedAt)
-                     VALUES (1, 'Annual HOA Meeting', 'Join us for our annual HOA meeting to discuss community improvements and budget.', 'Community Center', datetime('now', '+7 days'), datetime('now', '+7 days', '+2 hours'), 1, datetime('now'), datetime('now'))\`);
-
-            db.run(\`INSERT OR REPLACE INTO Events (id, title, description, location, startDate, endDate, createdBy, createdAt, updatedAt)
-                     VALUES (2, 'Summer BBQ Social', 'Annual summer BBQ event for all residents. Bring your family and meet your neighbors!', 'Community Park', datetime('now', '+21 days'), datetime('now', '+21 days', '+4 hours'), 1, datetime('now'), datetime('now'))\`);
-
-            // Insert sample documents
-            db.run(\`INSERT OR REPLACE INTO Documents (id, title, description, fileName, filePath, fileSize, mimeType, visibility, status, uploadedBy, createdAt, updatedAt)
-                     VALUES (1, 'HOA Bylaws 2024', 'Official HOA bylaws and regulations', 'hoa-bylaws-2024.pdf', '/uploads/documents/hoa-bylaws-2024.pdf', 245760, 'application/pdf', 'public', 'approved', 1, datetime('now'), datetime('now'))\`);
-
-            db.run(\`INSERT OR REPLACE INTO Documents (id, title, description, fileName, filePath, fileSize, mimeType, visibility, status, uploadedBy, createdAt, updatedAt)
-                     VALUES (2, 'Community Guidelines', 'Guidelines for maintaining community standards', 'community-guidelines.pdf', '/uploads/documents/community-guidelines.pdf', 189440, 'application/pdf', 'public', 'approved', 1, datetime('now'), datetime('now'))\`);
-
-            // Insert sample discussions
-            db.run(\`INSERT OR REPLACE INTO Discussions (id, title, content, createdBy, createdAt, updatedAt)
-                     VALUES (1, 'Playground Equipment Upgrade', 'What do you think about upgrading the playground equipment in the park? I would love to hear everyone\\'s thoughts.', 2, datetime('now', '-2 days'), datetime('now', '-2 days'))\`);
-
-            db.run(\`INSERT OR REPLACE INTO Discussions (id, title, content, createdBy, createdAt, updatedAt)
-                     VALUES (2, 'Street Parking Concerns', 'Has anyone else noticed the street parking situation on Oak Street? Maybe we should discuss potential solutions.', 2, datetime('now', '-5 days'), datetime('now', '-5 days'))\`, () => {
-              db.close();
-              console.log('Test data seeded successfully');
-            });
-          });
-          "
+          NODE_ENV=test node scripts/seed-test-data.js
 
       - name: Start backend server
         working-directory: backend
