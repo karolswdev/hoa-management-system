@@ -22,9 +22,11 @@ export default defineConfig({
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
     /* Screenshot on failure */
-    screenshot: 'only-on-failure',
+    screenshot: process.env.GENERATE_SCREENSHOTS === 'true' ? 'on' : 'only-on-failure',
     /* Video on first retry */
     video: 'retain-on-failure',
+    /* Viewport size for consistent screenshots */
+    viewport: { width: 1280, height: 720 },
   },
 
   /* Configure projects for major browsers */
