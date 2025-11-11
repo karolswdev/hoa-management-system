@@ -3,6 +3,7 @@ const authController = require('../controllers/auth.controller');
 const { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } = require('../validators/auth.validator.js');
 const validate = require('../middlewares/validate.middleware');
 const verifyTurnstile = require('../middlewares/captcha.middleware');
+const { loginLimiter, registerLimiter, passwordResetLimiter } = require('../config/rate-limit');
 
 const router = express.Router();
 
@@ -67,7 +68,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorServer'
  */
-router.post('/register', verifyTurnstile, validate(registerSchema), authController.register);
+router.post('/register', registerLimiter, verifyTurnstile, validate(registerSchema), authController.register);
 
 /**
  * @swagger
@@ -134,7 +135,7 @@ router.post('/register', verifyTurnstile, validate(registerSchema), authControll
  *             schema:
  *               $ref: '#/components/schemas/ErrorServer'
  */
-router.post('/login', validate(loginSchema), authController.login);
+router.post('/login', loginLimiter, validate(loginSchema), authController.login);
 
 /**
  * @swagger
@@ -189,7 +190,7 @@ router.post('/login', validate(loginSchema), authController.login);
  *       500:
  *         description: Internal server error
  */
-router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
+router.post('/forgot-password', passwordResetLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
 
 /**
  * @swagger
@@ -288,7 +289,7 @@ router.get('/verify-reset-token', authController.verifyResetToken);
  *             schema:
  *               $ref: '#/components/schemas/ErrorServer'
  */
-router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
+router.post('/reset-password', passwordResetLimiter, validate(resetPasswordSchema), authController.resetPassword);
 
 /**
  * Verify email address
