@@ -8,6 +8,13 @@ on:
     paths:
       - 'frontend/src/**'
       - 'frontend/e2e/generate-screenshots.spec.ts'
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - 'frontend/src/**'
+      - 'frontend/e2e/generate-screenshots.spec.ts'
 
 jobs:
   generate-screenshots:
