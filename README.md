@@ -53,7 +53,7 @@ The goal of the HOA Community Hub is to replace fragmented communication channel
 | ---------------------- | ------------------------------------------------------------ | ---------------------------------------------------- | --------------------------- |
 | **Authentication**     | ✅ Login/Logout                                              | ✅ Login/Logout, Register, Email Verify, Password Reset | ❌                       |
 | **User Management**    | ✅ View, Approve/Reject, Change Role, Delete Users           | ✅ Manage Own Profile                                | ❌                          |
-| **Announcements**      | ✅ Create, Edit, Delete, Optional Email Notify               | ✅ View                                              | ❌                          |
+| **Announcements / HOA Messages** | ✅ Create, Edit, Delete, Optional Email Notify to All Members | ✅ View                                              | ❌                          |
 | **Events**             | ✅ Create, Edit, Delete                                      | ✅ View                                              | ❌                          |
 | **Documents**          | ✅ Upload, Manage, Set Visibility                            | ✅ View & Download Approved Docs                     | ✅ View & Download Public Docs |
 | **Discussions**        | ✅ Delete Threads/Replies                                    | ✅ Create/View Threads, Post Replies                 | ❌                          |
@@ -227,6 +227,265 @@ Environment (production highlights)
 Nginx
 - Example site config lives on the server; ensure HTTPS, redirect `www` → apex, and a strict CSP that allows `https://challenges.cloudflare.com` for Turnstile.
 - The app’s Docker Compose publishes backend on `127.0.0.1:3001` and frontend on `127.0.0.1:3000`; Nginx proxies `https://<domain>/api/` to backend and `/` to frontend.
+
+---
+
+## HOA Message Feature
+
+### Overview
+
+The HOA Message feature allows administrators to send important communications to all HOA members via email. This is implemented through the announcements system with email notification capabilities.
+
+### How It Works
+
+When creating an announcement, administrators can enable the **"Notify Members"** option to send the announcement via email to all approved, verified, and active HOA members.
+
+**API Endpoint**: `POST /api/announcements`
+
+**Request Body**:
+```json
+{
+  "title": "Important HOA Update",
+  "content": "<p>This is an important message for all members.</p>",
+  "notify": true,
+  "expiresAt": "2025-12-31T23:59:59Z"
+}
+```
+
+**Notification Behavior**:
+- Emails are sent to all users with:
+  - `status: 'approved'`
+  - `email_verified: true`
+  - `is_system_user: false`
+- Uses the `announcement.html` email template
+- Emails are sent sequentially with error handling
+- Failed emails don't prevent announcement creation
+
+### Usage
+
+1. **Admin logs in** to the system
+2. **Navigate to Announcements** section
+3. **Click "Create Announcement"**
+4. **Fill in announcement details**:
+   - Title: Subject of the message
+   - Content: HTML-formatted message body
+   - Expires At: Optional expiration date
+   - **Notify Members**: Check this box to send emails
+5. **Submit** the announcement
+
+Members will receive an email with the announcement content and a link to view it on the website.
+
+### Implementation Details
+
+**Backend**: `backend/src/services/announcement.service.js` (lines 54-85)
+
+The email sending logic:
+- Queries all eligible recipients from the database
+- Renders the announcement email template
+- Sends individual emails via SendGrid
+- Continues on email failures (graceful degradation)
+
+**Email Template**: `backend/src/emails/templates/announcement.html`
+
+### Rate Limiting
+
+Mass email sending is not currently rate-limited, but individual announcement creation follows standard API rate limits (100 requests per 15 minutes per IP).
+
+### Future Enhancements
+
+Potential improvements for a dedicated HOA Message feature:
+- Recipient targeting (specific user groups, roles)
+- Message scheduling
+- Delivery tracking and read receipts
+- Template management
+- Message history and archive
+- Background job processing for large recipient lists
+
+---
+
+## Production Readiness
+
+The HOA Management System includes comprehensive production-ready features for monitoring, security, and operations.
+
+### Security Features
+
+- **Rate Limiting**:
+  - Global API rate limiting (100 req/15min)
+  - Login attempts: 5 per IP+email per 15 minutes
+  - Registration: 3 per IP per hour
+  - Password reset: 3 per IP+email per hour
+- **CORS Protection**: Configurable allowed origins
+- **Input Validation**: Joi validation on all endpoints
+- **SQL Injection Prevention**: Parameterized queries via Sequelize
+- **XSS Protection**: DOMPurify content sanitization
+- **JWT Authentication**: Secure token-based auth
+- **CAPTCHA**: Cloudflare Turnstile on registration
+- **Audit Logging**: All admin actions logged
+
+### Monitoring & Observability
+
+#### Prometheus Metrics
+- HTTP request rates and durations
+- Error rates by endpoint
+- Authentication attempts
+- Email sending metrics
+- System resources (CPU, memory)
+- Database query performance
+
+**Endpoint**: `GET /api/metrics`
+
+#### Grafana Dashboards
+- Real-time performance visualization
+- Response time percentiles (p50, p90, p95, p99)
+- Error tracking
+- Business metrics
+
+**Access**: `http://your-server:3002` (default: admin/admin)
+
+#### Structured Logging
+- Winston logger with JSON format
+- Daily log rotation
+- Separate log levels (error, warn, info, http, debug)
+- Log files in `backend/logs/`
+
+**Start Monitoring Stack**:
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+```
+
+#### Error Tracking (Optional)
+- Sentry integration for automatic error reporting
+- Stack traces and user context
+- Performance monitoring
+- Configure via `SENTRY_DSN` environment variable
+
+**Documentation**: See [docs/MONITORING.md](docs/MONITORING.md)
+
+### Backup & Recovery
+
+#### Automated Backups
+
+Comprehensive backup script (`scripts/backup.sh`) that backs up:
+- Database (SQLite, compressed)
+- Uploaded documents
+- Application logs
+- Git commit information
+- Configuration (secrets redacted)
+
+**Setup Automated Backups**:
+```bash
+# Test the backup script
+./scripts/backup.sh
+
+# Add to crontab for daily backups at 2 AM
+crontab -e
+# Add: 0 2 * * * /path/to/hoa-management-system/scripts/backup.sh
+```
+
+**Configuration**:
+- `BACKUP_DIR`: Backup location (default: `/root/hoa-backups`)
+- `BACKUP_RETENTION_DAYS`: Keep backups for N days (default: 30)
+- `BACKUP_NOTIFICATION_EMAIL`: Optional email notifications
+
+#### Restore Procedures
+
+Interactive restore script (`scripts/restore.sh`):
+```bash
+# Interactive mode
+./scripts/restore.sh
+
+# Restore specific backup
+./scripts/restore.sh 20250111_020000
+```
+
+**Documentation**: See [docs/BACKUP_AND_RESTORE.md](docs/BACKUP_AND_RESTORE.md)
+
+### Incident Response
+
+Comprehensive runbook for handling common incidents:
+- Application downtime
+- Database issues
+- Performance degradation
+- Security incidents
+- Email service failures
+- Disk space issues
+
+**Documentation**: See [docs/INCIDENT_RESPONSE.md](docs/INCIDENT_RESPONSE.md)
+
+### Testing
+
+#### Frontend Unit Tests
+```bash
+cd frontend
+npm test                # Run tests
+npm run test:coverage   # Generate coverage report
+npm run test:ui         # Open Vitest UI
+```
+
+Framework: Vitest + React Testing Library
+
+#### End-to-End Tests
+```bash
+cd frontend
+npm run test:e2e        # Run E2E tests
+npm run test:e2e:ui     # Open Playwright UI
+npm run test:e2e:debug  # Debug mode
+```
+
+Framework: Playwright
+
+#### Backend Integration Tests
+```bash
+cd backend
+npm run test:integration
+npm run test:debugging
+```
+
+Framework: Jest + Supertest
+
+### Environment Variables
+
+#### Required Production Variables
+```bash
+# Security
+JWT_SECRET=your-secret-here
+ALLOWED_ORIGINS=https://yourdomain.com
+
+# Email
+EMAIL_PROVIDER=sendgrid
+SENDGRID_API_KEY=your-api-key
+EMAIL_FROM=no-reply@yourdomain.com
+EMAIL_FROM_NAME=Your HOA Name
+FRONTEND_BASE_URL=https://yourdomain.com
+
+# Turnstile CAPTCHA
+TURNSTILE_SECRET_KEY=your-secret-key
+VITE_TURNSTILE_SITE_KEY=your-site-key
+```
+
+#### Optional Production Variables
+```bash
+# Monitoring
+SENTRY_DSN=https://your-sentry-dsn
+SENTRY_TRACES_SAMPLE_RATE=0.1
+APP_VERSION=1.0.0
+
+# Logging
+LOG_LEVEL=info
+ENABLE_FILE_LOGGING=true
+LOGS_DIR=./logs
+
+# Backup
+BACKUP_DIR=/root/hoa-backups
+BACKUP_RETENTION_DAYS=30
+BACKUP_NOTIFICATION_EMAIL=admin@yourdomain.com
+
+# Grafana
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=your-secure-password
+```
+
+See `.env.example` for complete list.
 
 ---
 
