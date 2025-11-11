@@ -13,7 +13,8 @@
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug"
+    "test:e2e:debug": "playwright test --debug",
+    "generate-screenshots": "GENERATE_SCREENSHOTS=true playwright test generate-screenshots.spec.ts --project=chromium"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
