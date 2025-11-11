@@ -9,7 +9,7 @@ module.exports = {
     const memberPassword = bcrypt.hashSync('Member123!@#', 10);
 
     // Insert test users
-    await queryInterface.bulkInsert('Users', [
+    await queryInterface.bulkInsert('users', [
       {
         id: 1,
         name: 'Admin User',
@@ -17,9 +17,10 @@ module.exports = {
         password: adminPassword,
         role: 'admin',
         status: 'approved',
-        isVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        email_verified: true,
+        is_system_user: false,
+        created_at: new Date(),
+        updated_at: new Date()
       },
       {
         id: 2,
@@ -28,9 +29,10 @@ module.exports = {
         password: memberPassword,
         role: 'member',
         status: 'approved',
-        isVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        email_verified: true,
+        is_system_user: false,
+        created_at: new Date(),
+        updated_at: new Date()
       },
       {
         id: 3,
@@ -39,9 +41,10 @@ module.exports = {
         password: memberPassword,
         role: 'member',
         status: 'pending',
-        isVerified: false,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        email_verified: false,
+        is_system_user: false,
+        created_at: new Date(),
+        updated_at: new Date()
       }
     ], { ignoreDuplicates: true });
 
