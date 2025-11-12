@@ -74,6 +74,9 @@ function initSentry(app) {
  * Middleware to capture Sentry request data
  */
 function sentryRequestHandler() {
+  if (!process.env.SENTRY_DSN || !Sentry.Handlers) {
+    return (req, res, next) => next();
+  }
   return Sentry.Handlers.requestHandler();
 }
 
@@ -81,6 +84,9 @@ function sentryRequestHandler() {
  * Middleware to trace Sentry transactions
  */
 function sentryTracingHandler() {
+  if (!process.env.SENTRY_DSN || !Sentry.Handlers) {
+    return (req, res, next) => next();
+  }
   return Sentry.Handlers.tracingHandler();
 }
 
@@ -89,6 +95,9 @@ function sentryTracingHandler() {
  * Should be added after all routes but before other error handlers
  */
 function sentryErrorHandler() {
+  if (!process.env.SENTRY_DSN || !Sentry.Handlers) {
+    return (err, req, res, next) => next(err);
+  }
   return Sentry.Handlers.errorHandler({
     shouldHandleError(error) {
       // Capture all errors with status code 500 or higher

@@ -9,6 +9,8 @@ node_modules/
 # Database
 src/database/*.db
 src/database/*.db-journal
+backend/database/*.db
+backend/database/*.db-journal
 
 # Logs
 logs/
@@ -22,3 +24,9 @@ npm-debug.log*
 # Misc
 .DS_Store
 coverage/
+
+# Test artifacts
+test-results/
+playwright-report/
+frontend/screenshots/*.png
+frontend/.auth/

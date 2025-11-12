@@ -11,8 +11,8 @@ const fs = require('fs');
 
 // Determine database path based on NODE_ENV
 const dbPath = process.env.NODE_ENV === 'test'
-  ? path.join(__dirname, '..', 'database_test.sqlite')
-  : path.join(__dirname, '..', 'database.sqlite');
+  ? path.join(__dirname, '..', 'database', 'test.db')
+  : path.join(__dirname, '..', 'database', 'hoa.db');
 
 console.log('Seeding test data...');
 console.log('Database path:', dbPath);
