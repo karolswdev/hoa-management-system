@@ -30,6 +30,9 @@ export BACKEND_IMAGE FRONTEND_IMAGE
 info "Deploying version $APP_VERSION"
 
 COMPOSE="docker-compose -f $COMPOSE_FILE"
+if [ -f .env ]; then
+  COMPOSE="$COMPOSE --env-file .env"
+fi
 
 info "Creating backups"
 mkdir -p /root/hoa-backups
