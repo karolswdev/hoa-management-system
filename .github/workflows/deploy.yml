@@ -44,6 +44,11 @@ jobs:
           echo "SSH_KEY_PATH=$RUNNER_TEMP/hoa_deploy_key" >> $GITHUB_ENV
           echo "REMOTE_SCRIPT_PATH=/tmp/hoa-remote-deploy.sh" >> $GITHUB_ENV
 
+      - name: Prepare runtime env vars
+        run: |
+          echo "SSH_KEY_PATH=$RUNNER_TEMP/hoa_deploy_key" >> $GITHUB_ENV
+          echo "REMOTE_SCRIPT_PATH=/tmp/hoa-remote-deploy.sh" >> $GITHUB_ENV
+
       - name: Extract metadata
         id: meta
         run: |
