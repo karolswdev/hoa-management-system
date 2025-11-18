@@ -159,8 +159,8 @@ jobs:
 
       - name: Execute remote deployment
         env:
-          RUN_MIGRATIONS_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.run_migrations || 'true' }}
-          BUILD_NO_CACHE_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.build_no_cache || 'false' }}
+          RUN_MIGRATIONS_INPUT: ${{ github.event.inputs.run_migrations || 'true' }}
+          BUILD_NO_CACHE_INPUT: ${{ github.event.inputs.build_no_cache || 'false' }}
           APP_VERSION: ${{ needs.build-images.outputs.version }}
           BACKEND_IMAGE: ${{ needs.build-images.outputs.backend_image }}
           FRONTEND_IMAGE: ${{ needs.build-images.outputs.frontend_image }}
