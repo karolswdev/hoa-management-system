@@ -176,7 +176,7 @@ jobs:
           ssh -i "$SSH_KEY_PATH" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=30 \
             "$DEPLOY_USER@$DEPLOY_HOST" \
             REMOTE_DIR="$DEPLOY_DIR" \
-            COMPOSE_FILE="docker-compose.yml" \
+            COMPOSE_FILE="deploy/docker-compose.prod.yml" \
             DOMAIN="$DEPLOY_DOMAIN" \
             BUILD_NO_CACHE="$BUILD_NO_CACHE_INPUT" \
             RUN_MIGRATIONS="$RUN_MIGRATIONS_INPUT" \
