@@ -44,6 +44,7 @@ $COMPOSE pull
 log "Images pulled"
 
 info "Restarting services with minimal downtime"
+$COMPOSE down || true
 $COMPOSE up -d
 log "Services updated"
 
