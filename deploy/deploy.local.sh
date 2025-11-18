@@ -55,7 +55,8 @@ log "SSH ok"
 ssh "${SSH_OPTS[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$REMOTE_DIR'" || true
 
 step "Sync code to remote (excluding DB/uploads/.env)"
-rsync -az --delete --delete-excluded \
+rsync -az --delete \
+  --filter='P .env' \
   --exclude-from="$EXCLUDES_FILE" \
   -e "ssh ${SSH_OPTS[*]}" \
   "$ROOT_DIR/" "$DEPLOY_USER@$DEPLOY_HOST:$REMOTE_DIR/"

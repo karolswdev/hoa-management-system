@@ -153,7 +153,8 @@ jobs:
 
       - name: Sync repository to server
         run: |
-          rsync -az --delete --delete-excluded \
+          rsync -az --delete \
+            --filter='P .env' \
             --exclude-from=deploy/rsync-exclude.txt \
             -e "ssh -i $SSH_KEY_PATH -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=30" \
             ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_DIR/"
