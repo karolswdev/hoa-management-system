@@ -151,8 +151,6 @@ You can let GitHub Actions deploy for you whenever a release is published (or ru
 | `DEPLOY_SSH_KEY` | Private SSH key (PEM/ED25519, no passphrase) that matches an `authorized_keys` entry on the server |
 | `DEPLOY_DIR` | Directory that hosts the project on the server (`/opt/hoa-management`) |
 | `DEPLOY_DOMAIN` | Public domain for health checks (`sandersoncreekhoa.com`) |
-| `REGISTRY_USERNAME` | GitHub username for GHCR login |
-| `REGISTRY_PASSWORD` | GHCR personal access token with `packages:write` scope |
 | `VITE_TURNSTILE_SITE_KEY` | Public Turnstile site key used by the frontend |
 
 > 💡 The `deploy/rsync-exclude.txt` file ensures `.env`, the SQLite DB, uploads, and other stateful files are never overwritten by CI.

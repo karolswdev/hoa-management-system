@@ -227,9 +227,9 @@ Environment (production highlights)
 
 GitHub Actions Release Workflow
 - Publish a GitHub release (or dispatch the workflow manually) to trigger an automated build.
-- The workflow builds backend and frontend images with `docker buildx`, tags them as `ghcr.io/<owner>/hoa-backend:<tag>` and `ghcr.io/<owner>/hoa-frontend:<tag>`, and pushes them to GHCR.
+- The workflow builds backend and frontend images with `docker buildx`, tags them as `ghcr.io/<owner>/hoa-backend:<tag>` and `ghcr.io/<owner>/hoa-frontend:<tag>`, and pushes them to GHCR using the built-in `GITHUB_TOKEN`.
 - The Linode only runs `docker-compose pull`/`up`, so builds happen entirely inside GitHub Actions (much lighter on the droplet).
-- Required repository secrets: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_DIR`, `DEPLOY_DOMAIN`, `DEPLOY_SSH_KEY`, `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`, `VITE_TURNSTILE_SITE_KEY`.
+- Required repository secrets: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_DIR`, `DEPLOY_DOMAIN`, `DEPLOY_SSH_KEY`, `VITE_TURNSTILE_SITE_KEY`.
 
 Nginx
 - Example site config lives on the server; ensure HTTPS, redirect `www` → apex, and a strict CSP that allows `https://challenges.cloudflare.com` for Turnstile.
