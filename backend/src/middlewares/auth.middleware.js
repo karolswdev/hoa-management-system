@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../../models'); // Adjust path if models are not in root/models
+const { jwtSecret } = require('../config/jwt');
 
 /**
  * Middleware to verify JWT token from Authorization header.
@@ -18,7 +19,7 @@ async function verifyToken(req, res, next) {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, jwtSecret);
     
     // Optionally, fetch user from DB to ensure they still exist and are active
     // This adds a DB hit but increases security. For this example, we'll trust the token payload.
@@ -81,7 +82,7 @@ async function optionalAuth(req, res, next) {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, jwtSecret);
       req.user = {
         id: decoded.userId,
         role: decoded.role,

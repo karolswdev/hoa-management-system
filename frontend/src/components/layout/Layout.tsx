@@ -34,6 +34,7 @@ import {
   Logout,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import ReleaseBadge from '../common/ReleaseBadge';
 
 const drawerWidth = 240;
 
@@ -98,7 +99,7 @@ const Layout: React.FC = () => {
   };
 
   const drawer = (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <Toolbar>
         <Typography variant="h6" noWrap component="div">
           HOA Community Hub
@@ -150,6 +151,9 @@ const Layout: React.FC = () => {
           </List>
         </>
       )}
+      <Box sx={{ mt: 'auto', p: 2 }}>
+        <ReleaseBadge />
+      </Box>
     </Box>
   );
 

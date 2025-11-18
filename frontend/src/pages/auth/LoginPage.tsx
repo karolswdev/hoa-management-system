@@ -17,6 +17,7 @@ import * as Yup from 'yup';
 import type { LoginRequest } from '../../types/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
+import ReleaseBadge from '../../components/common/ReleaseBadge';
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -171,6 +172,7 @@ const LoginPage: React.FC = () => {
                 View public information
               </Link>
             </Typography>
+            <ReleaseBadge />
           </Box>
         </Paper>
       </Box>

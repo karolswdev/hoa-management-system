@@ -32,6 +32,8 @@ fi
 : "${SSH_KEY:?set in deploy/config.env}"
 : "${REMOTE_DIR:?set in deploy/config.env}"
 : "${DOMAIN:?set in deploy/config.env}"
+: "${BACKEND_IMAGE:?set in deploy/config.env}"
+: "${FRONTEND_IMAGE:?set in deploy/config.env}"
 : "${COMPOSE_FILE:=docker-compose.yml}"
 : "${BUILD_NO_CACHE:=false}"
 : "${RUN_MIGRATIONS:=true}"
@@ -71,7 +73,8 @@ ssh "${SSH_OPTS[@]}" "$DEPLOY_USER@$DEPLOY_HOST" \
   DOMAIN="$DOMAIN" \
   BUILD_NO_CACHE="$BUILD_NO_CACHE" \
   RUN_MIGRATIONS="$RUN_MIGRATIONS" \
+  BACKEND_IMAGE="$BACKEND_IMAGE" \
+  FRONTEND_IMAGE="$FRONTEND_IMAGE" \
   "$REMOTE_SCRIPT_PATH"
 
 log "Deployment completed"
-

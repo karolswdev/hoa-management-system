@@ -107,6 +107,26 @@ const passwordResetLimiter = rateLimit({
   },
 });
 
+// Extremely low limit for verification re-sends (IP + email combo)
+const verificationResendLimiter = rateLimit({
+  windowMs: 6 * 60 * 60 * 1000, // 6 hours
+  max: 1, // Only one resend in the window to stay on free tier
+  skipSuccessfulRequests: false,
+  keyGenerator: (req) => `${req.ip}-${req.body.email || 'unknown'}`,
+  message: {
+    message: 'Verification email already sent recently. Please try again later.',
+  },
+  handler: (req, res) => {
+    logger.warn('Verification resend rate limit exceeded', {
+      ip: req.ip,
+      email: req.body.email,
+    });
+    res.status(429).json({
+      message: 'Verification email already sent recently. Please try again later.',
+    });
+  },
+});
+
 // Rate limit for file uploads
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -131,5 +151,6 @@ module.exports = {
   loginLimiter,
   registerLimiter,
   passwordResetLimiter,
+  verificationResendLimiter,
   uploadLimiter,
 };

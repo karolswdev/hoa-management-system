@@ -162,6 +162,7 @@ The project is a monorepo containing distinct `backend` and `frontend` applicati
     VITE_API_BASE_URL=http://localhost:3001/api
     # Turnstile site key (if protecting registration locally)
     VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
+    VITE_APP_VERSION=1.0.0
     # App name for document.title
     VITE_APP_NAME=Sanderson Creek HOA
     ```
@@ -217,12 +218,18 @@ For repeatable deployments to a remote server via SSH (backups, code sync, Docke
 
 - `deploy/deploy.local.sh` – run locally; syncs code to the remote and invokes the remote routine.
 - `deploy/remote.deploy.sh` – runs on the server; creates backups, builds, restarts, runs migrations (optional), and verifies.
-- `deploy/config.example.env` – copy to `deploy/config.env` and set `DEPLOY_HOST`, `DEPLOY_USER`, `SSH_KEY`, `REMOTE_DIR`, `DOMAIN`, and flags like `RUN_MIGRATIONS`.
+- `deploy/config.example.env` – copy to `deploy/config.env` and set `DEPLOY_HOST`, `DEPLOY_USER`, `SSH_KEY`, `REMOTE_DIR`, `DOMAIN`, `BACKEND_IMAGE`, `FRONTEND_IMAGE`, and flags like `RUN_MIGRATIONS`.
 - `deploy/DEPLOY.md` – full details and quick start.
 
 Environment (production highlights)
 - Backend: `JWT_SECRET`, `JWT_EXPIRES_IN`, `EMAIL_PROVIDER=sendgrid`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `SENDGRID_API_KEY`, `FRONTEND_BASE_URL`, `PASSWORD_RESET_COOLDOWN_MINUTES`, `TURNSTILE_SECRET_KEY`.
-- Frontend build: `VITE_API_BASE_URL`, `VITE_APP_NAME`, `VITE_TURNSTILE_SITE_KEY`.
+- Frontend build: `VITE_API_BASE_URL`, `VITE_APP_NAME`, `VITE_TURNSTILE_SITE_KEY`, `VITE_APP_VERSION` (the release workflow injects the git tag).
+
+GitHub Actions Release Workflow
+- Publish a GitHub release (or dispatch the workflow manually) to trigger an automated build.
+- The workflow builds backend and frontend images with `docker buildx`, tags them as `ghcr.io/<owner>/hoa-backend:<tag>` and `ghcr.io/<owner>/hoa-frontend:<tag>`, and pushes them to GHCR.
+- The Linode only runs `docker-compose pull`/`up`, so builds happen entirely inside GitHub Actions (much lighter on the droplet).
+- Required repository secrets: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_DIR`, `DEPLOY_DOMAIN`, `DEPLOY_SSH_KEY`, `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`, `VITE_TURNSTILE_SITE_KEY`.
 
 Nginx
 - Example site config lives on the server; ensure HTTPS, redirect `www` → apex, and a strict CSP that allows `https://challenges.cloudflare.com` for Turnstile.
@@ -461,6 +468,7 @@ FRONTEND_BASE_URL=https://yourdomain.com
 # Turnstile CAPTCHA
 TURNSTILE_SECRET_KEY=your-secret-key
 VITE_TURNSTILE_SITE_KEY=your-site-key
+VITE_APP_VERSION=1.0.0
 ```
 
 #### Optional Production Variables

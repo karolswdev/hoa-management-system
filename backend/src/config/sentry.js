@@ -1,6 +1,11 @@
 const Sentry = require('@sentry/node');
 const { ProfilingIntegration } = require('@sentry/profiling-node');
 
+let sentryEnabled = false;
+
+const noopMiddleware = (req, res, next) => next();
+const noopErrorMiddleware = (err, req, res, next) => next(err);
+
 /**
  * Initialize Sentry for error tracking and performance monitoring
  * Only initializes if SENTRY_DSN is configured in environment variables
@@ -68,20 +73,21 @@ function initSentry(app) {
   });
 
   console.log(`Sentry initialized for ${process.env.NODE_ENV} environment`);
+  sentryEnabled = true;
 }
 
 /**
  * Middleware to capture Sentry request data
  */
 function sentryRequestHandler() {
-  return Sentry.Handlers.requestHandler();
+  return sentryEnabled ? Sentry.Handlers.requestHandler() : noopMiddleware;
 }
 
 /**
  * Middleware to trace Sentry transactions
  */
 function sentryTracingHandler() {
-  return Sentry.Handlers.tracingHandler();
+  return sentryEnabled ? Sentry.Handlers.tracingHandler() : noopMiddleware;
 }
 
 /**
@@ -89,6 +95,9 @@ function sentryTracingHandler() {
  * Should be added after all routes but before other error handlers
  */
 function sentryErrorHandler() {
+  if (!sentryEnabled) {
+    return noopErrorMiddleware;
+  }
   return Sentry.Handlers.errorHandler({
     shouldHandleError(error) {
       // Capture all errors with status code 500 or higher
@@ -101,6 +110,7 @@ function sentryErrorHandler() {
  * Manually capture an exception
  */
 function captureException(error, context = {}) {
+  if (!sentryEnabled) return;
   Sentry.captureException(error, {
     extra: context,
   });
@@ -110,6 +120,7 @@ function captureException(error, context = {}) {
  * Manually capture a message
  */
 function captureMessage(message, level = 'info', context = {}) {
+  if (!sentryEnabled) return;
   Sentry.captureMessage(message, {
     level,
     extra: context,
@@ -120,6 +131,7 @@ function captureMessage(message, level = 'info', context = {}) {
  * Set user context for error tracking
  */
 function setUserContext(user) {
+  if (!sentryEnabled) return;
   if (user) {
     Sentry.setUser({
       id: user.id,

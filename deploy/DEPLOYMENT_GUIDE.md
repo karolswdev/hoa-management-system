@@ -138,6 +138,38 @@ sudo certbot --nginx -d your-domain.com
 sudo certbot renew --dry-run
 ```
 
+## 🤖 **Automated Deployments (GitHub Actions)**
+
+You can let GitHub Actions deploy for you whenever a release is published (or run it manually from the Actions tab). The workflow lives in `.github/workflows/deploy.yml`.
+
+### Required repository secrets
+
+| Secret | Purpose |
+| --- | --- |
+| `DEPLOY_HOST` | Public IP/host of the Linode (`172.237.148.25`) |
+| `DEPLOY_USER` | SSH user with deploy permissions (e.g., `root`) |
+| `DEPLOY_SSH_KEY` | Private SSH key (PEM/ED25519, no passphrase) that matches an `authorized_keys` entry on the server |
+| `DEPLOY_DIR` | Directory that hosts the project on the server (`/opt/hoa-management`) |
+| `DEPLOY_DOMAIN` | Public domain for health checks (`sandersoncreekhoa.com`) |
+| `REGISTRY_USERNAME` | GitHub username for GHCR login |
+| `REGISTRY_PASSWORD` | GHCR personal access token with `packages:write` scope |
+| `VITE_TURNSTILE_SITE_KEY` | Public Turnstile site key used by the frontend |
+
+> 💡 The `deploy/rsync-exclude.txt` file ensures `.env`, the SQLite DB, uploads, and other stateful files are never overwritten by CI.
+
+### What the workflow does
+
+1. Checks out the release/tag contents.
+2. Builds backend and frontend Docker images with `docker buildx`, tags them `ghcr.io/<owner>/hoa-{backend,frontend}:<git-tag>`, and pushes to GHCR.
+3. Sets up SSH, creates the target directory if missing, and `rsync`s the repo to `$DEPLOY_DIR`.
+4. Uploads `deploy/remote.deploy.sh` and executes it. That script:
+   - Creates timestamped backups of the database, uploads, and code.
+   - Pulls the freshly published images (`BACKEND_IMAGE`/`FRONTEND_IMAGE`) and restarts the containers.
+   - Optionally runs Sequelize migrations.
+   - Hits the apex site and `/api/` endpoint to verify success.
+
+Run the workflow manually if you want to skip migrations or force a cache-busting build—those options are exposed as dispatch inputs.
+
 ## 📁 **File Structure on Server**
 
 ```
@@ -177,8 +209,8 @@ docker-compose restart
 # Update application
 cd /opt/hoa-management
 git pull origin main
-docker-compose down
-docker-compose up -d --build
+docker-compose pull
+docker-compose up -d
 
 # Update system packages
 sudo apt update && sudo apt upgrade -y

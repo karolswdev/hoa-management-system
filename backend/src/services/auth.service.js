@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { User, VerificationToken } = require('../../models'); // Adjust path as necessary if models are not in root/models
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto'); // For a more secure plain token, though UUIDv4 is generally good.
+const { jwtSecret } = require('../config/jwt');
 
 /**
  * Registers a new user.
@@ -135,7 +136,7 @@ async function loginUser(loginData) {
     role: user.role,
   };
 
-  const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+  const token = jwt.sign(tokenPayload, jwtSecret, {
     expiresIn: process.env.JWT_EXPIRES_IN || '1h', // Default to 1 hour
   });
 

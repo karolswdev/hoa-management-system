@@ -3,7 +3,7 @@ const authController = require('../controllers/auth.controller');
 const { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } = require('../validators/auth.validator.js');
 const validate = require('../middlewares/validate.middleware');
 const verifyTurnstile = require('../middlewares/captcha.middleware');
-const { loginLimiter, registerLimiter, passwordResetLimiter } = require('../config/rate-limit');
+const { loginLimiter, registerLimiter, passwordResetLimiter, verificationResendLimiter } = require('../config/rate-limit');
 
 const router = express.Router();
 
@@ -299,7 +299,7 @@ router.get('/verify-email', authController.verifyEmail);
 /**
  * Resend verification email
  */
-router.post('/resend-verification', validate(forgotPasswordSchema), authController.resendVerification);
+router.post('/resend-verification', verificationResendLimiter, validate(forgotPasswordSchema), authController.resendVerification);
 
 
 // Placeholder for UserResponse schema (to be defined in Swagger setup)

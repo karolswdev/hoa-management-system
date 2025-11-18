@@ -25,6 +25,11 @@ services:
     build:
       context: ./frontend # Build context is the frontend directory
       dockerfile: Dockerfile # Frontend-specific Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:${APP_PORT:-3001}/api
+        - VITE_APP_NAME=${VITE_APP_NAME:-HOA Community Hub}
+        - VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY:-test-key}
+        - VITE_APP_VERSION=${APP_VERSION:-dev}
     container_name: hoa_frontend_web
     ports:
       # Map host port 3000 to container's port 80 (nginx)
@@ -32,6 +37,7 @@ services:
     environment:
       # API URL for the frontend to connect to backend
       - VITE_API_BASE_URL=http://localhost:${APP_PORT:-3001}/api
+      - VITE_APP_VERSION=${APP_VERSION:-dev}
     depends_on:
       - backend # Ensure backend starts before frontend
     restart: unless-stopped

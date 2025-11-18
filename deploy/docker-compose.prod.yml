@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE}
     container_name: hoa_backend_prod
     restart: unless-stopped
     environment:
@@ -42,12 +40,7 @@ services:
         max-file: "3"
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_BASE_URL=https://${DOMAIN}/api
-        - VITE_APP_NAME=${VITE_APP_NAME:-HOA Management System}
+    image: ${FRONTEND_IMAGE}
     container_name: hoa_frontend_prod
     restart: unless-stopped
     ports:

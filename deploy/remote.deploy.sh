@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Remote deploy script. Runs on server via SSH.
 # Expects env vars set by the caller:
-#   REMOTE_DIR, COMPOSE_FILE, DOMAIN, RUN_MIGRATIONS, BUILD_NO_CACHE
+#   REMOTE_DIR, COMPOSE_FILE, DOMAIN, RUN_MIGRATIONS,
+#   BACKEND_IMAGE, FRONTEND_IMAGE, APP_VERSION (optional), BUILD_NO_CACHE
 
 log()   { echo -e "\033[0;32m[OK]\033[0m  $*"; }
 info()  { echo -e "\033[0;34m[..]\033[0m  $*"; }
@@ -11,6 +12,22 @@ warn()  { echo -e "\033[1;33m[!!]\033[0m  $*"; }
 error() { echo -e "\033[0;31m[XX]\033[0m  $*"; }
 
 cd "$REMOTE_DIR"
+
+VERSION_LABEL="${APP_VERSION:-}"
+if [ -z "$VERSION_LABEL" ]; then
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    VERSION_LABEL=$(git describe --tags --always 2>/dev/null || git rev-parse --short HEAD)
+  else
+    VERSION_LABEL="dev"
+  fi
+fi
+export APP_VERSION="$VERSION_LABEL"
+export VITE_APP_VERSION="$VERSION_LABEL"
+if [ -z "${BACKEND_IMAGE:-}" ] || [ -z "${FRONTEND_IMAGE:-}" ]; then
+  error "BACKEND_IMAGE and FRONTEND_IMAGE environment variables are required"
+fi
+export BACKEND_IMAGE FRONTEND_IMAGE
+info "Deploying version $APP_VERSION"
 
 COMPOSE="docker-compose -f $COMPOSE_FILE"
 
@@ -22,13 +39,9 @@ tar czf "/root/hoa-backups/hoa-uploads-$TS.tgz" -C backend uploads || true
 tar czf "/root/hoa-backups/hoa-code-$TS.tgz" --exclude=backend/database --exclude=backend/uploads . || true
 log "Backups archived: $TS"
 
-info "Building images (BUILD_NO_CACHE=$BUILD_NO_CACHE)"
-if [ "$BUILD_NO_CACHE" = "true" ]; then
-  $COMPOSE build --no-cache
-else
-  $COMPOSE build
-fi
-log "Images built"
+info "Pulling container images"
+$COMPOSE pull
+log "Images pulled"
 
 info "Restarting services with minimal downtime"
 $COMPOSE up -d
@@ -62,4 +75,3 @@ if [ "$API" != "200" ] && [ "$API" != "404" ]; then
 fi
 
 log "Remote deploy finished"
-
