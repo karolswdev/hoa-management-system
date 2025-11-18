@@ -58,6 +58,7 @@ app.use(sentryRequestHandler());
 app.use(sentryTracingHandler());
 
 // Middleware
+app.set('trust proxy', 1); // honor Cloudflare/NGINX X-Forwarded-* headers
 app.use(cors(corsOptions));
 app.use(express.json()); // for parsing application/json
 app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
