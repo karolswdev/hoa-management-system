@@ -51,7 +51,7 @@ async function createAnnouncement(announcementData, userId) {
     const created = newAnnouncement.toJSON();
 
     // Optional: notify members by email
-    if (notify === true) {
+    if (notify) {
       try {
         const recipients = await User.findAll({
           where: {
