@@ -10,18 +10,10 @@ on:
         description: 'Run database migrations'
         required: true
         default: 'true'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
       build_no_cache:
         description: 'Force Docker rebuild without cache (legacy)'
         required: true
         default: 'false'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
 
 concurrency:
   group: deploy-production
