@@ -44,11 +44,6 @@ jobs:
           echo "SSH_KEY_PATH=$RUNNER_TEMP/hoa_deploy_key" >> $GITHUB_ENV
           echo "REMOTE_SCRIPT_PATH=/tmp/hoa-remote-deploy.sh" >> $GITHUB_ENV
 
-      - name: Prepare runtime env vars
-        run: |
-          echo "SSH_KEY_PATH=$RUNNER_TEMP/hoa_deploy_key" >> $GITHUB_ENV
-          echo "REMOTE_SCRIPT_PATH=/tmp/hoa-remote-deploy.sh" >> $GITHUB_ENV
-
       - name: Extract metadata
         id: meta
         run: |
@@ -121,6 +116,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - name: Configure SSH paths
+        run: |
+          echo "SSH_KEY_PATH=$RUNNER_TEMP/hoa_deploy_key" >> $GITHUB_ENV
+          echo "REMOTE_SCRIPT_PATH=/tmp/hoa-remote-deploy.sh" >> $GITHUB_ENV
 
       - name: Validate deployment secrets
         run: |
