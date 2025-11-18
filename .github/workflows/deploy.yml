@@ -39,6 +39,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
 
+      - name: Prepare runtime env vars
+        run: |
+          echo "SSH_KEY_PATH=$RUNNER_TEMP/hoa_deploy_key" >> $GITHUB_ENV
+          echo "REMOTE_SCRIPT_PATH=/tmp/hoa-remote-deploy.sh" >> $GITHUB_ENV
+
       - name: Extract metadata
         id: meta
         run: |
@@ -105,8 +110,6 @@ jobs:
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
       DEPLOY_DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
-      SSH_KEY_PATH: ${{ runner.temp }}/hoa_deploy_key
-      REMOTE_SCRIPT_PATH: /tmp/hoa-remote-deploy.sh
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
