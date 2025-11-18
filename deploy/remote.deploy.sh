@@ -31,7 +31,9 @@ info "Deploying version $APP_VERSION"
 
 COMPOSE="docker-compose -f $COMPOSE_FILE"
 if [ -f .env ]; then
-  COMPOSE="$COMPOSE --env-file .env"
+  set -a
+  . ./.env
+  set +a
 fi
 
 info "Creating backups"
@@ -47,6 +49,8 @@ $COMPOSE pull
 log "Images pulled"
 
 info "Restarting services with minimal downtime"
+docker rm -f hoa_backend_prod hoa_frontend_prod >/dev/null 2>&1 || true
+docker network create hoa-management-network >/dev/null 2>&1 || true
 $COMPOSE down || true
 $COMPOSE up -d
 log "Services updated"
