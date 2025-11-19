@@ -1,7 +1,9 @@
 import { test, expect, Page } from '@playwright/test';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 // Screenshot output directory
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOT_DIR = path.join(__dirname, '..', 'screenshots');
 
 // Helper functions for authentication
