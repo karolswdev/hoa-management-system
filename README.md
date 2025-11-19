@@ -144,8 +144,6 @@ The project is a monorepo containing distinct `backend` and `frontend` applicati
 
 ### Frontend Setup
 
-*(These steps are for when Phase 1 of the frontend is complete.)*
-
 1.  **Navigate to the frontend directory:**
     ```bash
     # from the project root
@@ -183,9 +181,9 @@ You will need two separate terminal windows to run the backend and frontend serv
 2.  **Start the Frontend Development Server:**
     ```bash
     # In a second terminal, from the frontend/ directory
-    npm start
+    npm run dev
     ```
-    The React application will open in your browser, usually at `http://localhost:3000`.
+    The React application will open in your browser, usually at `http://localhost:3000`. (CI uses a `npm run dev:screenshots` variant that binds to `0.0.0.0:3000` when generating automated screenshots.)
 
 Notes
 - Registration requires email verification. Users must click the link sent via email. Admin approval is also required to access member features.
@@ -209,6 +207,13 @@ The backend includes a full suite of integration tests to ensure API reliability
     # From the backend/ directory
     npm run test:debugging -- test/debugging/users.test.js
     ```
+    This runs just the provided file with verbose logging (the helper script keeps the process alive for easier inspection).
+*   **To generate end-to-end screenshots for the user guides:**
+    ```bash
+    # From the repository root
+    npm run --prefix frontend generate-screenshots
+    ```
+    That command sets `GENERATE_SCREENSHOTS=true` so Playwright captures every page, and our CI workflow (`.github/workflows/generate-screenshots.yml`) mirrors the same steps, starts both dev servers (backend on 5000, frontend on 3000), and publishes the screenshots as workflow artifacts.
 
 ---
 
