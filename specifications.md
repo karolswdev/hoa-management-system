@@ -2,11 +2,11 @@
 
 ## 1. Executive Summary
 
-This document outlines the technical roadmap for extending the HOA Management System. The primary goals are to enhance community governance through transparent voting, improve accessibility for elderly residents, and formalize board management.
+This document outlines the technical roadmap for extending the HOA Management System. The primary goals are to enhance community governance through transparent voting, improve accessibility for all residents via the **Accessibility Suite**, and formalize board management.
 
 **Constraints:**
 - **Infrastructure:** 1GB RAM Linode (SQLite database).
-- **User Base:** Small (~40 homes), primarily elderly.
+- **User Base:** Small (~40 homes).
 - **Philosophy:** Simplicity, Stability, and Security.
 
 ---
@@ -15,57 +15,72 @@ This document outlines the technical roadmap for extending the HOA Management Sy
 
 ### 2.1. Board Member Management & History
 
-**Objective:** Provide a clear, historical record of community leadership.
+**Objective:** Provide a clear, historical record of community leadership and enable secure communication.
 
-**User Stories:**
-- *As a Resident*, I want to see who is currently on the board so I know who to contact.
-- *As a Member*, I want to view the history of board changes to understand past leadership.
-- *As an Admin*, I want to easily reassign board roles without manually tracking dates.
+**Functional Requirements:**
+1.  **Board Roster:** Display current board members with their titles.
+2.  **History:** Maintain a complete history of who held which title and when. **Note:** While the current roster visibility can be toggled, the *history* view must strictly remain accessible only to authenticated members.
+3.  **Contact Board:** Allow residents to email the board directly without exposing personal email addresses.
+4.  **Visibility Control:** Admins can toggle whether the *current* board list is visible to the public (guests) or members only.
 
 **Technical Implementation:**
 
 *   **Database Schema:**
-    *   `BoardTitles`: `id` (PK), `title` (e.g., President, Treasurer), `rank` (for sorting).
-    *   `BoardMembers`: `id` (PK), `user_id` (FK), `title_id` (FK), `start_date`, `end_date` (nullable).
+    *   `BoardTitles`: `id` (PK), `title` (e.g., President), `rank` (int, for sorting).
+    *   `BoardMembers`: `id` (PK), `user_id` (FK), `title_id` (FK), `start_date`, `end_date` (nullable), `bio` (text, optional).
+    *   **Config Setting:** Key `board_visibility` with value `public` or `members_only` (stored in `Config` table).
 
-*   **Logic:**
-    *   When assigning a user to a title (e.g., "President"), the system checks if anyone currently holds that title.
-    *   If yes, the current holder's `end_date` is set to `NOW`.
-    *   The new holder is inserted with `start_date = NOW` and `end_date = NULL`.
+*   **Backend Logic:**
+    *   **Controllers:**
+        *   `backend/src/controllers/board.controller.js`: Endpoints for `GET /board` (public/member check), `POST /board/contact` (email dispatch), and CRUD for titles/members (admin).
+    *   **Email Integration:**
+        *   `backend/src/services/email.service.js`: Update to handle a new `sendBoardContactEmail` payload.
+        *   The system will lookup active board members and dispatch the message to their registered email addresses via SendGrid.
+    *   **Routes:**
+        *   `backend/src/routes/board.routes.js`: Define new routes.
 
-*   **UI/UX:**
-    *   **Public/Dashboard:** "Current Board" card showing names and titles.
-    *   **History Page:** A timeline or table view of past board members (Member only).
+*   **Frontend UI:**
+    *   `frontend/src/pages/Board.tsx`: Main view. Fetches visibility config first.
+    *   `frontend/src/components/Board/ContactForm.tsx`: A modal or inline form.
+    *   `frontend/src/pages/admin/BoardManagement.tsx`: Admin interface for assigning roles.
 
-### 2.2. Accessibility Mode ("High Visibility")
+### 2.2. Accessibility Suite
 
-**Objective:** Ensure the application is usable by residents with reduced visual acuity without stigmatizing the feature.
+**Objective:** Ensure the application is universally usable, providing high-contrast visuals and contextual guidance for users who may need assistance.
 
-**User Stories:**
-- *As a User*, I can toggle a "High Visibility" mode that increases contrast and font size.
-- *As a User*, I can easily understand what the toggle does via a tooltip.
+**Functional Requirements:**
+1.  **High Visibility Mode:** A toggle that switches the site to a high-contrast, larger-font theme.
+2.  **Contextual Help:** When the suite is active, additional "Help" icons appear next to complex form fields, offering plain-language explanations.
 
 **Technical Implementation:**
 
-*   **State Management:** React Context (`AccessibilityContext`) persists the preference to `localStorage`.
+*   **State Management:**
+    *   `frontend/src/contexts/AccessibilityContext.tsx`: New React Context to manage `isHighVisibility` state (persisted in `localStorage`).
+
 *   **Theming (MUI):**
-    *   Standard Mode: Current Brand Colors.
-    *   High Vis Mode:
-        *   `contrastText`: Pure Black/White.
-        *   `fontSize`: Base size increased by 25% (e.g., 14px -> 17.5px).
-        *   `borders`: Thicker (2px solid).
-*   **UI Component:** A distinct icon button (e.g., Eye icon or "Aa") in the top navigation bar with a tooltip: *"Increase text size and contrast for better visibility"*.
+    *   `frontend/src/theme/theme.ts`:
+        *   Refactor to export a function `createAppTheme(mode: 'standard' | 'high-vis')`.
+        *   **High Vis Specs:**
+            *   `palette.primary.main`: `#000000` (Black) or `#003366` (Deep Navy).
+            *   `palette.background.default`: `#FFFFFF` (Pure White).
+            *   `typography.fontSize`: Scale up base size by 20-25%.
+            *   `components.MuiButton`: Increase padding and border thickness.
+
+*   **UI Components:**
+    *   `frontend/src/components/Accessibility/Toggle.tsx`: A prominent button in the `Navbar` (e.g., "Aa" icon) with a tooltip: *"Increase text size and contrast for better visibility"*.
+    *   `frontend/src/components/common/FormHelper.tsx`: A component that renders a generic `?` icon only when `AccessibilityContext.isHighVisibility` is true. Hovering shows a popover with the helper text.
 
 ### 2.3. The "Democracy" Module: Polls & Secure Voting
 
-**Objective:** Enable digital governance for informal opinion gathering and formal binding votes (Proxy/Meeting alternatives) with auditability that rivals paper trails.
+**Objective:** Enable digital governance for informal polls and formal binding votes (Proxy/Meeting alternatives) with auditability.
 
-**User Stories:**
-- *As an Admin*, I can create a poll and choose if it is "Anonymous" or "Transparent".
-- *As an Admin*, I can designate a poll as a "Formal Vote" which implies stricter audit logging.
-- *As a Member*, I can clearly see if my vote will be anonymous before I cast it.
-- *As a Member*, I receive a "Receipt" (hash) of my vote to verify it was counted.
-- *As an Auditor*, I can verify that the vote database has not been tampered with.
+**Functional Requirements:**
+1.  **Poll Creation:** Admins create polls with options and can optionally **email all members** to notify them.
+2.  **Voting Types:**
+    *   **Informal:** Simple counts.
+    *   **Binding:** Strict audit logging, secure "receipts".
+3.  **Integrity:** Use a cryptographic Hash Chain to prevent tampering.
+4.  **Receipts:** Users receive a unique hash code to verify their vote was counted.
 
 **Technical Implementation:**
 
@@ -74,23 +89,29 @@ This document outlines the technical roadmap for extending the HOA Management Sy
     *   `PollOptions`: `id`, `poll_id`, `text`.
     *   `Votes`: `id`, `poll_id`, `user_id` (nullable if strict anon), `option_id`, `timestamp`, `prev_hash`, `vote_hash`.
 
-*   **Integrity Mechanism (Hash Chain):**
-    *   To address regulatory concerns on a lightweight stack, we implement a **Hash Chain** (a linear blockchain) within the SQLite `Votes` table.
-    *   **Formula:** `vote_hash_N = SHA256( user_id + option_id + timestamp + vote_hash_{N-1} )`
-    *   **Verification:** A utility script runs periodically (or on demand) to recalculate the chain. If `CalculatedHash != StoredHash`, tampering is detected.
-    *   **Receipts:** The user is presented with their `vote_hash` upon success. They can compare this against the published results (if transparent) or a verify tool.
+*   **Backend Logic (Hash Chain):**
+    *   `backend/src/services/vote.service.js`:
+        *   **Hash Formula:** `SHA256( user_id + option_id + timestamp + prev_vote_hash )`.
+        *   On every vote insertion, lock the table (or use serial transaction), fetch the last `vote_hash`, calculate the new one, and insert.
+    *   `backend/src/controllers/poll.controller.js`: endpoints for creating polls and casting votes.
+    *   **Email Integration:**
+        *   `backend/src/services/email.service.js`: Update to handle `sendPollNotificationEmail`.
+        *   Admin UI checkbox "Notify Members" triggers this service upon poll creation.
 
-*   **Email Integration:**
-    *   Checkbox on Poll Creation: "Notify Members via Email".
-    *   Uses existing SendGrid integration to dispatch links to the new poll.
+*   **Frontend UI:**
+    *   `frontend/src/pages/Polls.tsx`: List of active/past polls.
+    *   `frontend/src/pages/PollDetail.tsx`: Voting interface. Displays the "Vote Receipt" (hash) clearly after submission.
 
 ### 2.4. Vendor Directory
 
 **Objective:** A community-curated list of trusted service providers.
 
 **Technical Implementation:**
-*   **Database Schema:** `Vendors`: `id`, `name`, `category` (Plumbing, landscaping), `phone`, `email`, `website`, `recommended_by_user_id`.
-*   **UI:** Simple card grid or list with filter-by-category.
+*   **Schema:** `Vendors` table.
+*   **Code Impact:**
+    *   `backend/src/models/vendor.model.js`
+    *   `backend/src/controllers/vendor.controller.js`
+    *   `frontend/src/pages/Vendors.tsx`
 
 ---
 
@@ -98,25 +119,8 @@ This document outlines the technical roadmap for extending the HOA Management Sy
 
 **Objective:** Maintain the automated pipeline while enhancing security and reliability.
 
-**Enhancements:**
+**Code Impact:**
 1.  **Security Scanning:**
-    *   Add `npm audit` to the CI pipeline to block builds with critical vulnerabilities.
-    *   Continue using `gitleaks` for secret scanning.
+    *   Edit `.github/workflows/ci.yml`: Add `npm audit --audit-level=critical` step.
 2.  **Health Checks:**
-    *   Update `deploy.yml` to run a container health check *before* the final push to GHCR or immediately after deployment to verifying the endpoint returns `200 OK`.
-3.  **Database Backups:**
-    *   Ensure the SQLite file is backed up to S3 (or similar off-site storage) before every deployment, not just local retention.
-
----
-
-## 4. Implementation Phases
-
-1.  **Phase 1: Foundation**
-    *   Implement `BoardTitles` and `BoardMembers` schema.
-    *   Implement Accessibility Context and Theme overrides.
-2.  **Phase 2: The Democracy Engine**
-    *   Build the Voting Hash Chain logic (Backend).
-    *   Build the Polls UI (Frontend).
-3.  **Phase 3: Community Extras**
-    *   Vendor Directory.
-    *   Refinement of UI for elderly users based on feedback.
+    *   Edit `.github/workflows/deploy.yml`: Add a step to run the docker container and `curl` the health endpoint before pushing to GHCR.
