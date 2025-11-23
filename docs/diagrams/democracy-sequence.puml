@@ -1,0 +1,256 @@
+@startuml
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 150
+
+title Democracy Hash Chain - Vote Submission & Verification Sequence
+
+' Participants
+actor Resident as resident #LightBlue
+participant "CommunityWebApp\n(React SPA)" as webapp #LightGreen
+participant "ApiGateway\n(Express + AuthGuard)" as gateway #LightYellow
+participant "ConfigRegistry\n(Feature flags)" as config #LightGray
+participant "DemocracyService\n(Poll orchestration)" as democracy #Orange
+participant "VoteIntegrityEngine\n(Hash chain logic)" as voteEngine #Pink
+database "SQLite\n(Transaction store)" as db #LightCyan
+participant "AuditLogStore\n(Audit persistence)" as audit #Lavender
+participant "EmailNotificationService\n(SendGrid adapter)" as email #LightSalmon
+database "ResidentNotificationLog\n(Email tracking)" as notifLog #LightCyan
+
+' ===== VOTE SUBMISSION FLOW (SUCCESS PATH) =====
+group Vote Submission - Success Path
+  resident -> webapp: Click "Cast Vote" with option_id
+  webapp -> gateway: POST /api/polls/:id/votes\n{option_id: 2}
+
+  note right of gateway
+    **Request Entry**
+    - Generate correlationId (UUID)
+    - Validate session token
+    - Extract user_id from JWT
+  end note
+
+  gateway -> gateway: authGuard validates token
+
+  gateway -> democracy: castVote({poll_id, user_id, option_id}, correlationId)
+
+  note right of democracy
+    **Transaction Boundary Start**
+    type: IMMEDIATE (serialized access)
+  end note
+
+  democracy -> db: BEGIN IMMEDIATE TRANSACTION
+  democracy -> db: SELECT * FROM polls WHERE id=:id\nFOR UPDATE
+  db --> democracy: Poll record (locked)
+
+  democracy -> democracy: Validate poll window\n(now >= start_at && now <= end_at)
+
+  alt Poll not started yet
+    democracy --> gateway: Error: "Poll has not started yet"
+    gateway --> webapp: 400 Bad Request
+    webapp --> resident: Display error message
+  end
+
+  alt Poll already closed
+    democracy --> gateway: Error: "Poll has already closed"
+    gateway --> webapp: 400 Bad Request
+    webapp --> resident: Display error message
+  end
+
+  democracy -> db: SELECT * FROM poll_options\nWHERE id=:option_id AND poll_id=:poll_id
+  db --> democracy: PollOption record
+
+  alt Invalid option
+    democracy --> gateway: Error: "Invalid poll option"
+    gateway --> webapp: 400 Bad Request
+    webapp --> resident: Display error message
+  end
+
+  democracy -> voteEngine: hasUserVoted(poll_id, user_id)
+  voteEngine -> db: SELECT * FROM votes\nWHERE poll_id=:id AND user_id=:uid
+  db --> voteEngine: Vote record (if exists)
+  voteEngine --> democracy: boolean (hasVoted)
+
+  alt User already voted
+    democracy -> db: ROLLBACK
+    democracy --> gateway: Error: "User has already voted in this poll"
+    gateway --> webapp: 409 Conflict
+    webapp --> resident: Display "Already voted" message
+  end
+
+  ' Hash chain computation
+  democracy -> voteEngine: appendVoteToChain(\n  {poll_id, user_id, option_id},\n  transaction)
+
+  note right of voteEngine
+    **Hash Chain Computation**
+    1. Generate timestamp (ISO)
+    2. Fetch last vote with lock
+    3. Compute prev_hash
+    4. SHA256(user_id + option_id +
+       timestamp + prev_hash)
+    5. Derive receipt code
+  end note
+
+  voteEngine -> db: SELECT * FROM votes\nWHERE poll_id=:id\nORDER BY timestamp DESC, id DESC\nLIMIT 1 FOR UPDATE
+  db --> voteEngine: Last vote record (or null for GENESIS)
+
+  voteEngine -> voteEngine: prev_hash = lastVote?.vote_hash || null
+  voteEngine -> voteEngine: vote_hash = SHA256(\n  user_id + option_id +\n  timestamp + prev_hash)
+  voteEngine -> voteEngine: receipt_code = vote_hash.substring(0, 16).toUpperCase()
+
+  voteEngine --> democracy: {vote_hash, prev_hash,\n receipt_code, timestamp}
+
+  ' Persist vote
+  democracy -> db: INSERT INTO votes\n(poll_id, user_id, option_id,\n timestamp, prev_hash, vote_hash,\n receipt_code)
+  db --> democracy: Vote persisted
+
+  democracy -> db: COMMIT TRANSACTION
+
+  note right of democracy
+    **Transaction Boundary End**
+    Vote is now permanent and
+    hash chain is extended
+  end note
+
+  ' Audit logging
+  democracy -> audit: logAdminAction(user_id, 'vote_cast',\n  {pollId, optionId, receiptCode, correlationId})
+  audit -> db: INSERT INTO audit_logs
+  db --> audit: Audit entry created
+  audit --> democracy: Success
+
+  democracy --> gateway: {receipt, submitted_at, integrity: {vote_hash, prev_hash}}
+  gateway --> webapp: 201 Created\n{message, receipt, submitted_at, integrity}
+  webapp --> resident: Display success:\n"Vote recorded!\nReceipt: ABC123XYZ..."
+end
+
+' ===== RECEIPT VERIFICATION FLOW =====
+group Receipt Verification Flow
+  resident -> webapp: Enter receipt code for verification
+  webapp -> gateway: GET /api/polls/receipts/:code
+
+  gateway -> voteEngine: verifyReceipt(code)
+  voteEngine -> db: SELECT * FROM votes v\nJOIN polls p ON v.poll_id = p.id\nJOIN poll_options o ON v.option_id = o.id\nWHERE receipt_code = :code
+
+  alt Receipt found
+    db --> voteEngine: Vote record with poll and option
+    voteEngine --> gateway: {poll: {id, title, type},\n option: {id, text},\n timestamp, vote_hash, prev_hash}
+    gateway --> webapp: 200 OK + receipt metadata
+    webapp --> resident: Display:\n"Receipt valid!\nPoll: [Title]\nOption: [Text]\nTimestamp: [ISO]"
+  else Receipt not found
+    db --> voteEngine: null
+    voteEngine --> gateway: null
+    gateway --> webapp: 404 Not Found
+    webapp --> resident: "Receipt not found"
+  end
+end
+
+' ===== HASH CHAIN INTEGRITY VALIDATION (ADMIN) =====
+group Hash Chain Integrity Validation (Admin Only)
+  actor Admin as admin #LightBlue
+  admin -> webapp: Request poll integrity check
+  webapp -> gateway: GET /api/polls/:id/integrity
+
+  gateway -> gateway: authGuard enforces admin role
+  gateway -> voteEngine: validatePollHashChain(poll_id)
+
+  voteEngine -> db: SELECT * FROM votes\nWHERE poll_id = :id\nORDER BY timestamp ASC, id ASC
+  db --> voteEngine: Ordered vote list
+
+  voteEngine -> voteEngine: Recompute each vote_hash\nand compare with stored values
+
+  loop For each vote in sequence
+    voteEngine -> voteEngine: expected_hash = SHA256(\n  user_id + option_id +\n  timestamp + prev_hash)
+
+    alt Hash mismatch detected
+      voteEngine -> voteEngine: Record broken link:\n{voteId, expected, actual}
+    end
+  end
+
+  voteEngine --> gateway: {valid: boolean,\n totalVotes: N,\n brokenLinks: [...]}
+
+  alt Chain valid
+    gateway --> webapp: 200 OK\n{valid: true, totalVotes: N}
+    webapp --> admin: "Hash chain integrity: VALID"
+  else Chain compromised
+    gateway --> webapp: 200 OK\n{valid: false, brokenLinks: [...]}
+    webapp --> admin: "WARNING: Tampering detected!\nBroken links: [details]"
+
+    note right of webapp
+      Admin should freeze poll
+      and trigger incident response
+    end note
+  end
+end
+
+' ===== POLL NOTIFICATION FLOW (EMAIL DISPATCH) =====
+group Poll Creation with Member Notification (Optional)
+  note over email, notifLog
+    EmailNotificationService and ResidentNotificationLog
+    are used during poll creation (not vote submission).
+    This flow shows where email dispatch occurs.
+  end note
+
+  actor Admin as admin2 #LightBlue
+  admin2 -> webapp: Create new poll with notify_members=true
+  webapp -> gateway: POST /api/polls\n{...poll data, notify_members: true}
+
+  gateway -> config: getConfigValue('polls.binding-enabled')
+  config --> gateway: 'true'
+
+  gateway -> democracy: createPoll({...data}, admin_id)
+  democracy -> db: BEGIN TRANSACTION
+  democracy -> db: INSERT INTO polls + poll_options
+  db --> democracy: Poll created
+  democracy -> db: COMMIT
+
+  opt notify_members = true
+    democracy -> config: getConfigValue('polls.notify-members-enabled')
+    config --> democracy: 'true'
+
+    democracy -> email: sendMail({to: [...members],\n subject: "[New Poll] ...",\n html: "..."})
+
+    alt SendGrid configured
+      email -> email: Call SendGrid API
+      email --> democracy: Email sent
+    else SendGrid not configured
+      email -> email: console.log('[email:log-only]')
+      email --> democracy: Logged to console
+    end
+
+    democracy -> notifLog: Create ResidentNotificationLog entries
+    notifLog -> db: INSERT INTO resident_notification_logs
+    db --> notifLog: Entries created
+    notifLog --> democracy: Success
+  end
+
+  democracy --> gateway: Poll created
+  gateway --> webapp: 201 Created
+  webapp --> admin2: "Poll created and members notified"
+end
+
+' Legend
+legend right
+  **Notation Key:**
+
+  **Transaction Boundaries:**
+  - Serialized IMMEDIATE transactions prevent race conditions
+  - Lock contention ensures sequential hash chain writes
+
+  **Hash Formula:**
+  vote_hash = SHA256(user_id + option_id + timestamp + prev_hash)
+
+  **Error Codes:**
+  - 400: Bad Request (poll timing, invalid option)
+  - 404: Not Found (poll/receipt missing)
+  - 409: Conflict (already voted)
+
+  **Audit Trail:**
+  All vote submissions and validations are logged
+  with correlation IDs for operational traceability.
+
+  **Vote Receipt:**
+  Receipt code is returned in HTTP response only.
+  No email is sent for individual vote confirmations.
+end legend
+
+@enduml
