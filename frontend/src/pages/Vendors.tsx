@@ -261,6 +261,18 @@ const Vendors: React.FC = () => {
       {!isLoading && vendors.length > 0 && (
         <>
           <Typography
+            variant="h5"
+            component="h2"
+            sx={{
+              fontSize: fontSize * 1.5,
+              fontWeight: isHighVisibility ? 700 : 600,
+              mb: spacing * 0.5,
+              mt: spacing,
+            }}
+          >
+            Available Vendors
+          </Typography>
+          <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mb: spacing, fontSize: fontSize * 0.95 }}
@@ -488,6 +500,10 @@ const Vendors: React.FC = () => {
         autoHideDuration={6000}
         onClose={() => setToastMessage(null)}
         message={toastMessage}
+        ContentProps={{
+          'aria-live': 'polite',
+          role: 'status',
+        }}
         action={
           <IconButton
             size="small"

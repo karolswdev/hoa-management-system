@@ -261,8 +261,10 @@ const VendorForm: React.FC<VendorFormProps> = ({
                 },
               }}
             >
-              <InputLabel sx={{ fontSize: fontSize }}>Service Category</InputLabel>
+              <InputLabel id="service-category-label" sx={{ fontSize: fontSize }}>Service Category</InputLabel>
               <Select
+                labelId="service-category-label"
+                id="service-category-select"
                 value={formData.service_category}
                 onChange={(e) => handleChange('service_category', e.target.value)}
                 label="Service Category"
