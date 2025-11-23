@@ -42,9 +42,16 @@ Notes
 The goal of the HOA Community Hub is to replace fragmented communication channels like email chains and paper notices with a single, secure, and user-friendly platform. It empowers community administrators with the tools they need to manage the HOA efficiently while providing residents with easy access to information and a forum for discussion.
 
 **User Personas:**
-*   **Administrator:** Manages users, content, and site configuration.
-*   **Resident (Member):** Accesses information, participates in discussions.
-*   **Guest:** Views public-facing information about the HOA.
+*   **Administrator:** Manages users, content, site configuration, and feature rollouts via flags.
+*   **Resident (Member):** Accesses information, participates in discussions, votes in polls, and searches vendor directory.
+*   **Guest:** Views public-facing information about the HOA and public vendor categories.
+
+**Recent Enhancements (Iteration 5):**
+- Finalized CI/CD automation with health gate validation before registry pushes
+- Enhanced health monitoring endpoints (`/healthz`, `/metrics`) with diagnostics payloads
+- Completed cross-module QA and accessibility suite verification (WCAG 2.1 AA compliance)
+- Comprehensive documentation and knowledge transfer artifacts
+- Release communications templates and feature flag operational runbooks
 
 ---
 
@@ -62,6 +69,8 @@ The goal of the HOA Community Hub is to replace fragmented communication channel
 | **Audit Logs**         | ✅ View all administrative actions                           | ❌                                                   | ❌                          |
 | **Email**              | ✅ SendGrid provider, approval/rejection, announcements, password reset, email verification | — | — |
 | **CAPTCHA**            | —                                                           | ✅ Registration protected by Turnstile               | — |
+| **Accessibility**      | ✅ Configure default high-vis mode                          | ✅ Toggle high-visibility theme, keyboard navigation | ✅ High-vis mode support    |
+| **Feature Flags**      | ✅ Runtime configuration, staged rollouts                   | ❌                                                   | ❌                          |
 
 ---
 
@@ -257,15 +266,45 @@ Environment (production highlights)
 - Backend: `JWT_SECRET`, `JWT_EXPIRES_IN`, `EMAIL_PROVIDER=sendgrid`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `SENDGRID_API_KEY`, `FRONTEND_BASE_URL`, `PASSWORD_RESET_COOLDOWN_MINUTES`, `TURNSTILE_SECRET_KEY`.
 - Frontend build: `VITE_API_BASE_URL`, `VITE_APP_NAME`, `VITE_TURNSTILE_SITE_KEY`, `VITE_APP_VERSION` (the release workflow injects the git tag).
 
-GitHub Actions Release Workflow
-- Publish a GitHub release (or dispatch the workflow manually) to trigger an automated build.
-- The workflow builds backend and frontend images with `docker buildx`, tags them as `ghcr.io/<owner>/hoa-backend:<tag>` and `ghcr.io/<owner>/hoa-frontend:<tag>`, and pushes them to GHCR using the built-in `GITHUB_TOKEN`.
-- The Linode only runs `docker-compose pull`/`up`, so builds happen entirely inside GitHub Actions (much lighter on the droplet).
-- Required repository secrets: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_DIR`, `DEPLOY_DOMAIN`, `DEPLOY_SSH_KEY`, `VITE_TURNSTILE_SITE_KEY`.
+### GitHub Actions Release Workflow with Health Gate
 
-Nginx
+The deployment pipeline implements a **health gate pattern** where Docker images are validated before being pushed to the container registry:
+
+1. **Build Phase:**
+   - Publish a GitHub release (or dispatch the workflow manually) to trigger automated build
+   - Workflow builds backend and frontend images with `docker buildx`
+   - Images tagged as `ghcr.io/<owner>/hoa-backend:<tag>` and `ghcr.io/<owner>/hoa-frontend:<tag>`
+
+2. **Health Gate Validation:**
+   - Images loaded locally on GitHub Actions runner (not pushed yet)
+   - Temporary containers started with test database
+   - Database migrations executed and validated
+   - Health endpoints (`/api/health`, `/api/metrics`) verified with retries
+   - Container logs captured as workflow artifacts (`health-gate-dry-run-logs`)
+
+3. **Registry Push (Only After Health Gate Pass):**
+   - Images pushed to GHCR using built-in `GITHUB_TOKEN`
+   - Failed health checks prevent bad images from reaching production
+   - Artifacts retained for 30 days for troubleshooting
+
+4. **Deployment to Linode:**
+   - SSH orchestration pulls verified images from GHCR
+   - Automated backups (database, uploads, code) before deployment
+   - Zero-downtime restarts via Docker Compose
+   - Post-deploy verification of health endpoints
+
+**Required repository secrets:** `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_DIR`, `DEPLOY_DOMAIN`, `DEPLOY_SSH_KEY`, `VITE_TURNSTILE_SITE_KEY`
+
+**Detailed Documentation:**
+- [Deployment Runbook](docs/runbooks/deployment.md) – Complete deployment procedures, health gate details, rollback steps
+- [Release Checklist](docs/runbooks/release-checklist.md) – Pre-deploy, deploy, and post-deploy verification checklists
+- [Feature Flags Runbook](docs/runbooks/feature-flags.md) – Runtime configuration and staged rollout procedures
+- [Release Communications](docs/runbooks/release-communications.md) – Stakeholder communication templates
+
+### Nginx
+
 - Example site config lives on the server; ensure HTTPS, redirect `www` → apex, and a strict CSP that allows `https://challenges.cloudflare.com` for Turnstile.
-- The app’s Docker Compose publishes backend on `127.0.0.1:3001` and frontend on `127.0.0.1:3000`; Nginx proxies `https://<domain>/api/` to backend and `/` to frontend.
+- The app's Docker Compose publishes backend on `127.0.0.1:3001` and frontend on `127.0.0.1:3000`; Nginx proxies `https://<domain>/api/` to backend and `/` to frontend.
 
 ---
 
@@ -622,3 +661,52 @@ See docs/INFRASTRUCTURE.md for:
 - Nginx proxying (ports, logs, CSP)
 - Docker/Compose service layout and persistence paths
 - Health endpoints and backup locations
+
+---
+
+## Operational Documentation & Knowledge Transfer
+
+Comprehensive operational documentation is maintained to support volunteer HOA board members and system operators. All documentation follows anchor-based cross-referencing for traceability to architectural decisions and implementation plans.
+
+### Runbooks
+
+**Core Operational Procedures:**
+- [Deployment Runbook](docs/runbooks/deployment.md) – Health gate validation, rollback procedures, troubleshooting
+- [Release Checklist](docs/runbooks/release-checklist.md) – Pre-release, deployment, and post-deployment verification steps
+- [Feature Flags Runbook](docs/runbooks/feature-flags.md) – Runtime configuration, staged rollouts, emergency kill switches
+- [Release Communications](docs/runbooks/release-communications.md) – Stakeholder communication templates and timelines
+- [CI Pipeline Runbook](docs/runbooks/ci-pipeline.md) – Continuous integration troubleshooting and local replication
+- [Health Monitor Runbook](docs/runbooks/health-monitor.md) – Health endpoint diagnostics and monitoring setup
+
+**Module-Specific Runbooks:**
+- [Vendor Moderation](docs/runbooks/vendor-moderation.md) – Vendor approval workflows and moderation queue management
+- [Notification Log](docs/runbooks/notification-log.md) – Email audit logging and retention policies
+- [Pilot Instructions](docs/runbooks/pilot-instructions.md) – Feature pilot program procedures
+
+### Design Documentation
+
+**Accessibility & UI/UX:**
+- [Accessibility Suite Design](docs/design/accessibility-suite.md) – WCAG 2.1 AA compliance, high-visibility mode, component specifications
+- [Accessibility Theme Tokens](docs/design/accessibility-theme-tokens.md) – Complete design token specifications for standard and high-vis modes
+
+### Knowledge Transfer
+
+**For New System Operators and Board Members:**
+- [Knowledge Transfer Checklist](docs/knowledge-transfer-checklist.md) – System overview, operational ownership handoff, routine procedures
+- [Architecture Documentation](.codemachine/artifacts/architecture/) – Canonical system architecture and operational rationale
+- [Plan Manifest](.codemachine/artifacts/plan_manifest.json) – Traceability from requirements to implementation
+
+**Key Resources:**
+- All runbooks reference architecture document anchors (e.g., `04_Operational_Architecture.md#3-12`)
+- Video walkthroughs for UI operations (generated screenshots in CI artifacts)
+- Regular lunch-and-learn sessions for board transitions (documented in meeting notes)
+
+**Documentation Maintenance:**
+- Living documentation reviewed quarterly or after major releases
+- Every release requires documentation diff review before merging
+- Feedback loops allow residents to request clarifications (2-week update SLA)
+
+**For Technical Handoffs:**
+- Comprehensive inline code comments for complex business logic
+- Automated test suites verify expected behaviors (>80% backend, >75% frontend coverage)
+- Deployment logs maintain historical record of all production changes

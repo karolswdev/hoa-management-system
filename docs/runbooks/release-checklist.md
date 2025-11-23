@@ -289,16 +289,20 @@ This checklist ensures safe, repeatable deployments of the HOA Management System
 
 ### 8. Stakeholder Communication
 
+This section ensures proper notification of all stakeholder groups per the [Release Communications Runbook](./release-communications.md).
+
 - [ ] **Deployment Complete Notification**
   - Email stakeholders: "Deployment complete, system operational"
   - Include: Version number, new features summary, known issues
   - Provide: Link to CHANGELOG.md, user guides
   - **Recipients:** Board members, admin users, support team
+  - **Template Reference:** [Release Communications T+0 Hours template](./release-communications.md#t0-hours-deployment-complete-notification)
 
 - [ ] **Update System Banner (If Applicable)**
   - Admin creates announcement: "New features available: Vendor Directory, Poll Notifications"
   - Set announcement priority: Normal
   - **Expected:** Banner visible on homepage
+  - **Template Reference:** [Release Communications in-app banner template](./release-communications.md#t7-days-general-availability-announcement)
 
 - [ ] **Document Deployment in Log**
   - Update `ops/deploy-log.md` with:
@@ -308,6 +312,12 @@ This checklist ensures safe, repeatable deployments of the HOA Management System
     - Issues encountered (if any)
     - Verification steps completed
   - **Verification:** Log entry created
+  - **Template Reference:** [Deployment Runbook log template](./deployment.md#deployment-log-template)
+
+- [ ] **Schedule Post-Release Communications**
+  - **T+1 Day:** Member pilot invitations (if applicable) – [Template](./release-communications.md#t1-day-member-pilot-invitation-if-applicable)
+  - **T+7 Days:** Pilot retrospective and GA decision email – [Template](./release-communications.md#t7-days-pilot-retrospective--ga-decision)
+  - **T+7 Days:** General availability announcement (after board approval) – [Template](./release-communications.md#t7-days-general-availability-announcement)
 
 ### 9. Post-Deployment Monitoring (24 Hours)
 
