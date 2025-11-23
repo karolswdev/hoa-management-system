@@ -22,23 +22,18 @@ import {
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  CheckCircle as ApproveIcon,
-  Block as BlockIcon,
-  Person as PersonIcon,
 } from '@mui/icons-material';
 
-export interface TableColumn<T = any> {
+export interface TableColumn<T = Record<string, unknown>> {
   id: string;
   label: string;
   sortable?: boolean;
   align?: 'left' | 'center' | 'right';
   width?: string | number;
-  render?: (value: any, row: T) => React.ReactNode;
+  render?: (value: unknown, row: T) => React.ReactNode;
 }
 
-export interface TableAction<T = any> {
+export interface TableAction<T = Record<string, unknown>> {
   id: string;
   label: string;
   icon?: React.ReactNode;
@@ -47,7 +42,7 @@ export interface TableAction<T = any> {
   show?: (row: T) => boolean;
 }
 
-export interface AdminDataTableProps<T = any> {
+export interface AdminDataTableProps<T = Record<string, unknown>> {
   columns: TableColumn<T>[];
   data: T[];
   loading?: boolean;
@@ -64,7 +59,7 @@ export interface AdminDataTableProps<T = any> {
   title?: string;
 }
 
-const AdminDataTable = <T extends Record<string, any>>({
+const AdminDataTable = <T extends Record<string, unknown>>({
   columns,
   data,
   loading = false,

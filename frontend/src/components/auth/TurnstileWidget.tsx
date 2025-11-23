@@ -1,8 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 
+interface TurnstileAPI {
+  render: (container: HTMLElement, options: {
+    sitekey: string;
+    callback: (token: string) => void;
+    'expired-callback'?: () => void;
+    'error-callback'?: () => void;
+  }) => string;
+  remove: (widgetId: string) => void;
+}
+
 declare global {
   interface Window {
-    turnstile?: any;
+    turnstile?: TurnstileAPI;
   }
 }
 
@@ -14,7 +24,7 @@ interface TurnstileWidgetProps {
 
 const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({ siteKey, onToken, onExpire }) => {
   const ref = useRef<HTMLDivElement | null>(null);
-  const widgetId = useRef<any>(null);
+  const widgetId = useRef<string | null>(null);
   // Keep latest callbacks in refs so the effect doesn't re-run on each render
   const onTokenRef = useRef(onToken);
   const onExpireRef = useRef(onExpire);

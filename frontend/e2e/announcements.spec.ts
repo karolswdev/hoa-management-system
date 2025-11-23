@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.describe('Announcements', () => {
   // Helper function to login as admin
-  async function loginAsAdmin(page: any) {
+  async function loginAsAdmin(page: Page) {
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('admin@example.com');
     await page.getByLabel(/password/i).fill('Admin123!@#');

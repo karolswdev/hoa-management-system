@@ -5,9 +5,58 @@ All notable changes to the HOA Management System will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-01-11
+## [Unreleased] - 2025-11-23
 
-### Added - Production Readiness Improvements
+### Added - Iteration 4: Vendor Directory & Enhanced Notifications
+
+#### Vendor Directory Module
+- **Vendor Directory** (`GET /api/vendors`, `POST /api/vendors`):
+  - Public-facing vendor directory with category filtering (Landscaping, Plumbing, Electrical, HVAC, Roofing, Painting, Snow Removal)
+  - Member vendor submission with pending moderation workflow
+  - Visibility scopes: `public`, `members`, `admins` (configurable per vendor)
+  - Search and filter capabilities by service category
+  - Contact information display (email, phone, website) restricted to authenticated users
+  - Guest access limited to public categories (configured via `vendors.public-categories` flag)
+  - Feature flag gating: `vendors.directory` controls entire module (60s cache TTL)
+  - HTML sanitization on vendor name, notes, and contact fields
+- **Vendor Moderation** (`PUT /api/vendors/:id/moderate`, `DELETE /api/vendors/:id`):
+  - Admin-only vendor approval/denial workflow with state transitions: `pending` → `approved` | `denied`
+  - Bulk moderation actions for efficient queue processing (approve/deny multiple vendors)
+  - Permanent vendor deletion with confirmation (admin-only, audit logged)
+  - Moderation queue dashboard with real-time metrics (pending count, approval rate)
+  - Audit logging for all vendor lifecycle events (creation, moderation, deletion)
+  - Category distribution visualization for admin insights
+  - Prometheus metrics: `hoa_vendors_pending`, `hoa_vendors_by_state`, `hoa_vendor_moderations_total`
+- **Vendor Notification Flows** (EmailNotificationService integration):
+  - **Vendor Submission Alerts**: Automatic email to all admin users when member submits vendor for review
+  - **Vendor Approval Broadcasts** (optional): Announce newly approved vendors to all members
+  - Email templates: `vendor-submission-alert`, `vendor-approval-broadcast`
+  - Batching support (50 recipients per BCC batch) with retry logic
+  - Correlation IDs link vendor events to email audit trail (e.g., `vendor-{id}-submission`)
+  - Compliance: Unsubscribe instructions per HOA bylaws Section 4.7 included in broadcasts
+- **Frontend Components**:
+  - `/vendors` page: Public directory with responsive grid layout, category chips, search bar
+  - `/admin/vendors` page: Moderation dashboard with tabs (Pending, Approved, Denied)
+  - Vendor submission form with category dropdown, contact fields, notes textarea
+  - Bulk action controls: Select multiple vendors, approve/deny with single click
+  - Audit log viewer: Displays moderation history with admin identity, timestamps, state transitions
+  - Accessibility: WCAG AA compliance, keyboard navigation, screen reader support
+  - Touch targets: 44px minimum (52px in high-vis mode)
+- **Feature Flags for Vendor Module**:
+  - `vendors.directory`: Enable/disable entire vendor directory feature (default: `false` until pilot)
+  - `vendors.public-categories`: Comma-separated list of categories visible to guests (default: `Landscaping,Plumbing,Electrical,HVAC`)
+  - Flag values cached with 60s TTL, checked per-request for access control
+- **OpenAPI Documentation** (`api/openapi.yaml`):
+  - Complete REST API specification for vendor endpoints
+  - Request/response schemas for vendor CRUD and moderation operations
+  - Security requirements (JWT, member/admin roles) documented
+  - Error responses (400, 401, 403, 404, 409, 500) with examples
+  - Feature flag behavior and visibility scopes explained
+- **Runbooks & Operational Documentation**:
+  - [Vendor Moderation Runbook](docs/runbooks/vendor-moderation.md): Step-by-step procedures, troubleshooting, metrics
+  - [Notification Log Runbook](docs/runbooks/notification-log.md): Email flows, audit queries, retention policies
+  - [Release Checklist](docs/runbooks/release-checklist.md): Deployment procedures, rollback plan, vendor-specific verifications
+  - [QA Test Report](docs/testing/vendor-suite-report.md): Comprehensive test results for I4 features
 
 #### Democracy Module
 - **Poll Management** (`POST /api/polls`, `GET /api/polls`, `GET /api/polls/{id}`):
@@ -245,6 +294,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Monitoring Stack**: New `docker-compose.monitoring.yml` for Prometheus, Grafana, and Node Exporter
 - **Network Configuration**: Monitoring services connected to application network
 
+#### Notification Infrastructure Enhancements
+- **Enhanced EmailNotificationService**:
+  - Vendor notification flows: submission alerts to admins, approval broadcasts to members
+  - Improved batching: 50 recipients per BCC batch (reduced SendGrid API calls by 98% for large sends)
+  - Retry logic with exponential backoff (250ms, 500ms delays, max 2 retries)
+  - Correlation ID tracking for linking emails to originating events (polls, vendors)
+  - Email templates: `poll-notify`, `poll-receipt`, `vendor-submission-alert`, `vendor-approval-broadcast`
+- **Email Audit & Compliance**:
+  - `EmailAudit` table: Aggregated email send metadata with template, recipient count, status, correlation IDs
+  - `ResidentNotificationLog` table: Per-recipient delivery tracking with user ID, subject, status, timestamp
+  - Retention policies: EmailAudit indefinite (compliance), ResidentNotificationLog 90 days (configurable)
+  - SQL diagnostic queries documented in Notification Log Runbook
+  - Troubleshooting procedures for failed sends, partial batches, and retry exhaustion
+- **SendGrid Integration**:
+  - BCC batching support (50 recipients per API call)
+  - Custom categories and correlation IDs for filtering in SendGrid dashboard
+  - Error handling for 429 (rate limit), 503 (service unavailable), 401 (auth failure)
+  - Fallback to console logging when `SENDGRID_API_KEY` not configured (dev/test mode)
+
+#### Accessibility Infrastructure
+- **High-Visibility Mode**:
+  - Global accessibility toggle component with navbar and drawer variants
+  - Theme switching: standard ↔ high-vis (1.15x font size, 7:1 contrast ratios, enhanced spacing)
+  - LocalStorage persistence of user preferences across sessions
+  - Real-time theme sync across browser tabs via `storage` event listener
+  - ARIA compliance: `aria-label`, `aria-pressed`, keyboard navigation (Tab, Enter, Space)
+  - Touch target sizes: 44px minimum (standard), 52px (high-vis) for WCAG AAA compliance
+  - Analytics integration: First-toggle event tracking with feature flag state
+- **AccessibilityContext**:
+  - React context provider for global accessibility state management
+  - `mode` state: `standard` | `high-vis`
+  - `setMode()` function updates theme and persists to localStorage
+  - `initialPreferences` prop for SSR/test environment customization
+- **Theme Integration**:
+  - `createAppTheme()` function generates MUI theme based on accessibility mode
+  - High-vis theme enhancements: Increased font sizes, button padding, card spacing
+  - Color contrast validation: All text meets WCAG AA (4.5:1), high-vis exceeds AAA (7:1)
+  - Semantic color tokens: primary, secondary, success, error, warning, info
+
+### Changed
+
+#### Notification Log Runbook Expansion
+- **Version 1.1** (2025-11-23): Added vendor notification flows (submission alerts + approval broadcasts)
+  - Email template documentation: field descriptions, compliance notes, correlation ID patterns
+  - SQL diagnostic queries for vendor submission alerts and approval broadcasts
+  - Troubleshooting procedures for vendor notification failures
+  - Rate limit monitoring and SendGrid quota tracking guidance
+
 ### Dependencies
 
 #### Backend - New Dependencies
@@ -289,6 +386,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compressed backups reduce storage requirements
 
 ### Operations
+
+#### Vendor Directory Rollout Instructions
+
+The vendor directory uses feature flags for gradual, controlled rollout. Follow this phased approach:
+
+**Phase 1: Admin-Only Pilot (Week 1)**
+1. Set `vendors.directory = false` for all users (default)
+2. Enable via session override for admin users only (test environment)
+3. Admins submit 5-10 test vendors, practice moderation workflows
+4. Validate email notifications to admins (submission alerts)
+5. Monitor metrics: `hoa_vendors_pending`, `hoa_vendor_moderations_total`
+6. **Expected Outcome:** Admins confident in moderation UI, no critical bugs
+
+**Phase 2: Member Pilot (Week 2)**
+1. Set `vendors.directory = true` for all members
+2. Configure `vendors.public-categories = Landscaping,Plumbing` (limited scope)
+3. Announce pilot to 10-15 volunteer members via announcement
+4. Collect feedback on vendor submission, search, and filter UX
+5. Monitor metrics: Vendor submission rate, category distribution, search queries
+6. **Expected Outcome:** 10+ vendor submissions, <3 support tickets, positive feedback
+
+**Phase 3: General Availability (Week 3+)**
+1. Expand `vendors.public-categories` to full list (7 categories)
+2. Enable guest access (public categories only)
+3. Announce vendor directory via homepage banner and email blast
+4. Optional: Enable vendor approval broadcasts to members (admin toggle per approval)
+5. Monitor KPIs: Directory page views, vendor contact clicks, moderation SLA (<48 hours)
+6. **Expected Outcome:** 50+ approved vendors, <2% moderation denial rate, <5 support tickets/week
+
+**Rollback Plan:**
+- Set `vendors.directory = false` to disable all vendor endpoints instantly
+- No data loss (vendors remain in database, just hidden from UI)
+- Re-enable after addressing issues or feedback
+
+**Feature Flag Configuration:**
+```bash
+# Via Admin UI: https://hoa.example.com/admin/config
+vendors.directory = false  # Toggle to 'true' for pilot phases
+vendors.public-categories = Landscaping,Plumbing,Electrical,HVAC,Roofing,Painting,Snow Removal
+
+# Or via direct database update (not recommended, use admin UI):
+sqlite3 hoa.db "UPDATE Config SET value = 'true' WHERE key = 'vendors.directory';"
+```
+
+**Monitoring & Success Metrics:**
+- Vendor submission rate: Target 5-10 submissions/week during pilot
+- Moderation turnaround time: Target <48 hours (SLA documented in runbook)
+- Email delivery rate: Target >98% for vendor notifications
+- Support ticket volume: Target <3 tickets/week related to vendor features
+- User satisfaction: Collect feedback via in-app survey or announcement comments
+
+**Documentation References:**
+- [Vendor Moderation Runbook](docs/runbooks/vendor-moderation.md): Step-by-step procedures
+- [Notification Log Runbook](docs/runbooks/notification-log.md): Email troubleshooting
+- [Release Checklist](docs/runbooks/release-checklist.md): Deployment verification steps
+- [QA Test Report](docs/testing/vendor-suite-report.md): Test coverage and results
+
+#### Democracy Module Rollout Instructions (Updated)
+
+**Email Notification Defaults:**
+- `polls.notify-members-enabled = true` recommended for production (after pilot)
+- Members receive poll creation notifications via email (BCC batched, 50 per group)
+- Vote receipts sent individually upon vote submission
+- Monitor SendGrid dashboard for delivery rates, bounces, spam reports
+
+**Notification Opt-Out (Future Enhancement):**
+- Consider adding user preference to opt-out of poll notifications (deferred to I5)
+- Current workaround: Members can unsubscribe via link in email footer (SendGrid managed)
 
 #### New Operational Capabilities
 - Real-time performance monitoring via Grafana

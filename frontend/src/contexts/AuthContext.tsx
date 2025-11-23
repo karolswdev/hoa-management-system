@@ -71,27 +71,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [token, user]);
 
   const login = async (credentials: LoginRequest): Promise<void> => {
-    try {
-      const response = await apiService.login(credentials);
-      const { token: newToken, user: userData } = response;
+    const response = await apiService.login(credentials);
+    const { token: newToken, user: userData } = response;
 
-      setToken(newToken);
-      setUser(userData);
-      localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-      throw error;
-    }
+    setToken(newToken);
+    setUser(userData);
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const register = async (userData: RegisterRequest): Promise<void> => {
-    try {
-      await apiService.register(userData);
-      // Note: Registration doesn't automatically log in the user
-      // They need admin approval first
-    } catch (error) {
-      throw error;
-    }
+    await apiService.register(userData);
+    // Note: Registration doesn't automatically log in the user
+    // They need admin approval first
   };
 
   const logout = (): void => {
