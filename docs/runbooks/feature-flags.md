@@ -237,7 +237,11 @@ SELECT key, value FROM Config WHERE key = 'vendors.directory';
 
 ### 4. Feature Flag Coordination During Deployment
 
+<!-- anchor: feature-flag-rollout-coordination -->
+
 **Scenario:** Deploying new feature with staged rollout plan
+
+This section provides the phased rollout playbook for feature flags, with automation scripts and detailed verification steps tied to KPI monitoring and Go/No-Go decision gates.
 
 #### Phase 1: Pre-Deployment (Admin-Only Pilot)
 
@@ -261,9 +265,64 @@ SELECT key, value FROM Config WHERE key = 'vendors.directory';
 - Admin tests moderation workflow
 - Admin reviews vendor submission emails
 
+**Automation Script:**
+```bash
+#!/bin/bash
+# scripts/rollout/phase1-admin-pilot.sh
+# Configures feature flags for Phase 1 (Admin-Only Pilot)
+
+set -e
+
+echo "=== Phase 1: Admin-Only Pilot ==="
+echo "Setting feature flags for admin-only access..."
+
+# Set flags via Admin UI API (requires admin token)
+ADMIN_TOKEN="${ADMIN_TOKEN:-}"
+API_BASE="${API_BASE:-https://hoa.example.com/api}"
+
+if [ -z "$ADMIN_TOKEN" ]; then
+  echo "ERROR: ADMIN_TOKEN environment variable not set"
+  echo "Usage: ADMIN_TOKEN=<token> ./phase1-admin-pilot.sh"
+  exit 1
+fi
+
+# Helper function to update config
+update_config() {
+  local KEY=$1
+  local VALUE=$2
+  echo "Setting $KEY = $VALUE..."
+  curl -s -X PUT "$API_BASE/admin/config/$KEY" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"value\": \"$VALUE\"}" \
+    | jq -r '.status // "ERROR"'
+}
+
+# Vendor Directory flags
+update_config "vendors.directory" "false"
+update_config "vendors.member-submissions" "false"
+update_config "vendors.public-categories" ""
+
+# Accessibility flags (enable for pilot testing)
+update_config "accessibility.high-vis-default" "false"
+
+# Democracy flags (keep existing state)
+echo "Democracy flags unchanged (already enabled from I3)"
+
+echo ""
+echo "Phase 1 configuration complete!"
+echo "Verify admin access: https://hoa.example.com/admin/vendors"
+echo "Next: Run KPI baseline measurement before pilot starts"
+```
+
+**KPI Baseline Measurement:**
+- Capture pre-pilot metrics for comparison
+- Document admin user list for pilot participation tracking
+- Reference: [KPI Dashboard](../metrics/kpi-dashboard.md#kpi-definitions)
+
 #### Phase 2: Member Pilot
 
-**Timeline:** Week 2 (after admin approval)
+**Timeline:** Week 2 (after admin approval via [Go/No-Go Checklist](./go-no-go-checklist.md#phase-1-to-phase-2))
 
 **Flag Configuration:**
 ```json
@@ -284,9 +343,62 @@ SELECT key, value FROM Config WHERE key = 'vendors.directory';
 - Monitor moderation queue length
 - Review member feedback
 
+**Automation Script:**
+```bash
+#!/bin/bash
+# scripts/rollout/phase2-member-pilot.sh
+# Configures feature flags for Phase 2 (Member Pilot)
+
+set -e
+
+echo "=== Phase 2: Member Pilot ==="
+echo "Enabling vendor directory for authenticated members..."
+
+ADMIN_TOKEN="${ADMIN_TOKEN:-}"
+API_BASE="${API_BASE:-https://hoa.example.com/api}"
+
+if [ -z "$ADMIN_TOKEN" ]; then
+  echo "ERROR: ADMIN_TOKEN environment variable not set"
+  exit 1
+fi
+
+update_config() {
+  local KEY=$1
+  local VALUE=$2
+  echo "Setting $KEY = $VALUE..."
+  curl -s -X PUT "$API_BASE/admin/config/$KEY" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"value\": \"$VALUE\"}" \
+    | jq -r '.status // "ERROR"'
+}
+
+# Enable vendor directory for members
+update_config "vendors.directory" "true"
+update_config "vendors.member-submissions" "true"
+update_config "vendors.public-categories" ""  # Keep empty (members-only)
+
+# Accessibility flags (enable high-vis for broader testing)
+update_config "accessibility.high-vis-default" "false"  # Keep opt-in
+
+# Poll notification flags (ensure enabled for pilot engagement)
+update_config "polls.notify-members-enabled" "true"
+
+echo ""
+echo "Phase 2 configuration complete!"
+echo "Verify member access: https://hoa.example.com/vendors"
+echo "Monitor KPIs: Vendor submission rate, moderation SLA"
+echo "Next: Wait 1-2 weeks, then proceed to Phase 3 via Go/No-Go review"
+```
+
+**KPI Monitoring:**
+- Daily: Check vendor submission rate and moderation queue length
+- Weekly: Vendor freshness, email success rate
+- Reference: [KPI Dashboard](../metrics/kpi-dashboard.md#kpi-vendor-freshness)
+
 #### Phase 3: General Availability
 
-**Timeline:** Week 4 (after pilot review)
+**Timeline:** Week 4 (after pilot review via [Go/No-Go Checklist](./go-no-go-checklist.md#phase-2-to-phase-3))
 
 **Flag Configuration:**
 ```json
@@ -302,14 +414,329 @@ SELECT key, value FROM Config WHERE key = 'vendors.directory';
 - Guests can view public categories
 - Members can view all categories + submit vendors
 
+**Automation Script:**
+```bash
+#!/bin/bash
+# scripts/rollout/phase3-general-availability.sh
+# Configures feature flags for Phase 3 (General Availability)
+
+set -e
+
+echo "=== Phase 3: General Availability ==="
+echo "Enabling vendor directory for all users (including guests)..."
+
+ADMIN_TOKEN="${ADMIN_TOKEN:-}"
+API_BASE="${API_BASE:-https://hoa.example.com/api}"
+
+if [ -z "$ADMIN_TOKEN" ]; then
+  echo "ERROR: ADMIN_TOKEN environment variable not set"
+  exit 1
+fi
+
+update_config() {
+  local KEY=$1
+  local VALUE=$2
+  echo "Setting $KEY = $VALUE..."
+  curl -s -X PUT "$API_BASE/admin/config/$KEY" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"value\": \"$VALUE\"}" \
+    | jq -r '.status // "ERROR"'
+}
+
+# Enable full vendor directory access
+update_config "vendors.directory" "true"
+update_config "vendors.member-submissions" "true"
+update_config "vendors.public-categories" "Landscaping,Plumbing,Electrical,HVAC,Roofing,Painting,Snow Removal"
+
+# Accessibility flags (consider making high-vis default based on pilot KPIs)
+HIGHVIS_ADOPTION=$(curl -s "$API_BASE/metrics/accessibility-adoption" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" | jq -r '.adoption_rate')
+if (( $(echo "$HIGHVIS_ADOPTION > 20" | bc -l) )); then
+  echo "High-vis adoption >20%, enabling as default for new users"
+  update_config "accessibility.high-vis-default" "true"
+else
+  echo "High-vis adoption ${HIGHVIS_ADOPTION}%, keeping opt-in"
+  update_config "accessibility.high-vis-default" "false"
+fi
+
+echo ""
+echo "Phase 3 configuration complete!"
+echo "Verify guest access: https://hoa.example.com/vendors (logged out)"
+echo "Monitor KPIs: Vendor page views, support ticket volume"
+echo "Next: 30-day post-GA monitoring, then finalize feature documentation"
+```
+
+**Post-GA Monitoring:**
+- Daily (Week 1): Support tickets, email delivery rate, health check pass rate
+- Weekly (Weeks 2-4): Vendor submission rate, board engagement, poll participation
+- Monthly: Full KPI dashboard review, operational retrospective
+- Reference: [KPI Dashboard Monthly Review](../metrics/kpi-dashboard.md#dashboard-interpretation)
+
 **Rollout Checklist:**
 - [ ] Admin-only pilot completed (1 week)
 - [ ] No critical bugs reported
 - [ ] Member pilot feedback reviewed
-- [ ] Board approval for general availability
-- [ ] Communication sent to all residents
-- [ ] Flags toggled to GA configuration
+- [ ] Board approval for general availability (documented in meeting minutes)
+- [ ] Communication sent to all residents (email + homepage banner)
+- [ ] Flags toggled to GA configuration (via `phase3-general-availability.sh`)
 - [ ] Monitoring dashboards reviewed (24 hours post-toggle)
+- [ ] KPI baseline vs. post-GA comparison documented
+- [ ] Go/No-Go checklist signed off by operations team
+- [ ] Plan anchors referenced: [iteration-5-plan](../../.codemachine/artifacts/plan/02_Iteration_I5.md#iteration-5-plan), [task-i5-t6](../../.codemachine/artifacts/plan/02_Iteration_I5.md#task-i5-t6)
+
+---
+
+### 4A. Democracy Module Rollout Automation
+
+<!-- anchor: democracy-rollout-automation -->
+
+**Scenario:** Enabling poll notifications and binding polls with phased approach
+
+Democracy module endpoints are already live from Iteration 3, but notification enhancements and binding polls require careful rollout tied to legal review and community trust building.
+
+#### Democracy Phase 1: Notification Testing
+
+**Flags:**
+```json
+{
+  "polls.enabled": "true",
+  "polls.notify-members-enabled": "true",
+  "polls.binding-enabled": "false",
+  "polls.public-results": "false"
+}
+```
+
+**Automation Script:**
+```bash
+#!/bin/bash
+# scripts/rollout/democracy-phase1-notifications.sh
+# Enables poll notifications for pilot testing
+
+set -e
+
+echo "=== Democracy Phase 1: Notification Testing ==="
+
+ADMIN_TOKEN="${ADMIN_TOKEN:-}"
+API_BASE="${API_BASE:-https://hoa.example.com/api}"
+
+if [ -z "$ADMIN_TOKEN" ]; then
+  echo "ERROR: ADMIN_TOKEN environment variable not set"
+  exit 1
+fi
+
+update_config() {
+  local KEY=$1
+  local VALUE=$2
+  echo "Setting $KEY = $VALUE..."
+  curl -s -X PUT "$API_BASE/admin/config/$KEY" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"value\": \"$VALUE\"}" \
+    | jq -r '.status // "ERROR"'
+}
+
+update_config "polls.enabled" "true"
+update_config "polls.notify-members-enabled" "true"
+update_config "polls.binding-enabled" "false"  # Keep disabled until legal review
+update_config "polls.public-results" "false"   # Admin-only results
+
+echo ""
+echo "Democracy Phase 1 complete!"
+echo "Create test poll with notify_members=true to validate email delivery"
+echo "Monitor: Email success rate, poll participation KPIs"
+```
+
+#### Democracy Phase 2: Binding Polls (Post-Legal Review)
+
+**Prerequisites:**
+- Legal review of hash chain integrity complete
+- Board approval for binding votes documented
+- Go/No-Go checklist Phase 2 signed off
+
+**Flags:**
+```json
+{
+  "polls.enabled": "true",
+  "polls.notify-members-enabled": "true",
+  "polls.binding-enabled": "true",
+  "polls.public-results": "true"
+}
+```
+
+**Automation Script:**
+```bash
+#!/bin/bash
+# scripts/rollout/democracy-phase2-binding-polls.sh
+# Enables binding polls after legal approval
+
+set -e
+
+echo "=== Democracy Phase 2: Binding Polls ==="
+echo "WARNING: This enables binding votes. Ensure legal review complete."
+read -p "Proceed? (yes/no): " CONFIRM
+
+if [ "$CONFIRM" != "yes" ]; then
+  echo "Aborted."
+  exit 1
+fi
+
+ADMIN_TOKEN="${ADMIN_TOKEN:-}"
+API_BASE="${API_BASE:-https://hoa.example.com/api}"
+
+if [ -z "$ADMIN_TOKEN" ]; then
+  echo "ERROR: ADMIN_TOKEN environment variable not set"
+  exit 1
+fi
+
+update_config() {
+  local KEY=$1
+  local VALUE=$2
+  echo "Setting $KEY = $VALUE..."
+  curl -s -X PUT "$API_BASE/admin/config/$KEY" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"value\": \"$VALUE\"}" \
+    | jq -r '.status // "ERROR"'
+}
+
+update_config "polls.binding-enabled" "true"
+update_config "polls.public-results" "true"  # Enable transparent results
+
+# Run hash chain integrity check
+echo ""
+echo "Running hash chain integrity verification..."
+curl -s "$API_BASE/polls/integrity-check" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  | jq '.'
+
+echo ""
+echo "Democracy Phase 2 complete!"
+echo "Binding polls now enabled. Monitor vote receipt verification KPI."
+echo "Verify hash chain integrity after first binding poll completes."
+```
+
+**KPI Monitoring:**
+- Poll participation (binding vs. informal)
+- Vote receipt verification rate
+- Hash chain integrity check results
+- Reference: [KPI Dashboard](../metrics/kpi-dashboard.md#kpi-poll-participation)
+
+---
+
+### 4B. Accessibility Suite Rollout Automation
+
+<!-- anchor: accessibility-rollout-automation -->
+
+**Scenario:** Enabling accessibility features with adoption monitoring
+
+Accessibility flags control theme defaults and feature availability, allowing phased rollout based on community adoption metrics.
+
+#### Accessibility Phase 1: Opt-In High-Vis Mode
+
+**Flags:**
+```json
+{
+  "accessibility.high-vis-default": "false",
+  "accessibility.font-scaling": "true"
+}
+```
+
+**Automation Script:**
+```bash
+#!/bin/bash
+# scripts/rollout/accessibility-phase1-opt-in.sh
+# Enables accessibility features with opt-in high-vis mode
+
+set -e
+
+echo "=== Accessibility Phase 1: Opt-In High-Vis Mode ==="
+
+ADMIN_TOKEN="${ADMIN_TOKEN:-}"
+API_BASE="${API_BASE:-https://hoa.example.com/api}"
+
+if [ -z "$ADMIN_TOKEN" ]; then
+  echo "ERROR: ADMIN_TOKEN environment variable not set"
+  exit 1
+fi
+
+update_config() {
+  local KEY=$1
+  local VALUE=$2
+  echo "Setting $KEY = $VALUE..."
+  curl -s -X PUT "$API_BASE/admin/config/$KEY" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"value\": \"$VALUE\"}" \
+    | jq -r '.status // "ERROR"'
+}
+
+update_config "accessibility.high-vis-default" "false"
+update_config "accessibility.font-scaling" "true"
+
+echo ""
+echo "Accessibility Phase 1 complete!"
+echo "Users can toggle high-vis mode via UI"
+echo "Monitor: Accessibility adoption KPI (target >15%)"
+```
+
+#### Accessibility Phase 2: Default High-Vis (Based on KPIs)
+
+**Decision Criteria:**
+- Accessibility adoption rate >20% for 2 consecutive months
+- Positive user feedback from pilot participants
+- No accessibility regressions reported
+
+**Automation Script:**
+```bash
+#!/bin/bash
+# scripts/rollout/accessibility-phase2-default-highvis.sh
+# Enables high-vis mode as default for new users (based on KPI thresholds)
+
+set -e
+
+echo "=== Accessibility Phase 2: Default High-Vis Mode ==="
+
+ADMIN_TOKEN="${ADMIN_TOKEN:-}"
+API_BASE="${API_BASE:-https://hoa.example.com/api}"
+
+if [ -z "$ADMIN_TOKEN" ]; then
+  echo "ERROR: ADMIN_TOKEN environment variable not set"
+  exit 1
+fi
+
+# Check adoption rate before proceeding
+echo "Checking accessibility adoption rate..."
+ADOPTION_RATE=$(curl -s "$API_BASE/metrics/accessibility-adoption" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" | jq -r '.adoption_rate')
+
+echo "Current adoption rate: ${ADOPTION_RATE}%"
+
+if (( $(echo "$ADOPTION_RATE < 20" | bc -l) )); then
+  echo "ERROR: Adoption rate below 20% threshold"
+  echo "Current: ${ADOPTION_RATE}%, Required: >20%"
+  echo "Continue monitoring and re-run when threshold met."
+  exit 1
+fi
+
+update_config() {
+  local KEY=$1
+  local VALUE=$2
+  echo "Setting $KEY = $VALUE..."
+  curl -s -X PUT "$API_BASE/admin/config/$KEY" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"value\": \"$VALUE\"}" \
+    | jq -r '.status // "ERROR"'
+}
+
+update_config "accessibility.high-vis-default" "true"
+
+echo ""
+echo "Accessibility Phase 2 complete!"
+echo "New users default to high-vis mode (existing users retain preferences)"
+echo "Monitor: User feedback, support ticket volume"
+```
 
 ---
 
