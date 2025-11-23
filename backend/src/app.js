@@ -51,6 +51,7 @@ const publicDocumentRoutes = require('./routes/public.document.routes'); // For 
 const boardRoutes = require('./routes/board.routes'); // Routes for board governance
 const pollRoutes = require('./routes/poll.routes'); // Routes for democracy/polls
 const vendorRoutes = require('./routes/vendor.routes'); // Routes for vendor directory
+const healthController = require('./controllers/health.controller'); // Health diagnostics
 
 const app = express();
 
@@ -76,10 +77,16 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the HOA Management API!' });
 });
 
-// Lightweight health endpoint for load balancers and Compose healthchecks
+// Lightweight health endpoint for load balancers and Compose healthchecks (backwards compatible)
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', time: new Date().toISOString() });
 });
+
+// Enhanced health endpoint with extended diagnostics
+app.get('/api/healthz', healthController.healthz);
+
+// Hash chain verification endpoint
+app.get('/api/healthz/hashchain/:pollId', healthController.verifyHashChainEndpoint);
 
 // Prometheus metrics endpoint
 app.get('/api/metrics', async (req, res) => {
