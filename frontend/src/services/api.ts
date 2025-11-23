@@ -27,6 +27,10 @@ import type {
   UpdateUserStatusRequest,
   UpdateUserRoleRequest,
   UpdateConfigRequest,
+  BoardMember,
+  BoardHistoryItem,
+  BoardConfig,
+  BoardContactRequest,
 } from '../types/api';
 
 class ApiService {
@@ -312,6 +316,30 @@ class ApiService {
   // Admin - Audit Logs
   async getAuditLogs(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<AuditLog>> {
     const response: AxiosResponse<PaginatedResponse<AuditLog>> = await this.api.get('/admin/audit-logs', { params });
+    return response.data;
+  }
+
+  // Board
+  async getBoardRoster(): Promise<{ members: BoardMember[]; lastFetched: string }> {
+    const response = await this.api.get('/board/roster');
+    return {
+      members: response.data.members || response.data,
+      lastFetched: new Date().toISOString(),
+    };
+  }
+
+  async getBoardHistory(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<BoardHistoryItem>> {
+    const response: AxiosResponse<PaginatedResponse<BoardHistoryItem>> = await this.api.get('/board/history', { params });
+    return response.data;
+  }
+
+  async getBoardConfig(): Promise<BoardConfig> {
+    const response: AxiosResponse<BoardConfig> = await this.api.get('/board/config');
+    return response.data;
+  }
+
+  async submitBoardContact(data: BoardContactRequest): Promise<{ message: string }> {
+    const response = await this.api.post('/board/contact', data);
     return response.data;
   }
 }

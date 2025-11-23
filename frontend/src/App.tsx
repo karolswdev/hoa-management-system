@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -10,6 +11,17 @@ import { ThemeWrapper } from './theme/ThemeWrapper';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
 import Layout from './components/layout/Layout';
+
+// Create a React Query client with default options
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+      staleTime: 30 * 1000, // 30 seconds default
+    },
+  },
+});
 
 // Public Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -28,6 +40,7 @@ import DocumentsPage from './pages/member/DocumentsPage';
 import DiscussionsPage from './pages/member/DiscussionsPage';
 import DiscussionThreadPage from './pages/member/DiscussionThreadPage';
 import ProfilePage from './pages/member/ProfilePage';
+import BoardPage from './pages/BoardPage';
 
 // Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -40,12 +53,13 @@ import AdminAuditPage from './pages/admin/AdminAuditPage';
 
 const App: React.FC = () => {
   return (
-    <AccessibilityProvider>
-      <ThemeWrapper>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <NotificationProvider>
-            <AuthProvider>
-              <Router>
+    <QueryClientProvider client={queryClient}>
+      <AccessibilityProvider>
+        <ThemeWrapper>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <NotificationProvider>
+              <AuthProvider>
+                <Router>
             <Routes>
               {/* Public Routes */}
               <Route
@@ -121,6 +135,7 @@ const App: React.FC = () => {
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="discussions" element={<DiscussionsPage />} />
                 <Route path="discussions/:id" element={<DiscussionThreadPage />} />
+                <Route path="board" element={<BoardPage />} />
                 <Route path="profile" element={<ProfilePage />} />
 
                 {/* Admin Routes */}
@@ -193,12 +208,13 @@ const App: React.FC = () => {
               {/* Fallback route */}
               <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-              </Router>
-            </AuthProvider>
-          </NotificationProvider>
-        </LocalizationProvider>
-      </ThemeWrapper>
-    </AccessibilityProvider>
+                </Router>
+              </AuthProvider>
+            </NotificationProvider>
+          </LocalizationProvider>
+        </ThemeWrapper>
+      </AccessibilityProvider>
+    </QueryClientProvider>
   );
 };
 

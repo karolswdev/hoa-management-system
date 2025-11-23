@@ -89,6 +89,38 @@ export interface AuditLog {
   created_at: string;
 }
 
+// Board Types
+export interface BoardMember {
+  id: number;
+  name: string;
+  position: string;
+  email?: string;
+  phone?: string;
+  term_start: string;
+  term_end: string | null;
+  rank: number;
+  board_title?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BoardHistoryItem {
+  id: number;
+  member_name: string;
+  position: string;
+  term_start: string;
+  term_end: string;
+  board_title?: string;
+  created_at: string;
+}
+
+export interface BoardConfig {
+  visibility: 'public' | 'members-only' | 'restricted';
+  showContactInfo: boolean;
+  historyVisibility: 'public' | 'members-only';
+  lastUpdated?: string;
+}
+
 // API Response Types
 export interface PaginatedResponse<T> {
   data: T[];
@@ -195,6 +227,14 @@ export interface UpdateUserRoleRequest {
 
 export interface UpdateConfigRequest {
   value: string;
+}
+
+export interface BoardContactRequest {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  captchaToken?: string;
 }
 
 // Error Response
