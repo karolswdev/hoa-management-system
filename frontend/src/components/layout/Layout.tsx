@@ -18,8 +18,6 @@ import {
   MenuItem,
   useTheme,
   useMediaQuery,
-  Switch,
-  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -34,11 +32,11 @@ import {
   Settings,
   History,
   Logout,
-  Visibility,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { useAccessibility } from '../../contexts/AccessibilityContext';
 import ReleaseBadge from '../common/ReleaseBadge';
+import AccessibilityToggle from '../Accessibility/Toggle';
+import { trackAccessibilityToggle } from '../../utils/analytics';
 
 const drawerWidth = 240;
 
@@ -76,7 +74,6 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
-  const { isHighVisibility, toggleHighVisibility } = useAccessibility();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -133,13 +130,13 @@ const Layout: React.FC = () => {
           <Divider />
           <List>
             <ListItem>
-              <ListItemText 
-                primary="Administration" 
-                primaryTypographyProps={{ 
-                  variant: 'overline', 
+              <ListItemText
+                primary="Administration"
+                primaryTypographyProps={{
+                  variant: 'overline',
                   color: 'text.secondary',
                   fontWeight: 'bold'
-                }} 
+                }}
               />
             </ListItem>
             {adminNavigationItems.map((item) => (
@@ -156,8 +153,22 @@ const Layout: React.FC = () => {
           </List>
         </>
       )}
-      <Box sx={{ mt: 'auto', p: 2 }}>
-        <ReleaseBadge />
+
+      {/* Accessibility Toggle in Drawer */}
+      <Box sx={{ mt: 'auto' }}>
+        <Divider />
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AccessibilityToggle
+            variant="drawer"
+            onAnalytics={(event) => trackAccessibilityToggle(event.context, event.featureFlagState.highVis)}
+          />
+          <Typography variant="body2" sx={{ flexGrow: 1 }}>
+            High Visibility Mode
+          </Typography>
+        </Box>
+        <Box sx={{ px: 2, pb: 2 }}>
+          <ReleaseBadge />
+        </Box>
       </Box>
     </Box>
   );
@@ -187,43 +198,11 @@ const Layout: React.FC = () => {
           </Typography>
 
           {/* Accessibility Toggle */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
-            <Tooltip title={isHighVisibility ? 'Disable High Visibility Mode' : 'Enable High Visibility Mode'}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Visibility sx={{ display: { xs: 'none', sm: 'block' } }} />
-                <Switch
-                  checked={isHighVisibility}
-                  onChange={toggleHighVisibility}
-                  inputProps={{
-                    'aria-label': 'Toggle high visibility mode',
-                  }}
-                  color="default"
-                  sx={{
-                    '& .MuiSwitch-switchBase': {
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      '&.Mui-checked': {
-                        color: '#fff',
-                      },
-                      '&.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                      },
-                    },
-                    '& .MuiSwitch-track': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    },
-                  }}
-                />
-                <Typography
-                  variant="body2"
-                  sx={{
-                    display: { xs: 'none', md: 'block' },
-                    fontSize: '0.875rem',
-                  }}
-                >
-                  High Visibility
-                </Typography>
-              </Box>
-            </Tooltip>
+          <Box sx={{ mr: 2 }}>
+            <AccessibilityToggle
+              variant="navbar"
+              onAnalytics={(event) => trackAccessibilityToggle(event.context, event.featureFlagState.highVis)}
+            />
           </Box>
 
           {/* User Profile Menu */}
