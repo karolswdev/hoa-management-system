@@ -36,6 +36,11 @@ import type {
   VoteResponse,
   VoteReceipt,
   CreatePollRequest,
+  Vendor,
+  VendorFilter,
+  VendorsResponse,
+  CreateVendorRequest,
+  UpdateVendorRequest,
 } from '../types/api';
 
 class ApiService {
@@ -386,6 +391,31 @@ class ApiService {
 
   async deletePoll(id: number): Promise<void> {
     await this.api.delete(`/admin/polls/${id}`);
+  }
+
+  // Vendors
+  async getVendors(params?: VendorFilter): Promise<VendorsResponse> {
+    const response: AxiosResponse<VendorsResponse> = await this.api.get('/vendors', { params });
+    return response.data;
+  }
+
+  async getVendor(id: number): Promise<Vendor> {
+    const response: AxiosResponse<{ vendor: Vendor }> = await this.api.get(`/vendors/${id}`);
+    return response.data.vendor;
+  }
+
+  async createVendor(data: CreateVendorRequest): Promise<{ message: string; vendor: Vendor }> {
+    const response = await this.api.post('/vendors', data);
+    return response.data;
+  }
+
+  async updateVendor(id: number, data: UpdateVendorRequest): Promise<Vendor> {
+    const response: AxiosResponse<{ message: string; vendor: Vendor }> = await this.api.put(`/vendors/${id}`, data);
+    return response.data.vendor;
+  }
+
+  async deleteVendor(id: number): Promise<void> {
+    await this.api.delete(`/vendors/${id}`);
   }
 }
 

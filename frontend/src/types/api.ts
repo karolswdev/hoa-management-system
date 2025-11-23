@@ -320,6 +320,59 @@ export interface VoteResponse {
   vote_hash?: string;
 }
 
+// Vendor Types
+export type VendorVisibilityScope = 'public' | 'members' | 'admins';
+export type VendorModerationState = 'pending' | 'approved' | 'denied';
+
+export interface Vendor {
+  id: number;
+  name: string;
+  service_category: string;
+  visibility_scope: VendorVisibilityScope;
+  contact_info?: string | null;
+  rating?: number | null;
+  notes?: string | null;
+  moderation_state?: VendorModerationState;
+  created_by?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface VendorFilter {
+  category?: string;
+  search?: string;
+  status?: VendorModerationState;
+}
+
+export interface VendorsResponse {
+  vendors: Vendor[];
+  count: number;
+  filters: {
+    category?: string;
+    search?: string;
+    status?: VendorModerationState;
+  };
+}
+
+export interface CreateVendorRequest {
+  name: string;
+  service_category: string;
+  contact_info?: string;
+  rating?: number;
+  notes?: string;
+  visibility_scope?: VendorVisibilityScope;
+}
+
+export interface UpdateVendorRequest {
+  name?: string;
+  service_category?: string;
+  contact_info?: string;
+  rating?: number;
+  notes?: string;
+  visibility_scope?: VendorVisibilityScope;
+  moderation_state?: VendorModerationState;
+}
+
 // Error Response
 export interface ApiError {
   message: string;
