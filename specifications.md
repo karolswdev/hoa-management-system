@@ -115,6 +115,111 @@ This document outlines the technical roadmap for extending the HOA Management Sy
 
 ---
 
+## 2.5. Architectural Decisions & Clarifications
+
+This section addresses critical decision points identified during specification review (see `.codemachine/artifacts/requirements/00_Specification_Review.md`).
+
+### 2.5.1. Voting Anonymity vs. Auditability
+
+**Decision:** **Path A (Pseudonymous Auditability)**
+
+**Rationale:**
+- HOA votes typically require attribution for legal binding purposes (quorum verification, contested decisions)
+- The 1GB RAM constraint makes complex zero-knowledge proof systems impractical
+- The small community size (~40 homes) means sophisticated cryptographic anonymity adds unnecessary complexity
+
+**Implementation Details:**
+- The `is_anonymous` flag controls **UI display only** - voter names are hidden from results screens but votes remain attributed in the database
+- All votes include `user_id` in the hash chain formula for full auditability
+- Admin audit logs can reconstruct who voted for what if legally required
+- Clear privacy policy disclosure: "Votes are recorded with your identity for audit purposes but displayed anonymously to other members"
+
+**Legal Compliance:** Vote records with full attribution will be retained for 7 years per standard HOA document retention policies.
+
+---
+
+### 2.5.2. Hash Chain Integrity vs. SQLite Concurrency
+
+**Decision:** **Tier 1 (Sequential Processing with Vote Queue)**
+
+**Rationale:**
+- With ~40 homes, the probability of concurrent vote submissions is negligible
+- Even if all 40 residents vote within a 5-minute window, sequential processing handles this easily
+- No additional infrastructure (Redis/PostgreSQL) required - maintains simplicity
+
+**Implementation Details:**
+- Implement in-memory vote submission queue in `backend/src/services/vote.service.js`
+- Process votes sequentially with SQLite transactions to maintain hash chain integrity
+- Expected latency: 100-300ms per vote (acceptable for this use case)
+- Queue monitoring: Admin dashboard shows pending vote queue depth
+
+**Acceptable Load:** System designed to handle all 40 residents voting within a 10-minute window without issues. If concurrent load increases in the future, migration to Tier 2 (Redis) is straightforward.
+
+---
+
+### 2.5.3. Email Notification Strategy for Poll Creation
+
+**Decision:** **Path C (Hybrid with Retry)**
+
+**Rationale:**
+- Balances reliability with infrastructure simplicity
+- No webhook endpoints or Redis required
+- Provides admin visibility into email failures without real-time delivery confirmation overhead
+
+**Implementation Details:**
+- Use SQLite-backed job queue table: `EmailQueue` (`id`, `recipient`, `subject`, `body`, `attempts`, `last_attempt`, `status`)
+- Background worker retries failed emails: 3 attempts over 24 hours (immediate, +1 hour, +23 hours)
+- Admin dashboard displays email delivery statistics per poll
+- Log all email failures to admin notification panel
+
+**SLA Expectations:**
+- 95% of emails delivered within 5 minutes
+- Failed emails surface in admin dashboard within 1 hour
+- No guarantee of delivery for invalid email addresses (admin notified)
+
+---
+
+### 2.5.4. Board History Access Control Scope
+
+**Decision:** **Path A (Complete Lockdown)**
+
+**Rationale:**
+- Aligns with privacy-first philosophy and resident expectations
+- Simpler authorization logic reduces attack surface
+- Current board visibility toggle provides sufficient public transparency
+
+**Implementation Details:**
+- All historical board data (names, titles, tenure dates, bios, contact info) requires authentication
+- Public users see only current board roster when `board_visibility` is set to `public`
+- API authorization middleware: `GET /board/history` returns 401 for unauthenticated requests
+- Frontend routing: `/board/history` page requires login
+
+**Transparency Rationale:** Historical leadership records contain personal information (bios, tenure periods) that should remain private to the community. Public users can see who currently leads the HOA, which satisfies transparency requirements.
+
+---
+
+### 2.5.5. Accessibility Suite Activation Persistence Scope
+
+**Decision:** **Path A (Client-Only Persistence via localStorage)**
+
+**Rationale:**
+- Small user base (~40 homes) likely accesses from 1-2 devices maximum
+- Zero backend impact - no schema changes or API updates required
+- Faster development velocity for initial release
+- Setting is simple enough that re-enabling on a second device is low friction
+
+**Implementation Details:**
+- `AccessibilityContext` reads/writes to `localStorage` key: `hoa_accessibility_mode`
+- No database column required in `Users` table
+- Per-device setting acceptable for v1.0 release
+
+**Future Enhancement:** If user feedback indicates cross-device synchronization is important, migrate to Path B (account-synced preferences) in a future sprint. This would require:
+- Add `accessibility_preferences` JSON column to `Users` table
+- Update `AuthContext` to fetch preferences on login
+- Sync localStorage with backend on preference change
+
+---
+
 ## 3. CI/CD & Deployment Enhancements
 
 **Objective:** Maintain the automated pipeline while enhancing security and reliability.
