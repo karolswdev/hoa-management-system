@@ -9,6 +9,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - Production Readiness Improvements
 
+#### Democracy Module
+- **Poll Management** (`POST /api/polls`, `GET /api/polls`, `GET /api/polls/{id}`):
+  - Admin-only poll creation with support for informal, binding, and straw-poll types
+  - Public/member access to view active, scheduled, and closed polls
+  - Detailed poll information with options, status, and metadata
+  - Feature flag gating: `polls.binding-enabled` controls binding poll creation
+  - Poll status calculated server-side (scheduled, active, closed)
+  - HTML sanitization on poll title and description
+  - Optional member notifications via email on poll creation
+  - Feature flag `polls.notify-members-enabled` gates notification functionality
+- **Voting with Hash Chain Integrity** (`POST /api/polls/{id}/votes`):
+  - Member-only vote submission with cryptographic receipt generation
+  - Hash chain formula: `SHA256(user_id + option_id + timestamp + prev_hash)`
+  - Transaction safety using `BEGIN IMMEDIATE` with row-level locking
+  - Duplicate vote prevention (for non-anonymous polls)
+  - Vote validation: poll must be active, option must belong to poll
+  - Returns receipt code and integrity metadata (vote_hash, prev_hash)
+  - Audit logging with correlation IDs for all vote submissions
+  - Support for anonymous and identified voting modes
+- **Receipt Verification** (`GET /api/polls/receipts/{code}`):
+  - Public endpoint for verifying vote receipts
+  - Constant-time response to prevent timing attacks
+  - Privacy-preserving: returns poll/option info without voter identity
+  - Receipt code format: 16+ character alphanumeric string
+  - Verification status returned (valid/invalid)
+- **Poll Results** (`GET /api/polls/{id}/results`):
+  - Public access for closed polls, admin-only for active polls
+  - Aggregated vote counts by option
+  - Privacy protection: no individual voter identities exposed
+  - Results sorted by option order_index
+- **Hash Chain Integrity Verification** (`GET /api/polls/{id}/integrity`):
+  - Admin-only endpoint for post-poll audit verification
+  - Validates entire hash chain for poll
+  - Recalculates vote hashes and verifies chain links
+  - Returns validation report with discrepancies if any
+  - Compliance and tamper detection support
+- **Email Notifications**:
+  - Optional member notifications on poll creation
+  - Controlled by `polls.notify-members-enabled` feature flag
+  - Creates EmailAudit and ResidentNotificationLog records
+  - SendGrid integration for email delivery
+  - Correlation IDs for tracking notification delivery
+- **Feature Flags**:
+  - `polls.binding-enabled`: Allows creation of binding vote type (60s cache TTL)
+  - `polls.notify-members-enabled`: Enables email notifications for polls (60s cache TTL)
+  - Flag values checked per-request to enforce feature availability
+- **OpenAPI Documentation** (`api/openapi.yaml`):
+  - Complete REST API specification for all democracy endpoints
+  - Request/response schemas for polls, votes, receipts, and results
+  - Examples for informal and binding poll workflows
+  - Security requirements (JWT, member/admin roles)
+  - Error response documentation (400, 401, 403, 404, 409, 500)
+  - Feature flag behavior and hash chain mechanics documented
+  - Rate limiting headers included in responses
+  - Cross-references to hash chain diagrams (`docs/diagrams/democracy-sequence.puml`)
+
 #### Board Governance Module
 - **Board Roster Endpoint** (`GET /api/board`):
   - Public/member access to current board roster based on `board.visibility` feature flag
@@ -246,6 +302,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prometheus Metrics: `GET /api/metrics`
 - Grafana Dashboard: `http://your-server:3002`
 - Prometheus UI: `http://your-server:9090`
+
+### Democracy Module Rollout Instructions
+
+#### Feature Flag Configuration
+
+The democracy module uses feature flags for gradual rollout. Follow this sequence:
+
+1. **Initial Setup** (All flags disabled):
+   ```sql
+   -- Verify flags exist in Config table
+   SELECT key, value FROM Config WHERE key LIKE 'polls.%';
+   -- Expected: polls.binding-enabled='false', polls.notify-members-enabled='false'
+   ```
+
+2. **Phase 1 - Enable Informal Polls** (Pilot):
+   - Keep `polls.binding-enabled='false'`
+   - Keep `polls.notify-members-enabled='false'`
+   - Create test informal polls via AdminConsole
+   - Verify poll list, detail, voting, and receipt flows work
+   - Monitor logs for errors and audit events
+   - Validate hash chain integrity using `GET /api/polls/{id}/integrity`
+
+3. **Phase 2 - Enable Email Notifications**:
+   - Set `polls.notify-members-enabled='true'` in Config table
+   - Test notification delivery with a small test poll
+   - Verify EmailAudit and ResidentNotificationLog records created
+   - Monitor SendGrid delivery metrics
+   - Confirm members receive emails with correct poll details
+
+4. **Phase 3 - Enable Binding Polls** (Production):
+   - Set `polls.binding-enabled='true'` only after informal polls validated
+   - Document governance process for binding vote approval
+   - Train administrators on binding vs informal poll creation
+   - Establish audit procedures for binding vote verification
+   - Consider legal review of binding vote receipts before rollout
+
+5. **Monitoring & Operations**:
+   - Review AuditEvent logs for poll creation and vote submissions
+   - Periodically validate hash chain integrity for closed polls
+   - Monitor vote receipt verification requests for anomalies
+   - Track notification delivery rates and failures
+   - Set up alerts for voting errors or hash chain discrepancies
+
+#### Documentation References
+
+- **API Specification**: `api/openapi.yaml` (democracy endpoints)
+- **Hash Chain Diagram**: `docs/diagrams/democracy-sequence.puml`
+- **Feature Flag Guide**: See Config table key documentation
+- **Backend Implementation**: `backend/src/services/democracy.service.js`, `backend/src/services/vote.service.js`
+- **Frontend Components**: `frontend/src/pages/Polls.tsx`, `frontend/src/pages/PollDetail.tsx`
 
 ### Migration Notes
 

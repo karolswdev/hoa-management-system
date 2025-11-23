@@ -12,10 +12,22 @@ info:
     - Public contact form with CAPTCHA and rate limiting
     - Admin CRUD operations for board titles and member assignments
 
+    ## Democracy Module Features
+
+    The democracy module provides transparent, hash-chained voting:
+    - Poll creation and management (admin only)
+    - Member voting with cryptographic receipt generation
+    - Receipt verification for vote integrity
+    - Optional member notifications via email
+    - Support for informal, binding, and straw-poll types
+    - Anonymous and identified voting modes
+
     ## Feature Flags
 
     - **board.visibility**: Controls roster exposure (`public` or `members-only`, 60s cache TTL)
     - **board.history-visibility**: Controls history access (`public` or `members-only`, 60s cache TTL)
+    - **polls.binding-enabled**: Allows creation of binding vote type polls (60s cache TTL)
+    - **polls.notify-members-enabled**: Enables email notifications for poll announcements (60s cache TTL)
 
     ## Rate Limiting
 
@@ -45,6 +57,10 @@ tags:
     description: Board governance endpoints for roster, history, and contact
   - name: Board Admin
     description: Administrative endpoints for managing board members and titles
+  - name: Polls
+    description: Democracy module endpoints for polls and voting
+  - name: Polls Admin
+    description: Administrative endpoints for poll management and integrity verification
 
 paths:
   /board:
@@ -762,6 +778,713 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /polls:
+    get:
+      tags:
+        - Polls
+      summary: Get active and scheduled polls
+      description: |
+        Returns polls filtered by optional type and status parameters.
+
+        **Access:**
+        - Public and member access (no authentication required)
+        - Optional authentication to adjust visibility of certain polls
+
+        **Filtering:**
+        - `type`: Filter by poll type (informal, binding, straw-poll)
+        - `status`: Filter by status (active, scheduled, closed)
+
+        **Feature Flags:**
+        - Binding polls only appear if `polls.binding-enabled` is `true`
+
+        **Status Determination:**
+        - `scheduled`: Poll start time is in the future
+        - `active`: Current time is between start_at and end_at
+        - `closed`: Poll end time has passed
+      operationId: getPolls
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          description: Filter by poll type
+          schema:
+            type: string
+            enum: [informal, binding, straw-poll]
+        - name: status
+          in: query
+          description: Filter by poll status
+          schema:
+            type: string
+            enum: [active, scheduled, closed]
+      responses:
+        '200':
+          description: Polls retrieved successfully
+          headers:
+            RateLimit-Limit:
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              schema:
+                type: integer
+            RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - polls
+                  - count
+                  - serverTime
+                properties:
+                  polls:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PollSummary'
+                  count:
+                    type: integer
+                  serverTime:
+                    type: string
+                    format: date-time
+                    description: Server timestamp for countdown calculations
+              examples:
+                informal:
+                  summary: Informal poll example
+                  value:
+                    polls:
+                      - id: 1
+                        title: "Should we add a new playground?"
+                        description: "Community feedback on playground location"
+                        type: "informal"
+                        is_anonymous: false
+                        start_at: "2025-01-15T00:00:00.000Z"
+                        end_at: "2025-01-22T23:59:59.000Z"
+                        status: "active"
+                        options:
+                          - id: 1
+                            text: "Near the pool"
+                            order_index: 0
+                          - id: 2
+                            text: "Near the tennis courts"
+                            order_index: 1
+                        created_by: "Admin User"
+                        created_at: "2025-01-10T12:00:00.000Z"
+                    count: 1
+                    serverTime: "2025-01-18T14:30:00.000Z"
+                binding:
+                  summary: Binding poll example
+                  value:
+                    polls:
+                      - id: 2
+                        title: "Annual Budget Approval"
+                        description: "Vote to approve the 2025 budget"
+                        type: "binding"
+                        is_anonymous: false
+                        start_at: "2025-02-01T00:00:00.000Z"
+                        end_at: "2025-02-07T23:59:59.000Z"
+                        status: "scheduled"
+                        options:
+                          - id: 3
+                            text: "Approve budget"
+                            order_index: 0
+                          - id: 4
+                            text: "Reject budget"
+                            order_index: 1
+                        created_by: "Admin User"
+                        created_at: "2025-01-15T09:00:00.000Z"
+                    count: 1
+                    serverTime: "2025-01-18T14:30:00.000Z"
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Polls Admin
+      summary: Create a new poll
+      description: |
+        Admin-only endpoint to create a new poll with options.
+
+        **Validation:**
+        - Title, type, start_at, end_at, and options (minimum 2) are required
+        - End date must be after start date
+        - Binding polls require `polls.binding-enabled` flag to be `true`
+
+        **Workflow:**
+        1. Validates input and feature flags
+        2. Sanitizes title and description (strips HTML)
+        3. Creates poll and poll options in transaction
+        4. Logs audit event
+        5. Optionally sends email notifications if `notify_members` is true
+
+        **Feature Flags:**
+        - `polls.binding-enabled`: Required for binding poll creation
+        - `polls.notify-members-enabled`: Gates email notification functionality
+      operationId: createPoll
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PollCreateRequest'
+            examples:
+              informal:
+                summary: Informal poll creation
+                value:
+                  title: "Should we add a new playground?"
+                  description: "Community feedback on playground location"
+                  type: "informal"
+                  is_anonymous: false
+                  notify_members: true
+                  start_at: "2025-01-15T00:00:00.000Z"
+                  end_at: "2025-01-22T23:59:59.000Z"
+                  options:
+                    - text: "Near the pool"
+                      order_index: 0
+                    - text: "Near the tennis courts"
+                      order_index: 1
+                    - text: "No new playground"
+                      order_index: 2
+              binding:
+                summary: Binding poll creation
+                value:
+                  title: "Annual Budget Approval"
+                  description: "Vote to approve the 2025 budget of $150,000"
+                  type: "binding"
+                  is_anonymous: false
+                  notify_members: true
+                  start_at: "2025-02-01T00:00:00.000Z"
+                  end_at: "2025-02-07T23:59:59.000Z"
+                  options:
+                    - text: "Approve budget"
+                      order_index: 0
+                    - text: "Reject budget"
+                      order_index: 1
+      responses:
+        '201':
+          description: Poll created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - poll
+                properties:
+                  message:
+                    type: string
+                  poll:
+                    $ref: '#/components/schemas/PollDetail'
+              example:
+                message: "Poll created successfully"
+                poll:
+                  id: 1
+                  title: "Should we add a new playground?"
+                  description: "Community feedback on playground location"
+                  type: "informal"
+                  is_anonymous: false
+                  notify_members: true
+                  start_at: "2025-01-15T00:00:00.000Z"
+                  end_at: "2025-01-22T23:59:59.000Z"
+                  created_by: 1
+                  created_at: "2025-01-10T12:00:00.000Z"
+                  options:
+                    - id: 1
+                      poll_id: 1
+                      text: "Near the pool"
+                      order_index: 0
+                    - id: 2
+                      poll_id: 1
+                      text: "Near the tennis courts"
+                      order_index: 1
+        '400':
+          description: Bad request - Missing fields or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    message: "Missing required fields: title, type, start_at, end_at, options"
+                invalidDates:
+                  summary: Invalid date range
+                  value:
+                    message: "End date must be after start date"
+                invalidType:
+                  summary: Invalid poll type
+                  value:
+                    message: "Invalid poll type. Must be one of: informal, binding, straw-poll"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - Feature flag disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Binding polls are currently disabled"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /polls/receipts/{code}:
+    get:
+      tags:
+        - Polls
+      summary: Verify a vote receipt
+      description: |
+        Public endpoint for verifying vote receipts using constant-time comparison.
+
+        **Receipt Format:**
+        - 16+ character alphanumeric code
+        - Generated using cryptographic hash chain
+
+        **Privacy:**
+        - Returns poll and option information
+        - Does NOT expose voter identity
+        - Constant-time response to prevent timing attacks
+
+        **Response:**
+        - Returns receipt details if valid
+        - Returns 404 for invalid receipts (constant time)
+      operationId: verifyReceipt
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Vote receipt code
+          schema:
+            type: string
+            minLength: 16
+      responses:
+        '200':
+          description: Receipt verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - receipt
+                properties:
+                  message:
+                    type: string
+                  receipt:
+                    $ref: '#/components/schemas/VoteReceiptVerification'
+              example:
+                message: "Receipt verified"
+                receipt:
+                  hash: "a8b9c0d1e2f3..."
+                  poll_id: 1
+                  poll_title: "Should we add a new playground?"
+                  option_label: "Near the pool"
+                  timestamp: "2025-01-16T14:22:00.000Z"
+                  verification_status: "valid"
+        '400':
+          description: Invalid receipt format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Invalid receipt code format"
+        '404':
+          description: Receipt not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Receipt not found"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /polls/{id}:
+    get:
+      tags:
+        - Polls
+      summary: Get poll details by ID
+      description: |
+        Returns detailed poll information including options and status.
+
+        **Access:**
+        - Public and member access
+        - Optional authentication for enhanced visibility
+
+        **Query Parameters:**
+        - `include_results`: Set to `true` to include vote counts (only for closed polls)
+
+        **Status:**
+        - Poll status is calculated server-side based on start_at and end_at
+      operationId: getPollById
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Poll ID
+          schema:
+            type: integer
+        - name: include_results
+          in: query
+          description: Include vote counts (only for closed polls)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Poll retrieved successfully
+          headers:
+            RateLimit-Limit:
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              schema:
+                type: integer
+            RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - poll
+                properties:
+                  poll:
+                    $ref: '#/components/schemas/PollDetail'
+              examples:
+                active:
+                  summary: Active poll without results
+                  value:
+                    poll:
+                      id: 1
+                      title: "Should we add a new playground?"
+                      description: "Community feedback on playground location"
+                      type: "informal"
+                      is_anonymous: false
+                      start_at: "2025-01-15T00:00:00.000Z"
+                      end_at: "2025-01-22T23:59:59.000Z"
+                      status: "active"
+                      options:
+                        - id: 1
+                          text: "Near the pool"
+                          order_index: 0
+                        - id: 2
+                          text: "Near the tennis courts"
+                          order_index: 1
+                      created_by: "Admin User"
+                      created_at: "2025-01-10T12:00:00.000Z"
+                closedWithResults:
+                  summary: Closed poll with results
+                  value:
+                    poll:
+                      id: 1
+                      title: "Should we add a new playground?"
+                      description: "Community feedback on playground location"
+                      type: "informal"
+                      is_anonymous: false
+                      start_at: "2025-01-15T00:00:00.000Z"
+                      end_at: "2025-01-22T23:59:59.000Z"
+                      status: "closed"
+                      options:
+                        - id: 1
+                          text: "Near the pool"
+                          order_index: 0
+                        - id: 2
+                          text: "Near the tennis courts"
+                          order_index: 1
+                      created_by: "Admin User"
+                      created_at: "2025-01-10T12:00:00.000Z"
+                      results:
+                        - option_id: 1
+                          text: "Near the pool"
+                          vote_count: 45
+                        - option_id: 2
+                          text: "Near the tennis courts"
+                          vote_count: 32
+        '404':
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Poll not found"
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /polls/{id}/votes:
+    post:
+      tags:
+        - Polls
+      summary: Cast a vote in a poll
+      description: |
+        Member-only endpoint to cast a vote with hash chain integrity.
+
+        **Authentication:**
+        - Requires valid JWT token with member or admin role
+
+        **Validation:**
+        - Poll must be active (between start_at and end_at)
+        - Option must belong to the poll
+        - User cannot vote twice (for non-anonymous polls)
+
+        **Hash Chain:**
+        - Vote is appended to cryptographic hash chain
+        - Receipt code is generated for verification
+        - Uses formula: `SHA256(user_id + option_id + timestamp + prev_hash)`
+
+        **Transaction Safety:**
+        - Uses `BEGIN IMMEDIATE` for serialized access
+        - Locks poll record during vote submission
+        - All-or-nothing commit ensures data integrity
+      operationId: castVote
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Poll ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteRequest'
+            example:
+              option_id: 1
+      responses:
+        '201':
+          description: Vote cast successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteResponse'
+              example:
+                message: "Vote cast successfully"
+                receipt: "a8b9c0d1e2f3g4h5i6j7k8l9"
+                submitted_at: "2025-01-16T14:22:00.000Z"
+                integrity:
+                  vote_hash: "9f8e7d6c5b4a3..."
+                  prev_hash: "1a2b3c4d5e6f..."
+        '400':
+          description: Bad request - Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingField:
+                  summary: Missing option_id
+                  value:
+                    message: "Missing required field: option_id"
+                notStarted:
+                  summary: Poll not started
+                  value:
+                    message: "Poll has not started yet"
+                closed:
+                  summary: Poll closed
+                  value:
+                    message: "Poll has already closed"
+                invalidOption:
+                  summary: Invalid option
+                  value:
+                    message: "Invalid poll option"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Poll not found"
+        '409':
+          description: Conflict - User already voted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "User has already voted in this poll"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /polls/{id}/results:
+    get:
+      tags:
+        - Polls
+      summary: Get poll results
+      description: |
+        Returns vote counts for each poll option.
+
+        **Access:**
+        - Public access for closed polls
+        - Admin-only access for active polls
+
+        **Privacy:**
+        - Returns aggregated counts only
+        - Does not expose individual voter identities
+      operationId: getPollResults
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Poll ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Poll results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - poll
+                  - results
+                properties:
+                  poll:
+                    type: object
+                    required:
+                      - id
+                      - title
+                      - type
+                      - status
+                    properties:
+                      id:
+                        type: integer
+                      title:
+                        type: string
+                      type:
+                        type: string
+                        enum: [informal, binding, straw-poll]
+                      status:
+                        type: string
+                        enum: [scheduled, active, closed]
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PollResult'
+              example:
+                poll:
+                  id: 1
+                  title: "Should we add a new playground?"
+                  type: "informal"
+                  status: "closed"
+                results:
+                  - option_id: 1
+                    text: "Near the pool"
+                    vote_count: 45
+                  - option_id: 2
+                    text: "Near the tennis courts"
+                    vote_count: 32
+        '403':
+          description: Forbidden - Results not available for active polls
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Poll results are only available after the poll closes"
+        '404':
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Poll not found"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /polls/{id}/integrity:
+    get:
+      tags:
+        - Polls Admin
+      summary: Validate poll hash chain integrity
+      description: |
+        Admin-only endpoint to validate the cryptographic hash chain for a poll.
+
+        **Validation Process:**
+        1. Retrieves all votes in chronological order
+        2. Recalculates each vote hash
+        3. Verifies chain links (each prev_hash matches previous vote_hash)
+        4. Returns validation report with any discrepancies
+
+        **Use Cases:**
+        - Post-poll audit verification
+        - Investigating potential tampering
+        - Compliance reporting
+      operationId: validatePollIntegrity
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Poll ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Hash chain validation completed
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - validation
+                properties:
+                  message:
+                    type: string
+                  validation:
+                    type: object
+                    required:
+                      - isValid
+                      - totalVotes
+                      - errors
+                    properties:
+                      isValid:
+                        type: boolean
+                      totalVotes:
+                        type: integer
+                      errors:
+                        type: array
+                        items:
+                          type: object
+              example:
+                message: "Hash chain validation completed"
+                validation:
+                  isValid: true
+                  totalVotes: 77
+                  errors: []
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -1016,6 +1739,272 @@ components:
         message:
           type: string
           description: Human-readable error message
+
+    PollSummary:
+      type: object
+      required:
+        - id
+        - title
+        - type
+        - is_anonymous
+        - start_at
+        - end_at
+        - status
+        - options
+        - created_by
+        - created_at
+      properties:
+        id:
+          type: integer
+          description: Poll ID
+        title:
+          type: string
+          description: Poll title
+        description:
+          type: string
+          nullable: true
+          description: Optional poll description
+        type:
+          type: string
+          enum: [informal, binding, straw-poll]
+          description: Poll type
+        is_anonymous:
+          type: boolean
+          description: Whether votes are anonymous
+        start_at:
+          type: string
+          format: date-time
+          description: Poll start timestamp
+        end_at:
+          type: string
+          format: date-time
+          description: Poll end timestamp
+        status:
+          type: string
+          enum: [scheduled, active, closed]
+          description: Poll status calculated server-side
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollOptionSummary'
+          description: Poll options
+        created_by:
+          type: string
+          description: Name of poll creator
+        created_at:
+          type: string
+          format: date-time
+          description: Poll creation timestamp
+
+    PollDetail:
+      type: object
+      required:
+        - id
+        - title
+        - type
+        - is_anonymous
+        - start_at
+        - end_at
+        - status
+        - options
+        - created_by
+        - created_at
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [informal, binding, straw-poll]
+        is_anonymous:
+          type: boolean
+        notify_members:
+          type: boolean
+          description: Whether members were notified
+        start_at:
+          type: string
+          format: date-time
+        end_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, active, closed]
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollOptionSummary'
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollResult'
+          nullable: true
+          description: Vote counts (only for closed polls when requested)
+
+    PollOptionSummary:
+      type: object
+      required:
+        - id
+        - text
+        - order_index
+      properties:
+        id:
+          type: integer
+          description: Option ID
+        text:
+          type: string
+          description: Option text
+        order_index:
+          type: integer
+          description: Display order
+
+    PollCreateRequest:
+      type: object
+      required:
+        - title
+        - type
+        - start_at
+        - end_at
+        - options
+      properties:
+        title:
+          type: string
+          description: Poll title
+        description:
+          type: string
+          nullable: true
+          description: Optional poll description
+        type:
+          type: string
+          enum: [informal, binding, straw-poll]
+          description: Poll type
+        is_anonymous:
+          type: boolean
+          default: false
+          description: Whether votes should be anonymous
+        notify_members:
+          type: boolean
+          default: false
+          description: Send email notifications to members
+        start_at:
+          type: string
+          format: date-time
+          description: Poll start timestamp
+        end_at:
+          type: string
+          format: date-time
+          description: Poll end timestamp
+        options:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required:
+              - text
+            properties:
+              text:
+                type: string
+                description: Option text
+              order_index:
+                type: integer
+                description: Optional display order (defaults to array index)
+
+    VoteRequest:
+      type: object
+      required:
+        - option_id
+      properties:
+        option_id:
+          type: integer
+          description: ID of the poll option to vote for
+
+    VoteResponse:
+      type: object
+      required:
+        - message
+        - receipt
+        - submitted_at
+        - integrity
+      properties:
+        message:
+          type: string
+          example: "Vote cast successfully"
+        receipt:
+          type: string
+          description: Receipt code for vote verification
+        submitted_at:
+          type: string
+          format: date-time
+          description: Vote submission timestamp
+        integrity:
+          type: object
+          required:
+            - vote_hash
+            - prev_hash
+          properties:
+            vote_hash:
+              type: string
+              description: Cryptographic hash of this vote
+            prev_hash:
+              type: string
+              description: Hash of previous vote in chain (or "GENESIS" for first vote)
+
+    VoteReceiptVerification:
+      type: object
+      required:
+        - hash
+        - poll_id
+        - poll_title
+        - option_label
+        - timestamp
+        - verification_status
+      properties:
+        hash:
+          type: string
+          description: Vote hash
+        poll_id:
+          type: integer
+          description: Poll ID
+        poll_title:
+          type: string
+          description: Poll title
+        option_label:
+          type: string
+          description: Selected option text
+        timestamp:
+          type: string
+          format: date-time
+          description: Vote timestamp
+        verification_status:
+          type: string
+          enum: [valid, invalid]
+          description: Verification result
+
+    PollResult:
+      type: object
+      required:
+        - option_id
+        - text
+        - vote_count
+      properties:
+        option_id:
+          type: integer
+          description: Option ID
+        text:
+          type: string
+          description: Option text
+        vote_count:
+          type: integer
+          description: Number of votes for this option
 
   responses:
     Unauthorized:
