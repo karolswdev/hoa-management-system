@@ -2,6 +2,32 @@
 
 ## Database Schema (Visual Reference)
 
+### Canonical ERD (Mermaid)
+
+The authoritative Entity Relationship Diagram is maintained in Mermaid format and includes all current and planned entities for the board governance module:
+
+**Source:** [`../diagrams/board-data-erd.mmd`](../diagrams/board-data-erd.mmd)
+**Visual:** [`../diagrams/board-data-erd.svg`](../diagrams/board-data-erd.svg)
+
+![Board Governance ERD](../diagrams/board-data-erd.svg)
+
+#### Update Cadence
+
+The ERD should be regenerated whenever database migrations are added or modified:
+
+1. Edit the Mermaid source: `docs/diagrams/board-data-erd.mmd`
+2. Regenerate the SVG:
+   ```bash
+   cd docs/diagrams
+   mmdc -i board-data-erd.mmd -o board-data-erd.svg -t neutral -b transparent --puppeteerConfigFile <(echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}')
+   ```
+3. Verify entity names, column names, and foreign key relationships match the migration files
+4. Commit both `.mmd` and `.svg` files together
+
+**Note:** The Puppeteer `--no-sandbox` flags are required for Ubuntu 23.10+ due to AppArmor restrictions.
+
+### Text-Based Schema (Legacy Reference)
+
 ```
 ┌─────────────────────────┐
 │     board_titles        │
