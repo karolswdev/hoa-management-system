@@ -417,6 +417,16 @@ class ApiService {
   async deleteVendor(id: number): Promise<void> {
     await this.api.delete(`/vendors/${id}`);
   }
+
+  async moderateVendor(id: number, moderation_state: 'pending' | 'approved' | 'denied'): Promise<Vendor> {
+    const response: AxiosResponse<{ message: string; vendor: Vendor }> = await this.api.patch(`/vendors/${id}/moderate`, { moderation_state });
+    return response.data.vendor;
+  }
+
+  async getVendorStats(): Promise<{ stats: { byModerationState: Array<{ state: string; count: number }>; byCategory: Array<{ category: string; count: number }> } }> {
+    const response = await this.api.get('/vendors/stats');
+    return response.data;
+  }
 }
 
 export const apiService = new ApiService();

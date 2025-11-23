@@ -44,6 +44,7 @@ import BoardPage from './pages/BoardPage';
 import PollsPage from './pages/Polls';
 import PollDetailPage from './pages/PollDetail';
 import PollReceiptPage from './pages/PollReceipt';
+import Vendors from './pages/Vendors';
 
 // Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -53,6 +54,7 @@ import AdminEventsPage from './pages/admin/AdminEventsPage';
 import AdminDocumentsPage from './pages/admin/AdminDocumentsPage';
 import AdminConfigPage from './pages/admin/AdminConfigPage';
 import AdminAuditPage from './pages/admin/AdminAuditPage';
+import VendorManagement from './pages/admin/VendorManagement';
 
 const App: React.FC = () => {
   return (
@@ -147,6 +149,7 @@ const App: React.FC = () => {
                 <Route path="board" element={<BoardPage />} />
                 <Route path="polls" element={<PollsPage />} />
                 <Route path="polls/:id" element={<PollDetailPage />} />
+                <Route path="vendors" element={<Vendors />} />
                 <Route path="profile" element={<ProfilePage />} />
 
                 {/* Admin Routes */}
@@ -211,6 +214,14 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute requireAdmin>
                       <AdminAuditPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/vendors"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <VendorManagement />
                     </ProtectedRoute>
                   }
                 />

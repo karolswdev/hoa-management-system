@@ -5,6 +5,7 @@ const auditService = require('./audit.service');
 const { JSDOM } = require('jsdom');
 const DOMPurify = require('dompurify');
 const logger = require('../config/logger');
+const vendorMetrics = require('../metrics/vendorMetrics');
 
 const window = new JSDOM('').window;
 const purify = DOMPurify(window);
@@ -270,6 +271,9 @@ const createVendor = async (vendorData, userId, userRole = 'member') => {
     moderationState
   });
 
+  // Record metrics
+  vendorMetrics.recordSubmission(userRole);
+
   // Log admin action if admin created with approval
   if (userRole === 'admin') {
     try {
@@ -283,6 +287,9 @@ const createVendor = async (vendorData, userId, userRole = 'member') => {
       logger.error('Failed to log vendor creation audit', { error: auditError.message });
     }
   }
+
+  // Update state gauges
+  await updateStateGauges();
 
   return vendor.toJSON();
 };
@@ -332,6 +339,9 @@ const updateVendor = async (vendorId, updates, adminUserId) => {
     updates: Object.keys(filteredUpdates)
   });
 
+  // Record metrics
+  vendorMetrics.recordUpdate('general');
+
   // Log admin action
   try {
     await auditService.logAdminAction(adminUserId, 'vendor_update', {
@@ -340,6 +350,11 @@ const updateVendor = async (vendorId, updates, adminUserId) => {
     });
   } catch (auditError) {
     logger.error('Failed to log vendor update audit', { error: auditError.message });
+  }
+
+  // Update state gauges if moderation state changed
+  if (filteredUpdates.moderation_state) {
+    await updateStateGauges();
   }
 
   return vendor.toJSON();
@@ -366,6 +381,9 @@ const deleteVendor = async (vendorId, adminUserId) => {
     adminUserId
   });
 
+  // Record metrics
+  vendorMetrics.recordDeletion();
+
   // Log admin action
   try {
     await auditService.logAdminAction(adminUserId, 'vendor_delete', {
@@ -376,6 +394,9 @@ const deleteVendor = async (vendorId, adminUserId) => {
   } catch (auditError) {
     logger.error('Failed to log vendor deletion audit', { error: auditError.message });
   }
+
+  // Update state gauges
+  await updateStateGauges();
 };
 
 /**
@@ -406,6 +427,10 @@ const updateModerationState = async (vendorId, moderationState, adminUserId) => 
     newState: moderationState
   });
 
+  // Record metrics
+  const action = moderationState === 'approved' ? 'approve' : moderationState === 'denied' ? 'deny' : 'revert';
+  vendorMetrics.recordModeration(action, oldState, moderationState);
+
   // Log admin action
   try {
     await auditService.logAdminAction(adminUserId, 'vendor_moderation', {
@@ -418,7 +443,37 @@ const updateModerationState = async (vendorId, moderationState, adminUserId) => 
     logger.error('Failed to log vendor moderation audit', { error: auditError.message });
   }
 
+  // Update state gauges
+  await updateStateGauges();
+
   return vendor.toJSON();
+};
+
+/**
+ * Update Prometheus gauge metrics for vendor states
+ * Internal helper to sync gauges after state changes
+ */
+const updateStateGauges = async () => {
+  try {
+    const stats = await Vendor.findAll({
+      attributes: [
+        'moderation_state',
+        [Vendor.sequelize.fn('COUNT', Vendor.sequelize.col('id')), 'count']
+      ],
+      group: ['moderation_state']
+    });
+
+    const counts = { pending: 0, approved: 0, denied: 0 };
+    stats.forEach(s => {
+      const state = s.moderation_state;
+      const count = parseInt(s.getDataValue('count'), 10);
+      counts[state] = count;
+    });
+
+    vendorMetrics.updateVendorStateGauges(counts);
+  } catch (error) {
+    logger.error('Failed to update vendor state gauges', { error: error.message });
+  }
 };
 
 /**
@@ -444,15 +499,26 @@ const getVendorStats = async () => {
     order: [[Vendor.sequelize.fn('COUNT', Vendor.sequelize.col('id')), 'DESC']]
   });
 
+  const statsByState = stats.map(s => ({
+    state: s.moderation_state,
+    count: parseInt(s.getDataValue('count'), 10)
+  }));
+
+  const statsByCategory = categoryStats.map(s => ({
+    category: s.service_category,
+    count: parseInt(s.getDataValue('count'), 10)
+  }));
+
+  // Update gauges while we're at it
+  const counts = { pending: 0, approved: 0, denied: 0 };
+  statsByState.forEach(s => {
+    counts[s.state] = s.count;
+  });
+  vendorMetrics.updateVendorStateGauges(counts);
+
   return {
-    byModerationState: stats.map(s => ({
-      state: s.moderation_state,
-      count: parseInt(s.getDataValue('count'), 10)
-    })),
-    byCategory: categoryStats.map(s => ({
-      category: s.service_category,
-      count: parseInt(s.getDataValue('count'), 10)
-    }))
+    byModerationState: statsByState,
+    byCategory: statsByCategory
   };
 };
 

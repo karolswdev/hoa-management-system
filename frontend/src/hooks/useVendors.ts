@@ -198,3 +198,61 @@ export function useVendorsData(filters?: VendorFilter) {
     invalidateVendors,
   };
 }
+
+/**
+ * Hook to moderate vendor (update moderation state) - admin only
+ *
+ * Features:
+ * - Dedicated endpoint for moderation workflow
+ * - Invalidates both detail and list caches
+ * - Triggers metrics recording on backend
+ *
+ * @example
+ * ```tsx
+ * const { mutate: moderate } = useModerateVendor();
+ * moderate({ id: 123, moderation_state: 'approved' });
+ * ```
+ */
+export function useModerateVendor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, moderation_state }: { id: number; moderation_state: 'pending' | 'approved' | 'denied' }) =>
+      apiService.moderateVendor(id, moderation_state),
+    onSuccess: (vendor, variables) => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
+      // Also invalidate stats
+      queryClient.invalidateQueries({ queryKey: ['vendor-stats'] });
+    },
+  });
+}
+
+/**
+ * Hook to get vendor statistics (admin only)
+ *
+ * Features:
+ * - Provides counts by moderation state
+ * - Provides counts by category
+ * - 30-second stale time for dashboard display
+ *
+ * @example
+ * ```tsx
+ * const { stats, isLoading } = useVendorStats();
+ * ```
+ */
+export function useVendorStats() {
+  const query = useQuery({
+    queryKey: ['vendor-stats'] as const,
+    queryFn: () => apiService.getVendorStats(),
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+    retry: 2,
+  });
+
+  return {
+    ...query,
+    stats: query.data?.stats,
+    isLoading: query.isLoading,
+  };
+}
