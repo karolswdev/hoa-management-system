@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Card,
-  CardContent,
   TextField,
   Button,
   Typography,
@@ -31,7 +29,7 @@ const validationSchema = Yup.object({
   password: Yup.string()
     .min(8, 'Password must be at least 8 characters long')
     .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).*$/,
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).*$/,
       'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character'
     )
     .required('Password is required'),
@@ -54,7 +52,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       // Remove confirmPassword before sending to API
-      const { confirmPassword, captchaToken, ...registerData } = values;
+      const { captchaToken, ...registerData } = values;
       const payload: any = { ...registerData };
       if (captchaToken) payload.captchaToken = captchaToken;
       await register(payload);

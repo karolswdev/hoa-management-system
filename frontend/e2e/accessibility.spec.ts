@@ -149,7 +149,9 @@ test.describe('Accessibility Features', () => {
       });
 
       // Touch targets should increase or stay the same
-      expect(typeof newHeight === 'string' || typeof newHeight === 'number').toBeTruthy();
+      const initialNumeric = typeof initialHeight === 'string' ? parseFloat(initialHeight) : Number(initialHeight);
+      const newNumeric = typeof newHeight === 'string' ? parseFloat(newHeight) : Number(newHeight);
+      expect(newNumeric).toBeGreaterThanOrEqual(initialNumeric);
     });
 
     test('should enhance contrast in high-vis mode', async ({ page }) => {

@@ -5,14 +5,12 @@ import {
   Tabs,
   Tab,
   Button,
-  Chip,
   Alert,
   CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   useTheme,
 } from '@mui/material';
 import {
@@ -23,10 +21,9 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
-import { useVendors, useVendorStats, useModerateVendor, useUpdateVendor, useDeleteVendor } from '../../hooks/useVendors';
+import { useVendors, useVendorStats, useModerateVendor, useDeleteVendor } from '../../hooks/useVendors';
 import VendorAdminTable from '../../components/Vendors/VendorAdminTable';
 import VendorAuditLog from '../../components/Vendors/VendorAuditLog';
-import type { Vendor } from '../../types/api';
 
 /**
  * Admin Vendor Management Page
@@ -79,7 +76,6 @@ const VendorManagement: React.FC = () => {
 
   // Mutations
   const moderateVendor = useModerateVendor();
-  const updateVendor = useUpdateVendor();
   const deleteVendor = useDeleteVendor();
 
   // Accessibility spacing

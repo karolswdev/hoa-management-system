@@ -44,7 +44,7 @@ test.describe('Vendor Directory', () => {
 
       // Guests should not see contact buttons or full contact info
       const hasContactInfo = await page.getByRole('button', { name: /contact|email|phone/i }).count();
-      // Contact info should be hidden or minimal for guests
+      expect(hasContactInfo).toBe(0);
     });
 
     test('should not show vendor submission button to guests', async ({ page }) => {
@@ -320,7 +320,7 @@ test.describe('Vendor Directory', () => {
 
       // Admins should see all approved vendors
       const vendorCount = await page.locator('[data-testid="vendor-card"], [data-testid="vendor-item"]').count();
-      // Admin should see more vendors than guests
+      expect(vendorCount).toBeGreaterThan(0);
     });
   });
 

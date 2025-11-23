@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -60,7 +60,7 @@ const AdminUsersPage: React.FC = () => {
   const [newRole, setNewRole] = useState<'admin' | 'member'>('member');
 
   // Load users data
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -94,17 +94,20 @@ const AdminUsersPage: React.FC = () => {
       
       setUsers(filteredUsers);
       setTotalUsers(filteredUsers.length);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load users');
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to load users';
+      setError(message);
       enqueueSnackbar('Failed to load users', { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, searchTerm, statusFilter, roleFilter, enqueueSnackbar]);
 
   useEffect(() => {
     loadUsers();
-  }, [currentPage, searchTerm, statusFilter, roleFilter]);
+  }, [loadUsers]);
 
   // Handle user status update
   const handleUpdateStatus = async () => {
@@ -118,8 +121,11 @@ const AdminUsersPage: React.FC = () => {
       setStatusModalOpen(false);
       setSelectedUser(null);
       loadUsers();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update user status', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to update user status';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 
@@ -135,8 +141,11 @@ const AdminUsersPage: React.FC = () => {
       setRoleModalOpen(false);
       setSelectedUser(null);
       loadUsers();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update user role', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to update user role';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 
@@ -151,8 +160,11 @@ const AdminUsersPage: React.FC = () => {
       setDeleteModalOpen(false);
       setSelectedUser(null);
       loadUsers();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to delete user', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to delete user';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 

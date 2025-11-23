@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Typography,
   Box,
@@ -24,7 +24,7 @@ const AnnouncementsPage: React.FC = () => {
 
   const itemsPerPage = 10;
 
-  const fetchAnnouncements = async (page: number = 1) => {
+  const fetchAnnouncements = useCallback(async (page: number = 1) => {
     setLoading(true);
     setError('');
     
@@ -41,20 +41,21 @@ const AnnouncementsPage: React.FC = () => {
       setTotalCount(response.pagination.totalItems);
       setTotalPages(response.pagination.totalPages);
       setCurrentPage(page);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 
-                          err.response?.data?.message || 
-                          'Failed to load announcements. Please try again.';
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { error?: string; message?: string } } }).response?.data?.error ||
+        (err as { response?: { data?: { error?: string; message?: string } } }).response?.data?.message ||
+        'Failed to load announcements. Please try again.';
       setError(errorMessage);
       showError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemsPerPage, showError]);
 
   useEffect(() => {
     fetchAnnouncements(1);
-  }, []);
+  }, [fetchAnnouncements]);
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     fetchAnnouncements(page);

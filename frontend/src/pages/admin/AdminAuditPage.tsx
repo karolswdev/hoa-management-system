@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -62,7 +62,7 @@ const AdminAuditPage: React.FC = () => {
   ];
 
   // Load audit logs data
-  const loadAuditLogs = async () => {
+  const loadAuditLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -91,17 +91,20 @@ const AdminAuditPage: React.FC = () => {
       
       setAuditLogs(filteredLogs);
       setTotalItems(response.pagination.totalItems);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load audit logs');
-      enqueueSnackbar('Failed to load audit logs', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to load audit logs';
+      setError(message);
+      enqueueSnackbar(message, { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [actionFilter, currentPage, itemsPerPage, searchTerm, enqueueSnackbar]);
 
   useEffect(() => {
     loadAuditLogs();
-  }, [currentPage, searchTerm, actionFilter]);
+  }, [loadAuditLogs]);
 
   // Format JSON details for display
   const formatDetails = (details: object): string => {
@@ -172,7 +175,7 @@ const AdminAuditPage: React.FC = () => {
     {
       id: 'details',
       label: 'Details',
-      render: (value: object, log: AuditLog) => {
+      render: (value: object) => {
         const detailsStr = formatDetails(value);
         const preview = detailsStr.length > 100 ? `${detailsStr.substring(0, 100)}...` : detailsStr;
         

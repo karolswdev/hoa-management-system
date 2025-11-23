@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -15,7 +15,6 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Event as EventIcon,
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -57,7 +56,7 @@ const AdminEventsPage: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Load events data
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -71,17 +70,20 @@ const AdminEventsPage: React.FC = () => {
       
       setEvents(response.data);
       setTotalItems(response.pagination.totalItems);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load events');
-      enqueueSnackbar('Failed to load events', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to load events';
+      setError(message);
+      enqueueSnackbar(message, { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, sortColumn, sortDirection, enqueueSnackbar]);
 
   useEffect(() => {
     loadEvents();
-  }, [currentPage, sortColumn, sortDirection]);
+  }, [loadEvents]);
 
   // Handle sorting
   const handleSort = (column: string, direction: 'asc' | 'desc') => {
@@ -143,8 +145,11 @@ const AdminEventsPage: React.FC = () => {
       setCreateModalOpen(false);
       resetForm();
       loadEvents();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to create event', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to create event';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 
@@ -168,8 +173,11 @@ const AdminEventsPage: React.FC = () => {
       setSelectedEvent(null);
       resetForm();
       loadEvents();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update event', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to update event';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 
@@ -184,8 +192,11 @@ const AdminEventsPage: React.FC = () => {
       setDeleteModalOpen(false);
       setSelectedEvent(null);
       loadEvents();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to delete event', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to delete event';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 

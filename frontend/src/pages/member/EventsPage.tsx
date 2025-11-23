@@ -120,10 +120,6 @@ const EventsPage: React.FC = () => {
     return `${formatDate(startDate)} - ${formatDate(endDate)}`;
   };
 
-  const isEventPast = (endDate: string) => {
-    return new Date(endDate) < new Date();
-  };
-
   if (loading) {
     return (
       <Box>
