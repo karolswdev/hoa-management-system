@@ -1,0 +1,1063 @@
+openapi: 3.0.3
+info:
+  title: HOA Management System API
+  description: |
+    REST API for the Sanderson Creek HOA Management System.
+
+    ## Board Governance Features
+
+    The board governance module provides:
+    - Public/member access to current board roster (controlled by `board.visibility` feature flag)
+    - Members-only access to historical board composition (controlled by `board.history-visibility` feature flag)
+    - Public contact form with CAPTCHA and rate limiting
+    - Admin CRUD operations for board titles and member assignments
+
+    ## Feature Flags
+
+    - **board.visibility**: Controls roster exposure (`public` or `members-only`, 60s cache TTL)
+    - **board.history-visibility**: Controls history access (`public` or `members-only`, 60s cache TTL)
+
+    ## Rate Limiting
+
+    - Default: 100 requests per 15 minutes per IP
+    - Board Contact: 3 requests per hour per IP+email combination
+    - Rate limit responses include `RateLimit-*` headers and return HTTP 429 with JSON error
+
+    ## Authentication
+
+    Admin endpoints require JWT Bearer token authentication with admin role.
+    Some endpoints support optional authentication to adjust visibility.
+  version: 1.0.0
+  contact:
+    name: HOA Management System Support
+    email: support@sandersoncreekhoa.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3001/api
+    description: Development server
+  - url: https://api.sandersoncreekhoa.com/api
+    description: Production server
+
+tags:
+  - name: Board
+    description: Board governance endpoints for roster, history, and contact
+  - name: Board Admin
+    description: Administrative endpoints for managing board members and titles
+
+paths:
+  /board:
+    get:
+      tags:
+        - Board
+      summary: Get current board roster
+      description: |
+        Returns the current board roster based on the `board.visibility` feature flag.
+
+        - If `board.visibility` is `public`, returns roster to all users
+        - If `board.visibility` is `members-only`, returns roster only to authenticated members
+        - Unauthenticated users receive empty roster when visibility is members-only
+
+        Results are sorted by board title rank (ascending).
+      operationId: getCurrentRoster
+      security:
+        - {}
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Board roster retrieved successfully
+          headers:
+            RateLimit-Limit:
+              schema:
+                type: integer
+              description: Maximum requests per window
+            RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Remaining requests in current window
+            RateLimit-Reset:
+              schema:
+                type: integer
+              description: Time when rate limit resets (Unix timestamp)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - roster
+                  - count
+                properties:
+                  roster:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RosterMember'
+                  count:
+                    type: integer
+                    description: Number of roster members returned
+              examples:
+                public:
+                  summary: Public roster response
+                  value:
+                    roster:
+                      - id: 1
+                        user:
+                          id: 10
+                          name: "Jane Smith"
+                          email: "jane@example.com"
+                        title:
+                          id: 1
+                          title: "President"
+                          rank: 1
+                        start_date: "2024-01-01"
+                        bio: "Community leader with 5 years of HOA experience"
+                        created_at: "2024-01-01T00:00:00.000Z"
+                      - id: 2
+                        user:
+                          id: 15
+                          name: "John Doe"
+                          email: "john@example.com"
+                        title:
+                          id: 2
+                          title: "Vice President"
+                          rank: 2
+                        start_date: "2024-01-01"
+                        bio: null
+                        created_at: "2024-01-01T00:00:00.000Z"
+                    count: 2
+                membersOnly:
+                  summary: Empty response for guests when members-only
+                  value:
+                    roster: []
+                    count: 0
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /board/history:
+    get:
+      tags:
+        - Board
+      summary: Get board history
+      description: |
+        Returns historical board members (past board members with end dates).
+
+        - Controlled by `board.history-visibility` feature flag
+        - If flag is `members-only` and user is not authenticated, returns HTTP 403
+        - Results sorted by end_date descending, then by title rank ascending
+      operationId: getBoardHistory
+      security:
+        - {}
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Board history retrieved successfully
+          headers:
+            RateLimit-Limit:
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              schema:
+                type: integer
+            RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - history
+                  - count
+                properties:
+                  history:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HistoricalMember'
+                  count:
+                    type: integer
+                    description: Number of historical members returned
+              examples:
+                success:
+                  summary: Historical board members
+                  value:
+                    history:
+                      - id: 3
+                        user:
+                          id: 8
+                          name: "Alice Johnson"
+                          email: "alice@example.com"
+                        title:
+                          id: 1
+                          title: "President"
+                          rank: 1
+                        start_date: "2022-01-01"
+                        end_date: "2023-12-31"
+                        bio: "Former president"
+                        created_at: "2022-01-01T00:00:00.000Z"
+                    count: 1
+        '403':
+          description: Forbidden - History is members-only and user is not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Board history is only available to authenticated members"
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /board/contact:
+    post:
+      tags:
+        - Board
+      summary: Submit contact request to board
+      description: |
+        Public endpoint for submitting contact requests to the board.
+
+        **Security Requirements:**
+        - Cloudflare Turnstile CAPTCHA validation required
+        - Rate limited to 3 requests per hour per IP+email combination
+
+        **Workflow:**
+        1. Validates required fields and CAPTCHA token
+        2. Sanitizes subject and message (strips HTML tags)
+        3. Creates ContactRequest record with `pending` status
+        4. Retrieves current board member emails
+        5. Sends email to all board members via SendGrid
+        6. Updates ContactRequest status to `sent` or `failed`
+
+        **Error Handling:**
+        - Returns 503 if no board members are available
+        - Returns 502 if SendGrid fails to send email
+        - Returns 429 if rate limit exceeded
+        - Returns 400 if CAPTCHA validation fails or required fields missing
+      operationId: submitContactRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactRequest'
+            examples:
+              valid:
+                summary: Valid contact request
+                value:
+                  requestor_email: "resident@example.com"
+                  subject: "Question about pool hours"
+                  message: "What are the updated pool hours for summer?"
+                  captcha_token: "0.abc123..."
+                  captchaToken: "0.abc123..."
+      responses:
+        '201':
+          description: Contact request submitted successfully
+          headers:
+            RateLimit-Limit:
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              schema:
+                type: integer
+            RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+              example:
+                message: "Contact request submitted successfully"
+                id: 42
+                status: "sent"
+                submitted_at: "2025-01-11T12:00:00.000Z"
+        '400':
+          description: Bad request - Missing required fields or CAPTCHA validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    message: "Missing required fields: requestor_email, subject, message"
+                captchaFailed:
+                  summary: CAPTCHA validation failed
+                  value:
+                    message: "Captcha verification failed."
+                captchaMissing:
+                  summary: CAPTCHA token missing
+                  value:
+                    message: "Captcha token is required."
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '502':
+          description: Bad Gateway - SendGrid email delivery failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Failed to send contact request to board members"
+        '503':
+          description: Service Unavailable - No board members available to receive message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Unable to process contact request at this time"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /board/titles:
+    get:
+      tags:
+        - Board
+      summary: Get all board titles
+      description: |
+        Public endpoint returning all available board titles.
+        Results sorted by rank (ascending).
+      operationId: getAllBoardTitles
+      responses:
+        '200':
+          description: Board titles retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - titles
+                  - count
+                properties:
+                  titles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BoardTitle'
+                  count:
+                    type: integer
+              example:
+                titles:
+                  - id: 1
+                    title: "President"
+                    rank: 1
+                    description: null
+                  - id: 2
+                    title: "Vice President"
+                    rank: 2
+                    description: null
+                  - id: 3
+                    title: "Treasurer"
+                    rank: 3
+                    description: null
+                count: 3
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Board Admin
+      summary: Create board title
+      description: |
+        Admin-only endpoint to create a new board title.
+
+        **Validation:**
+        - Title must be unique
+        - Rank must be provided
+
+        **Constraints:**
+        - Returns 409 if title already exists
+      operationId: createBoardTitle
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardTitleInput'
+            example:
+              title: "Secretary"
+              rank: 4
+      responses:
+        '201':
+          description: Board title created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - boardTitle
+                properties:
+                  message:
+                    type: string
+                  boardTitle:
+                    $ref: '#/components/schemas/BoardTitle'
+              example:
+                message: "Board title created successfully"
+                boardTitle:
+                  id: 4
+                  title: "Secretary"
+                  rank: 4
+                  description: null
+        '400':
+          description: Bad request - Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Missing required fields: title, rank"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Conflict - Board title already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Board title already exists"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /board/titles/{id}:
+    put:
+      tags:
+        - Board Admin
+      summary: Update board title
+      description: |
+        Admin-only endpoint to update an existing board title.
+
+        **Allowed Updates:**
+        - title
+        - rank
+
+        All other fields are filtered out.
+      operationId: updateBoardTitle
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Board title ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                rank:
+                  type: integer
+            example:
+              title: "Chief Secretary"
+              rank: 4
+      responses:
+        '200':
+          description: Board title updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - boardTitle
+                properties:
+                  message:
+                    type: string
+                  boardTitle:
+                    $ref: '#/components/schemas/BoardTitle'
+              example:
+                message: "Board title updated successfully"
+                boardTitle:
+                  id: 4
+                  title: "Chief Secretary"
+                  rank: 4
+                  description: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Board title not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Board title not found"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Board Admin
+      summary: Delete board title
+      description: |
+        Admin-only endpoint to delete a board title.
+
+        **Constraints:**
+        - Cannot delete title if any members (active or historical) are assigned to it
+        - Returns 409 if constraint violated
+      operationId: deleteBoardTitle
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Board title ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Board title deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Board title deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Board title not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Board title not found"
+        '409':
+          description: Conflict - Cannot delete title with assigned members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Cannot delete board title with active or historical members"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /board/members:
+    post:
+      tags:
+        - Board Admin
+      summary: Create board member
+      description: |
+        Admin-only endpoint to assign a user to a board position.
+
+        **Validation:**
+        - User cannot have more than one active board position
+        - Returns 409 if user already has an active position
+
+        **Behavior:**
+        - Sets end_date to null (active position)
+        - Bio is optional
+      operationId: createBoardMember
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardMemberInput'
+            example:
+              user_id: 10
+              title_id: 1
+              start_date: "2024-01-01"
+              bio: "Experienced community leader"
+      responses:
+        '201':
+          description: Board member created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - boardMember
+                properties:
+                  message:
+                    type: string
+                  boardMember:
+                    $ref: '#/components/schemas/BoardMember'
+              example:
+                message: "Board member created successfully"
+                boardMember:
+                  id: 5
+                  user_id: 10
+                  title_id: 1
+                  start_date: "2024-01-01"
+                  end_date: null
+                  bio: "Experienced community leader"
+                  created_at: "2024-01-11T12:00:00.000Z"
+        '400':
+          description: Bad request - Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Missing required fields: user_id, title_id, start_date"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Conflict - User already has an active board position
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "User already has an active board position"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /board/members/{id}:
+    put:
+      tags:
+        - Board Admin
+      summary: Update board member
+      description: |
+        Admin-only endpoint to update board member details.
+
+        **Allowed Updates:**
+        - title_id (change position)
+        - start_date
+        - end_date (set to mark position as ended)
+        - bio
+
+        All other fields are filtered out.
+        User ID cannot be changed after creation.
+      operationId: updateBoardMember
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Board member ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title_id:
+                  type: integer
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                  nullable: true
+                bio:
+                  type: string
+                  nullable: true
+            example:
+              end_date: "2024-12-31"
+              bio: "Completed term with distinction"
+      responses:
+        '200':
+          description: Board member updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - boardMember
+                properties:
+                  message:
+                    type: string
+                  boardMember:
+                    $ref: '#/components/schemas/BoardMember'
+              example:
+                message: "Board member updated successfully"
+                boardMember:
+                  id: 5
+                  user_id: 10
+                  title_id: 1
+                  start_date: "2024-01-01"
+                  end_date: "2024-12-31"
+                  bio: "Completed term with distinction"
+                  created_at: "2024-01-11T12:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Board member not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Board member not found"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Board Admin
+      summary: Delete board member
+      description: |
+        Admin-only endpoint to permanently delete a board member record.
+
+        **Use Cases:**
+        - Correcting data entry errors
+        - Removing duplicate records
+
+        **Note:** For ending a board term, use PUT to set end_date instead.
+      operationId: deleteBoardMember
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Board member ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Board member deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Board member deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Board member not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Board member not found"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from authentication endpoints.
+        Admin role required for administrative operations.
+
+  schemas:
+    RosterMember:
+      type: object
+      required:
+        - id
+        - user
+        - title
+        - start_date
+        - created_at
+      properties:
+        id:
+          type: integer
+          description: Board member record ID
+        user:
+          type: object
+          required:
+            - id
+            - name
+            - email
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+        title:
+          type: object
+          required:
+            - id
+            - title
+            - rank
+          properties:
+            id:
+              type: integer
+            title:
+              type: string
+            rank:
+              type: integer
+        start_date:
+          type: string
+          format: date
+          description: Date the member assumed this position
+        bio:
+          type: string
+          nullable: true
+          description: Optional biography or description
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when record was created
+
+    HistoricalMember:
+      type: object
+      required:
+        - id
+        - user
+        - title
+        - start_date
+        - end_date
+        - created_at
+      properties:
+        id:
+          type: integer
+        user:
+          type: object
+          required:
+            - id
+            - name
+            - email
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+        title:
+          type: object
+          required:
+            - id
+            - title
+            - rank
+          properties:
+            id:
+              type: integer
+            title:
+              type: string
+            rank:
+              type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          description: Date the member's term ended
+        bio:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ContactRequest:
+      type: object
+      required:
+        - requestor_email
+        - subject
+        - message
+        - captcha_token
+        - captchaToken
+      properties:
+        requestor_email:
+          type: string
+          format: email
+          description: Email address of the person contacting the board
+        subject:
+          type: string
+          description: Subject line (will be sanitized to strip HTML)
+        message:
+          type: string
+          description: Message body (will be sanitized to strip HTML)
+        captcha_token:
+          type: string
+          description: Cloudflare Turnstile CAPTCHA token (stored with request)
+        captchaToken:
+          type: string
+          description: Cloudflare Turnstile CAPTCHA token (for verification middleware)
+
+    ContactResponse:
+      type: object
+      required:
+        - message
+        - id
+        - status
+        - submitted_at
+      properties:
+        message:
+          type: string
+          example: "Contact request submitted successfully"
+        id:
+          type: integer
+          description: ContactRequest record ID
+        status:
+          type: string
+          enum: [pending, sent, failed]
+          description: Status of the contact request
+        submitted_at:
+          type: string
+          format: date-time
+          description: Timestamp when request was submitted
+
+    BoardTitle:
+      type: object
+      required:
+        - id
+        - title
+        - rank
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          description: Title name (e.g., "President", "Vice President")
+        rank:
+          type: integer
+          description: Sort order for display (lower numbers first)
+        description:
+          type: string
+          nullable: true
+          description: Optional description of the title
+
+    BoardTitleInput:
+      type: object
+      required:
+        - title
+        - rank
+      properties:
+        title:
+          type: string
+        rank:
+          type: integer
+
+    BoardMember:
+      type: object
+      required:
+        - id
+        - user_id
+        - title_id
+        - start_date
+        - created_at
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+          description: Reference to User record
+        title_id:
+          type: integer
+          description: Reference to BoardTitle record
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          description: Null for active positions, set to mark term as ended
+        bio:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    BoardMemberInput:
+      type: object
+      required:
+        - user_id
+        - title_id
+        - start_date
+      properties:
+        user_id:
+          type: integer
+        title_id:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        bio:
+          type: string
+          nullable: true
+
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error message
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Unauthorized"
+
+    RateLimitExceeded:
+      description: Too Many Requests - Rate limit exceeded
+      headers:
+        RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window (will be 0)
+        RateLimit-Reset:
+          schema:
+            type: integer
+          description: Time when rate limit resets (Unix timestamp)
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Too many requests from this IP, please try again later."
+
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Internal server error"

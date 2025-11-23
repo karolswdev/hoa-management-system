@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - Production Readiness Improvements
 
+#### Board Governance Module
+- **Board Roster Endpoint** (`GET /api/board`):
+  - Public/member access to current board roster based on `board.visibility` feature flag
+  - Returns current members with nested user and title information
+  - Sorted by board title rank (ascending)
+  - Optional authentication support via JWT
+- **Board History Endpoint** (`GET /api/board/history`):
+  - Members-only access to historical board composition
+  - Controlled by `board.history-visibility` feature flag
+  - Returns past members with start/end dates
+  - Returns 403 for unauthorized guests when in members-only mode
+- **Board Contact Form** (`POST /api/board/contact`):
+  - Public contact submission to current board members
+  - Cloudflare Turnstile CAPTCHA validation required
+  - Rate limiting: 3 requests per hour per IP and per email (returns 429 when exceeded)
+  - HTML sanitization on subject and message fields
+  - Email routing to all current board members via SendGrid
+  - Status tracking: pending → sent/failed with audit trail
+  - Error responses: 502 for SendGrid failures, 503 when no board members available
+- **Admin Board Title Management**:
+  - `GET /api/board/titles`: Public endpoint to list all board titles
+  - `POST /api/board/titles`: Admin-only title creation with uniqueness validation
+  - `PUT /api/board/titles/:id`: Admin-only title updates (name and rank)
+  - `DELETE /api/board/titles/:id`: Admin-only deletion with constraint checking (409 if members assigned)
+- **Admin Board Member Management**:
+  - `POST /api/board/members`: Admin-only member assignment with active position validation
+  - `PUT /api/board/members/:id`: Admin-only updates supporting partial changes (title, dates, bio)
+  - `DELETE /api/board/members/:id`: Admin-only permanent deletion for data correction
+- **Feature Flags for Board Governance**:
+  - `board.visibility`: Controls public roster exposure (`public` or `members-only`)
+  - `board.history-visibility`: Controls history access (`public` or `members-only`)
+  - 60-second cache TTL on flag reads for performance
+  - Flag values checked per-request to enforce visibility policies
+- **OpenAPI Documentation** (`api/openapi.yaml`):
+  - Comprehensive REST API specification for all board endpoints
+  - Request/response schemas matching controller DTOs exactly
+  - Security schemes (JWT Bearer auth with optional auth support)
+  - Error response documentation (400, 401, 403, 404, 409, 429, 502, 503, 500)
+  - CAPTCHA requirements and rate limit behavior documented
+  - Feature flag metadata and visibility policy explanations
+  - Example requests and responses for all endpoints
+  - Rate limiting headers and Retry-After guidance
+
 #### Security Enhancements
 - **Global Rate Limiting**: Added express-rate-limit for all API endpoints (100 req/15min default)
 - **Authentication Rate Limiting**:
