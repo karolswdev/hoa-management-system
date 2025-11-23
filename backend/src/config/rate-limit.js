@@ -145,6 +145,28 @@ const uploadLimiter = rateLimit({
   },
 });
 
+// Rate limit for board contact requests (IP + email combination)
+const boardContactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 contact requests per IP + email per hour
+  skipSuccessfulRequests: false,
+  keyGenerator: (req) => {
+    return `${req.ip}-${req.body.requestor_email || 'unknown'}`;
+  },
+  message: {
+    message: 'Too many contact requests. Please try again later.',
+  },
+  handler: (req, res) => {
+    logger.warn('Board contact rate limit exceeded', {
+      ip: req.ip,
+      email: req.body.requestor_email,
+    });
+    res.status(429).json({
+      message: 'Too many contact requests. Please try again later.',
+    });
+  },
+});
+
 module.exports = {
   defaultLimiter,
   authLimiter,
@@ -153,4 +175,5 @@ module.exports = {
   passwordResetLimiter,
   verificationResendLimiter,
   uploadLimiter,
+  boardContactLimiter,
 };
