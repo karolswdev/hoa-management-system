@@ -251,6 +251,306 @@ async function sendPollNotificationEmail({
 }
 
 /**
+ * Send vendor submission alert to admins
+ * @param {Object} params - Vendor submission parameters
+ * @param {number} params.vendorId - Vendor ID
+ * @param {string} params.vendorName - Vendor name
+ * @param {string} params.serviceCategory - Service category
+ * @param {string} params.submitterName - Name of user who submitted
+ * @param {Array<{id: number, email: string, name: string}>} params.adminRecipients - List of admin recipients
+ * @param {string} params.correlationId - Optional correlation ID for audit trail
+ * @returns {Promise<Object>} Result object with success/failure counts
+ */
+async function sendVendorSubmissionAlert({
+  vendorId,
+  vendorName,
+  serviceCategory,
+  submitterName,
+  adminRecipients,
+  correlationId = null
+}) {
+  const transaction = await sequelize.transaction();
+
+  try {
+    // Prepare email content per board tone guidelines
+    const subject = 'New Vendor Submission Requires Review';
+    const html = `
+      <h2>New Vendor Submission</h2>
+      <p>A new vendor has been submitted to our community directory and requires your review.</p>
+
+      <h3>Vendor Details</h3>
+      <p><strong>Business Name:</strong> ${vendorName}</p>
+      <p><strong>Service Category:</strong> ${serviceCategory}</p>
+      <p><strong>Submitted By:</strong> ${submitterName}</p>
+
+      <p>Please log in to the HOA admin panel to review this submission and update its moderation status.</p>
+
+      <hr>
+      <p style="font-size: 12px; color: #666;">
+        This notification was sent in accordance with HOA governance procedures.
+        To manage your notification preferences or for questions, contact the HOA board at ${process.env.EMAIL_FROM || 'board@hoa.example.com'}.
+      </p>
+    `;
+    const text = `New Vendor Submission Requires Review\n\nA new vendor has been submitted to our community directory and requires your review.\n\nVendor Details:\nBusiness Name: ${vendorName}\nService Category: ${serviceCategory}\nSubmitted By: ${submitterName}\n\nPlease log in to the HOA admin panel to review this submission and update its moderation status.\n\n---\nThis notification was sent in accordance with HOA governance procedures. To manage your notification preferences or for questions, contact the HOA board.`;
+
+    const payload = {
+      subject,
+      html,
+      text,
+      recipients: adminRecipients.map(r => r.email),
+      correlationId: correlationId || `vendor-${vendorId}-submission`
+    };
+
+    const payloadHash = computePayloadHash(payload);
+
+    // Create EmailAudit record
+    const emailAudit = await EmailAudit.create({
+      template: 'vendor-submission-alert',
+      recipient_count: adminRecipients.length,
+      request_payload_hash: correlationId || payloadHash,
+      sent_at: new Date(),
+      status: 'pending'
+    }, { transaction });
+
+    let successCount = 0;
+    let failureCount = 0;
+    const results = [];
+
+    // Batch recipients for SendGrid
+    const batches = chunkArray(adminRecipients, BATCH_SIZE);
+
+    for (const batch of batches) {
+      const batchEmails = batch.map(r => r.email);
+
+      try {
+        // Send as BCC batch
+        await sendWithRetry({
+          to: process.env.EMAIL_FROM,
+          bcc: batchEmails,
+          subject,
+          html,
+          text
+        });
+
+        successCount += batch.length;
+
+        // Log individual recipient notifications
+        for (const recipient of batch) {
+          await ResidentNotificationLog.create({
+            user_id: recipient.id,
+            email_audit_id: emailAudit.id,
+            subject,
+            sent_at: new Date(),
+            status: 'sent'
+          }, { transaction });
+        }
+
+        results.push({ batch: batchEmails, status: 'success' });
+      } catch (error) {
+        failureCount += batch.length;
+
+        // Log failures
+        for (const recipient of batch) {
+          await ResidentNotificationLog.create({
+            user_id: recipient.id,
+            email_audit_id: emailAudit.id,
+            subject,
+            sent_at: new Date(),
+            status: 'failed'
+          }, { transaction });
+        }
+
+        results.push({ batch: batchEmails, status: 'failed', error: error.message });
+      }
+    }
+
+    // Update EmailAudit with final status
+    await emailAudit.update({
+      status: failureCount === 0 ? 'sent' : (successCount === 0 ? 'failed' : 'partial')
+    }, { transaction });
+
+    await transaction.commit();
+
+    logger.info('Vendor submission alert completed', {
+      emailAuditId: emailAudit.id,
+      vendorId,
+      successCount,
+      failureCount,
+      totalRecipients: adminRecipients.length,
+      correlationId: correlationId || payloadHash
+    });
+
+    return {
+      emailAuditId: emailAudit.id,
+      successCount,
+      failureCount,
+      totalRecipients: adminRecipients.length,
+      results
+    };
+  } catch (error) {
+    await transaction.rollback();
+    logger.error('Vendor submission alert failed', {
+      error: error.message,
+      stack: error.stack,
+      vendorId,
+      recipients: adminRecipients.length
+    });
+    throw error;
+  }
+}
+
+/**
+ * Send vendor approval broadcast to residents
+ * @param {Object} params - Vendor approval parameters
+ * @param {number} params.vendorId - Vendor ID
+ * @param {string} params.vendorName - Vendor name
+ * @param {string} params.serviceCategory - Service category
+ * @param {string} params.contactInfo - Vendor contact information
+ * @param {Array<{id: number, email: string, name: string}>} params.recipients - List of resident recipients
+ * @param {string} params.correlationId - Optional correlation ID for audit trail
+ * @returns {Promise<Object>} Result object with success/failure counts
+ */
+async function sendVendorApprovalBroadcast({
+  vendorId,
+  vendorName,
+  serviceCategory,
+  contactInfo,
+  recipients,
+  correlationId = null
+}) {
+  const transaction = await sequelize.transaction();
+
+  try {
+    // Prepare email content per board tone guidelines
+    const subject = `New Vendor Approved: ${vendorName}`;
+    const html = `
+      <h2>New Vendor Added to Our Directory</h2>
+      <p>Great news! We've added a new vendor to our community directory.</p>
+
+      <h3>${vendorName}</h3>
+      <p><strong>Service Category:</strong> ${serviceCategory}</p>
+      ${contactInfo ? `<p><strong>Contact:</strong> ${contactInfo}</p>` : ''}
+
+      <p>This vendor has been reviewed and approved by the HOA board. You can view more details and explore other vetted local providers in the vendor directory on our HOA portal.</p>
+
+      <p><strong>Thanks for strengthening our HOA governance!</strong></p>
+
+      <hr>
+      <p style="font-size: 12px; color: #666;">
+        You're receiving this because you're a member of our HOA community.
+        To manage your notification preferences or unsubscribe from vendor announcements, please contact the HOA board at ${process.env.EMAIL_FROM || 'board@hoa.example.com'}
+        or reference Section 4.7 of the HOA bylaws for communication preferences.
+      </p>
+    `;
+    const text = `New Vendor Added to Our Directory\n\nGreat news! We've added a new vendor to our community directory.\n\n${vendorName}\nService Category: ${serviceCategory}\n${contactInfo ? `Contact: ${contactInfo}\n` : ''}\nThis vendor has been reviewed and approved by the HOA board. You can view more details and explore other vetted local providers in the vendor directory on our HOA portal.\n\nThanks for strengthening our HOA governance!\n\n---\nYou're receiving this because you're a member of our HOA community. To manage your notification preferences or unsubscribe from vendor announcements, please contact the HOA board or reference Section 4.7 of the HOA bylaws for communication preferences.`;
+
+    const payload = {
+      subject,
+      html,
+      text,
+      recipients: recipients.map(r => r.email),
+      correlationId: correlationId || `vendor-${vendorId}-approval`
+    };
+
+    const payloadHash = computePayloadHash(payload);
+
+    // Create EmailAudit record
+    const emailAudit = await EmailAudit.create({
+      template: 'vendor-approval-broadcast',
+      recipient_count: recipients.length,
+      request_payload_hash: correlationId || payloadHash,
+      sent_at: new Date(),
+      status: 'pending'
+    }, { transaction });
+
+    let successCount = 0;
+    let failureCount = 0;
+    const results = [];
+
+    // Batch recipients for SendGrid
+    const batches = chunkArray(recipients, BATCH_SIZE);
+
+    for (const batch of batches) {
+      const batchEmails = batch.map(r => r.email);
+
+      try {
+        // Send as BCC batch
+        await sendWithRetry({
+          to: process.env.EMAIL_FROM,
+          bcc: batchEmails,
+          subject,
+          html,
+          text
+        });
+
+        successCount += batch.length;
+
+        // Log individual recipient notifications
+        for (const recipient of batch) {
+          await ResidentNotificationLog.create({
+            user_id: recipient.id,
+            email_audit_id: emailAudit.id,
+            subject,
+            sent_at: new Date(),
+            status: 'sent'
+          }, { transaction });
+        }
+
+        results.push({ batch: batchEmails, status: 'success' });
+      } catch (error) {
+        failureCount += batch.length;
+
+        // Log failures
+        for (const recipient of batch) {
+          await ResidentNotificationLog.create({
+            user_id: recipient.id,
+            email_audit_id: emailAudit.id,
+            subject,
+            sent_at: new Date(),
+            status: 'failed'
+          }, { transaction });
+        }
+
+        results.push({ batch: batchEmails, status: 'failed', error: error.message });
+      }
+    }
+
+    // Update EmailAudit with final status
+    await emailAudit.update({
+      status: failureCount === 0 ? 'sent' : (successCount === 0 ? 'failed' : 'partial')
+    }, { transaction });
+
+    await transaction.commit();
+
+    logger.info('Vendor approval broadcast completed', {
+      emailAuditId: emailAudit.id,
+      vendorId,
+      successCount,
+      failureCount,
+      totalRecipients: recipients.length,
+      correlationId: correlationId || payloadHash
+    });
+
+    return {
+      emailAuditId: emailAudit.id,
+      successCount,
+      failureCount,
+      totalRecipients: recipients.length,
+      results
+    };
+  } catch (error) {
+    await transaction.rollback();
+    logger.error('Vendor approval broadcast failed', {
+      error: error.message,
+      stack: error.stack,
+      vendorId,
+      recipients: recipients.length
+    });
+    throw error;
+  }
+}
+
+/**
  * Send poll receipt email to a single voter
  * @param {Object} params - Receipt parameters
  * @param {number} params.userId - User ID
@@ -365,6 +665,8 @@ module.exports = {
   sendMail, // Legacy function for backward compatibility
   sendPollNotificationEmail,
   sendPollReceiptEmail,
+  sendVendorSubmissionAlert,
+  sendVendorApprovalBroadcast,
   // Export for testing
   computePayloadHash,
   sendWithRetry,

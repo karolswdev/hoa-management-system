@@ -78,6 +78,55 @@ When a user casts a vote and requests a receipt:
    - Audit trail captures delivery status
    - Receipt persisted for verification
 
+### Vendor Submission Alert Flow
+
+When a member submits a vendor for moderation:
+
+1. **VendorDirectoryService** triggers `sendVendorSubmissionAlert()` with:
+   - Vendor metadata (ID, name, service category)
+   - Submitter name
+   - List of admin recipients
+   - Optional correlation ID (e.g., `vendor-{id}-submission`)
+
+2. **EmailNotificationService** executes:
+   - Creates `EmailAudit` record with template `vendor-submission-alert`
+   - Batches admin recipients into groups of 50
+   - Sends each batch via SendGrid BCC
+   - Retries failed batches with exponential backoff (max 2 retries)
+   - Creates `ResidentNotificationLog` entry for each admin
+   - Updates `EmailAudit` status: `sent`, `failed`, or `partial`
+   - Commits transaction
+
+3. **Expected Outcomes**:
+   - All admin users receive vendor submission alert
+   - Email includes vendor details and action required
+   - Audit trail captures send status per admin
+   - Correlation ID links email to vendor submission event
+
+### Vendor Approval Broadcast Flow
+
+When an admin approves a vendor (optional broadcast):
+
+1. **VendorDirectoryService** triggers `sendVendorApprovalBroadcast()` with:
+   - Vendor metadata (ID, name, category, contact info)
+   - List of resident recipients
+   - Optional correlation ID (e.g., `vendor-{id}-approval`)
+
+2. **EmailNotificationService** executes:
+   - Creates `EmailAudit` record with template `vendor-approval-broadcast`
+   - Batches resident recipients into groups of 50
+   - Sends each batch via SendGrid BCC
+   - Retries failed batches with exponential backoff (max 2 retries)
+   - Creates `ResidentNotificationLog` entry for each recipient
+   - Updates `EmailAudit` status: `sent`, `failed`, or `partial`
+   - Commits transaction
+
+3. **Expected Outcomes**:
+   - Residents receive notification of newly approved vendor
+   - Email includes unsubscribe instructions per HOA bylaws
+   - Audit trail captures send status per recipient
+   - Correlation ID links email to vendor approval event
+
 ---
 
 ## Rate Limits & Throttling
@@ -145,6 +194,25 @@ SELECT
 FROM email_audits ea
 LEFT JOIN resident_notification_logs rnl ON rnl.email_audit_id = ea.id
 WHERE ea.template = 'poll-notify'
+  AND ea.sent_at >= datetime('now', '-30 days')
+GROUP BY ea.id
+ORDER BY ea.sent_at DESC
+LIMIT 20;
+```
+
+#### List Recent Vendor Notifications
+```sql
+SELECT
+  ea.id,
+  ea.template,
+  ea.recipient_count,
+  ea.status,
+  ea.request_payload_hash as correlation_id,
+  ea.sent_at,
+  COUNT(rnl.id) as logged_recipients
+FROM email_audits ea
+LEFT JOIN resident_notification_logs rnl ON rnl.email_audit_id = ea.id
+WHERE ea.template IN ('vendor-submission-alert', 'vendor-approval-broadcast')
   AND ea.sent_at >= datetime('now', '-30 days')
 GROUP BY ea.id
 ORDER BY ea.sent_at DESC
@@ -310,6 +378,77 @@ WHERE sent_at < datetime('now', '-90 days');
 **Resolution**:
 - User can retrieve receipt from portal using receipt code
 - Admin can manually re-send via API if needed
+
+---
+
+### Issue: Vendor Submission Alert Not Received
+
+**Symptoms**: Admins report not receiving vendor submission alerts
+
+**Diagnosis Steps**:
+
+1. Check `EmailAudit` for vendor submission alerts:
+   ```sql
+   SELECT * FROM email_audits
+   WHERE template = 'vendor-submission-alert'
+     AND sent_at >= datetime('now', '-1 day')
+   ORDER BY sent_at DESC;
+   ```
+
+2. Check individual admin logs:
+   ```sql
+   SELECT u.email, u.role, rnl.status, rnl.sent_at
+   FROM resident_notification_logs rnl
+   JOIN users u ON u.id = rnl.user_id
+   WHERE rnl.email_audit_id = :audit_id;
+   ```
+
+3. Review application logs:
+   ```bash
+   grep "Vendor submission alert" backend/logs/combined-*.log | tail -50
+   ```
+
+**Common Causes**:
+- No admin users configured in system
+- Admin email addresses invalid or bounced
+- SendGrid API issues
+- Vendor submission code path not triggering notification
+
+**Resolution**:
+- Verify admin users exist: `SELECT * FROM users WHERE role = 'admin';`
+- Manually notify admins of pending submissions
+- Check vendor submission workflow in code
+
+---
+
+### Issue: Vendor Approval Broadcast Not Sent
+
+**Symptoms**: Residents did not receive vendor approval notification
+
+**Diagnosis Steps**:
+
+1. Check if broadcast was triggered:
+   ```sql
+   SELECT * FROM email_audits
+   WHERE template = 'vendor-approval-broadcast'
+     AND sent_at >= datetime('now', '-1 day')
+   ORDER BY sent_at DESC;
+   ```
+
+2. Review vendor approval workflow:
+   ```bash
+   grep "Vendor approval broadcast" backend/logs/combined-*.log
+   ```
+
+**Common Causes**:
+- Broadcast feature disabled or not implemented in approval workflow
+- No resident recipients configured for broadcast
+- Feature flag disabled for vendor notifications
+
+**Resolution**:
+- Verify broadcast is enabled in vendor approval code path
+- Check if resident notification list is configured
+- Review feature flag settings
 
 ---
 
@@ -515,11 +654,27 @@ Monitor delivery stats:
 - **Subject**: `New Poll: {pollTitle}`
 - **Template ID**: `poll-notify`
 - **Fields**: Poll title, description, type, voting period
+- **Recipients**: All members
 
 #### Vote Receipt Template
 - **Subject**: `Vote Receipt: {pollTitle}`
 - **Template ID**: `poll-receipt`
 - **Fields**: Receipt code, vote hash, timestamp, voter name
+- **Recipients**: Individual voter
+
+#### Vendor Submission Alert Template
+- **Subject**: `New Vendor Submission Requires Review`
+- **Template ID**: `vendor-submission-alert`
+- **Fields**: Vendor name, service category, submitter name
+- **Recipients**: Admin users
+- **Compliance**: Includes contact information per HOA governance procedures
+
+#### Vendor Approval Broadcast Template
+- **Subject**: `New Vendor Approved: {vendorName}`
+- **Template ID**: `vendor-approval-broadcast`
+- **Fields**: Vendor name, service category, contact info
+- **Recipients**: Member residents (optional broadcast)
+- **Compliance**: Includes unsubscribe instructions referencing HOA bylaws Section 4.7
 
 ### Database Schema References
 
@@ -555,7 +710,11 @@ CREATE TABLE resident_notification_logs (
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-01-15
+**Document Version**: 1.1
+**Last Updated**: 2025-01-23
 **Maintained By**: Backend Team
 **Review Cycle**: Quarterly
+
+**Changelog**:
+- **v1.1** (2025-01-23): Added vendor notification flows (submission alerts + approval broadcasts) with audit queries, troubleshooting steps, and template documentation
+- **v1.0** (2025-01-15): Initial version with poll notifications and receipt flows

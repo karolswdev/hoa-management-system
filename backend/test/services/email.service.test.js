@@ -497,6 +497,358 @@ describe('Email Service Tests', () => {
     });
   });
 
+  describe('sendVendorSubmissionAlert', () => {
+    let mockTransaction;
+
+    beforeEach(async () => {
+      mockTransaction = {
+        commit: jest.fn().mockResolvedValue(undefined),
+        rollback: jest.fn().mockResolvedValue(undefined),
+        finished: false
+      };
+
+      process.env.EMAIL_PROVIDER = 'sendgrid';
+      process.env.SENDGRID_API_KEY = 'test-key';
+      process.env.EMAIL_FROM = 'admin@example.com';
+
+      mockSend.mockResolvedValue({ messageId: 'test-message-id' });
+      sequelize.transaction.mockResolvedValue(mockTransaction);
+    });
+
+    afterEach(async () => {
+      delete process.env.EMAIL_PROVIDER;
+      delete process.env.SENDGRID_API_KEY;
+      delete process.env.EMAIL_FROM;
+    });
+
+    it('should send vendor submission alert to admins successfully', async () => {
+      const adminRecipients = [
+        { id: 1, email: 'admin1@example.com', name: 'Admin One' },
+        { id: 2, email: 'admin2@example.com', name: 'Admin Two' }
+      ];
+
+      const mockEmailAudit = {
+        id: 1,
+        template: 'vendor-submission-alert',
+        update: jest.fn().mockResolvedValue(true)
+      };
+
+      EmailAudit.create.mockResolvedValue(mockEmailAudit);
+      ResidentNotificationLog.create.mockResolvedValue({});
+
+      const result = await emailService.sendVendorSubmissionAlert({
+        vendorId: 123,
+        vendorName: 'Best Landscaping Co.',
+        serviceCategory: 'Landscaping',
+        submitterName: 'John Doe',
+        adminRecipients,
+        correlationId: 'vendor-123-submission'
+      });
+
+      expect(result.successCount).toBe(2);
+      expect(result.failureCount).toBe(0);
+      expect(result.totalRecipients).toBe(2);
+
+      // Verify EmailAudit was created
+      expect(EmailAudit.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          template: 'vendor-submission-alert',
+          recipient_count: 2,
+          request_payload_hash: 'vendor-123-submission',
+          status: 'pending'
+        }),
+        { transaction: mockTransaction }
+      );
+
+      // Verify email was sent with proper content
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'admin@example.com',
+          bcc: ['admin1@example.com', 'admin2@example.com'],
+          subject: 'New Vendor Submission Requires Review'
+        })
+      );
+
+      // Verify EmailAudit was updated to 'sent'
+      expect(mockEmailAudit.update).toHaveBeenCalledWith(
+        { status: 'sent' },
+        { transaction: mockTransaction }
+      );
+
+      // Verify ResidentNotificationLog entries
+      expect(ResidentNotificationLog.create).toHaveBeenCalledTimes(2);
+
+      expect(mockTransaction.commit).toHaveBeenCalled();
+    });
+
+    it('should handle email send failure gracefully', async () => {
+      const adminRecipients = [
+        { id: 1, email: 'admin@example.com', name: 'Admin' }
+      ];
+
+      const mockEmailAudit = {
+        id: 1,
+        update: jest.fn().mockResolvedValue(true)
+      };
+
+      EmailAudit.create.mockResolvedValue(mockEmailAudit);
+      ResidentNotificationLog.create.mockResolvedValue({});
+
+      mockSend.mockRejectedValue(new Error('SendGrid API error'));
+
+      const result = await emailService.sendVendorSubmissionAlert({
+        vendorId: 123,
+        vendorName: 'Test Vendor',
+        serviceCategory: 'Testing',
+        submitterName: 'User',
+        adminRecipients
+      });
+
+      expect(result.successCount).toBe(0);
+      expect(result.failureCount).toBe(1);
+
+      // Verify status was set to 'failed'
+      expect(mockEmailAudit.update).toHaveBeenCalledWith(
+        { status: 'failed' },
+        { transaction: mockTransaction }
+      );
+
+      // Verify failure was logged
+      expect(ResidentNotificationLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: 1,
+          status: 'failed'
+        }),
+        { transaction: mockTransaction }
+      );
+    });
+
+    it('should rollback transaction on critical error', async () => {
+      const adminRecipients = [
+        { id: 1, email: 'admin@example.com', name: 'Admin' }
+      ];
+
+      EmailAudit.create.mockRejectedValue(new Error('Database error'));
+
+      await expect(
+        emailService.sendVendorSubmissionAlert({
+          vendorId: 123,
+          vendorName: 'Test',
+          serviceCategory: 'Test',
+          submitterName: 'User',
+          adminRecipients
+        })
+      ).rejects.toThrow('Database error');
+
+      expect(mockTransaction.rollback).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledWith(
+        'Vendor submission alert failed',
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe('sendVendorApprovalBroadcast', () => {
+    let mockTransaction;
+
+    beforeEach(async () => {
+      mockTransaction = {
+        commit: jest.fn().mockResolvedValue(undefined),
+        rollback: jest.fn().mockResolvedValue(undefined),
+        finished: false
+      };
+
+      process.env.EMAIL_PROVIDER = 'sendgrid';
+      process.env.SENDGRID_API_KEY = 'test-key';
+      process.env.EMAIL_FROM = 'noreply@example.com';
+
+      mockSend.mockResolvedValue({ messageId: 'test-message-id' });
+      sequelize.transaction.mockResolvedValue(mockTransaction);
+    });
+
+    afterEach(async () => {
+      delete process.env.EMAIL_PROVIDER;
+      delete process.env.SENDGRID_API_KEY;
+      delete process.env.EMAIL_FROM;
+    });
+
+    it('should send vendor approval broadcast to residents successfully', async () => {
+      const recipients = Array.from({ length: 25 }, (_, i) => ({
+        id: i + 1,
+        email: `resident${i + 1}@example.com`,
+        name: `Resident ${i + 1}`
+      }));
+
+      const mockEmailAudit = {
+        id: 1,
+        template: 'vendor-approval-broadcast',
+        update: jest.fn().mockResolvedValue(true)
+      };
+
+      EmailAudit.create.mockResolvedValue(mockEmailAudit);
+      ResidentNotificationLog.create.mockResolvedValue({});
+
+      const result = await emailService.sendVendorApprovalBroadcast({
+        vendorId: 456,
+        vendorName: 'Premium Pool Service',
+        serviceCategory: 'Pool Maintenance',
+        contactInfo: 'info@premiumpool.com',
+        recipients,
+        correlationId: 'vendor-456-approval'
+      });
+
+      expect(result.successCount).toBe(25);
+      expect(result.failureCount).toBe(0);
+      expect(result.totalRecipients).toBe(25);
+
+      // Verify EmailAudit was created
+      expect(EmailAudit.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          template: 'vendor-approval-broadcast',
+          recipient_count: 25,
+          request_payload_hash: 'vendor-456-approval',
+          status: 'pending'
+        }),
+        { transaction: mockTransaction }
+      );
+
+      // Verify email was sent with proper content
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'noreply@example.com',
+          subject: 'New Vendor Approved: Premium Pool Service'
+        })
+      );
+
+      // Verify subject includes vendor name
+      const sendCall = mockSend.mock.calls[0][0];
+      expect(sendCall.html).toContain('Premium Pool Service');
+      expect(sendCall.html).toContain('Pool Maintenance');
+      expect(sendCall.html).toContain('info@premiumpool.com');
+      expect(sendCall.html).toContain('Section 4.7 of the HOA bylaws');
+
+      // Verify EmailAudit was updated to 'sent'
+      expect(mockEmailAudit.update).toHaveBeenCalledWith(
+        { status: 'sent' },
+        { transaction: mockTransaction }
+      );
+
+      // Verify ResidentNotificationLog entries
+      expect(ResidentNotificationLog.create).toHaveBeenCalledTimes(25);
+
+      expect(mockTransaction.commit).toHaveBeenCalled();
+    });
+
+    it('should batch large recipient lists correctly', async () => {
+      const recipients = Array.from({ length: 120 }, (_, i) => ({
+        id: i + 1,
+        email: `resident${i + 1}@example.com`,
+        name: `Resident ${i + 1}`
+      }));
+
+      const mockEmailAudit = {
+        id: 1,
+        update: jest.fn().mockResolvedValue(true)
+      };
+
+      EmailAudit.create.mockResolvedValue(mockEmailAudit);
+      ResidentNotificationLog.create.mockResolvedValue({});
+
+      const result = await emailService.sendVendorApprovalBroadcast({
+        vendorId: 789,
+        vendorName: 'Elite Security',
+        serviceCategory: 'Security',
+        contactInfo: null,
+        recipients
+      });
+
+      expect(result.successCount).toBe(120);
+      expect(result.failureCount).toBe(0);
+
+      // Should batch into 3 batches (50 + 50 + 20)
+      expect(mockSend).toHaveBeenCalledTimes(3);
+
+      // Verify ResidentNotificationLog entries for all recipients
+      expect(ResidentNotificationLog.create).toHaveBeenCalledTimes(120);
+    });
+
+    it('should handle partial batch failures', async () => {
+      const recipients = Array.from({ length: 75 }, (_, i) => ({
+        id: i + 1,
+        email: `resident${i + 1}@example.com`,
+        name: `Resident ${i + 1}`
+      }));
+
+      const mockEmailAudit = {
+        id: 1,
+        update: jest.fn().mockResolvedValue(true)
+      };
+
+      EmailAudit.create.mockResolvedValue(mockEmailAudit);
+      ResidentNotificationLog.create.mockResolvedValue({});
+
+      // First batch succeeds, second batch fails
+      mockSend
+        .mockResolvedValueOnce({ messageId: 'batch-1' })
+        .mockRejectedValueOnce(new Error('Batch 2 failed'))
+        .mockRejectedValueOnce(new Error('Batch 2 failed'))
+        .mockRejectedValueOnce(new Error('Batch 2 failed'));
+
+      const result = await emailService.sendVendorApprovalBroadcast({
+        vendorId: 999,
+        vendorName: 'Test Vendor',
+        serviceCategory: 'Testing',
+        contactInfo: 'test@example.com',
+        recipients
+      });
+
+      expect(result.successCount).toBe(50);
+      expect(result.failureCount).toBe(25);
+
+      // Verify status was set to 'partial'
+      expect(mockEmailAudit.update).toHaveBeenCalledWith(
+        { status: 'partial' },
+        { transaction: mockTransaction }
+      );
+
+      // Verify all recipients were logged
+      expect(ResidentNotificationLog.create).toHaveBeenCalledTimes(75);
+    });
+
+    it('should include unsubscribe instructions in email', async () => {
+      const recipients = [
+        { id: 1, email: 'resident@example.com', name: 'Resident' }
+      ];
+
+      const mockEmailAudit = {
+        id: 1,
+        update: jest.fn().mockResolvedValue(true)
+      };
+
+      EmailAudit.create.mockResolvedValue(mockEmailAudit);
+      ResidentNotificationLog.create.mockResolvedValue({});
+
+      await emailService.sendVendorApprovalBroadcast({
+        vendorId: 111,
+        vendorName: 'Compliance Test Vendor',
+        serviceCategory: 'Testing',
+        contactInfo: null,
+        recipients
+      });
+
+      const sendCall = mockSend.mock.calls[0][0];
+
+      // Check HTML version
+      expect(sendCall.html).toContain('unsubscribe');
+      expect(sendCall.html).toContain('Section 4.7 of the HOA bylaws');
+      expect(sendCall.html).toContain('notification preferences');
+
+      // Check text version
+      expect(sendCall.text).toContain('unsubscribe');
+      expect(sendCall.text).toContain('Section 4.7 of the HOA bylaws');
+    });
+  });
+
   describe('Legacy sendMail', () => {
     beforeEach(() => {
       process.env.EMAIL_PROVIDER = 'sendgrid';
