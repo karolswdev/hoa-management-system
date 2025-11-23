@@ -1,14 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AccessibilityProvider } from './contexts/AccessibilityContext';
-import { theme } from './theme/theme';
+import { ThemeWrapper } from './theme/ThemeWrapper';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
 import Layout from './components/layout/Layout';
@@ -42,10 +40,9 @@ import AdminAuditPage from './pages/admin/AdminAuditPage';
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <AccessibilityProvider>
+    <AccessibilityProvider>
+      <ThemeWrapper>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
           <NotificationProvider>
             <AuthProvider>
               <Router>
@@ -199,9 +196,9 @@ const App: React.FC = () => {
               </Router>
             </AuthProvider>
           </NotificationProvider>
-        </AccessibilityProvider>
-      </LocalizationProvider>
-    </ThemeProvider>
+        </LocalizationProvider>
+      </ThemeWrapper>
+    </AccessibilityProvider>
   );
 };
 

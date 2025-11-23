@@ -18,6 +18,8 @@ import {
   MenuItem,
   useTheme,
   useMediaQuery,
+  Switch,
+  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -32,8 +34,10 @@ import {
   Settings,
   History,
   Logout,
+  Visibility,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAccessibility } from '../../contexts/AccessibilityContext';
 import ReleaseBadge from '../common/ReleaseBadge';
 
 const drawerWidth = 240;
@@ -72,6 +76,7 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
+  const { isHighVisibility, toggleHighVisibility } = useAccessibility();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -180,6 +185,46 @@ const Layout: React.FC = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {/* Page title could be dynamic based on current route */}
           </Typography>
+
+          {/* Accessibility Toggle */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+            <Tooltip title={isHighVisibility ? 'Disable High Visibility Mode' : 'Enable High Visibility Mode'}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Visibility sx={{ display: { xs: 'none', sm: 'block' } }} />
+                <Switch
+                  checked={isHighVisibility}
+                  onChange={toggleHighVisibility}
+                  inputProps={{
+                    'aria-label': 'Toggle high visibility mode',
+                  }}
+                  color="default"
+                  sx={{
+                    '& .MuiSwitch-switchBase': {
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      '&.Mui-checked': {
+                        color: '#fff',
+                      },
+                      '&.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                      },
+                    },
+                    '& .MuiSwitch-track': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    },
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    display: { xs: 'none', md: 'block' },
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  High Visibility
+                </Typography>
+              </Box>
+            </Tooltip>
+          </Box>
 
           {/* User Profile Menu */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
