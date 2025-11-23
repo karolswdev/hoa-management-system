@@ -1,0 +1,106 @@
+[
+  {
+    "task_id": "I3.T1",
+    "iteration_id": "I3",
+    "iteration_goal": "Ship the democracy stack (poll schema, services, UI, hash chain diagrams) enabling informal + binding voting with receipts and optional notifications.",
+    "description": "Create SQLite migrations for `Polls`, `PollOptions`, `Votes`, `EmailAudit`, `ResidentNotificationLog`, indexes on `(poll_id, timestamp)` and `(vote_hash)`, plus seeding default poll types/config flags.",
+    "agent_type_hint": "DatabaseAgent",
+    "inputs": "Data model overview, I1 migration patterns",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Migration + seed scripts, runbook notes covering apply/rollback/test steps.",
+    "acceptance_criteria": "Schema matches Section 2.1 tables, indexes present, seeds create sample poll + options, migration timelog recorded.",
+    "dependencies": [
+      "I1.T1"
+    ],
+    "parallelizable": false,
+    "done": false
+  },
+  {
+    "task_id": "I3.T2",
+    "iteration_id": "I3",
+    "iteration_goal": "Ship the democracy stack (poll schema, services, UI, hash chain diagrams) enabling informal + binding voting with receipts and optional notifications.",
+    "description": "Implement `vote.service.js` (hash chain helper) and `poll.controller.js` endpoints for poll CRUD + voting + receipt verification; ensure transactions use `BEGIN IMMEDIATE`, prev_hash lookup, receipts returned, and logging occurs in `AuditEvent`.",
+    "agent_type_hint": "BackendAgent",
+    "inputs": "Requirements 2.3, Task 3.1 schema",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Service/controller implementations, hash helper, Jest tests covering informal/binding cases + receipt lookup.",
+    "acceptance_criteria": "Hash formula `SHA256(user_id + option_id + timestamp + prev_hash)` implemented, concurrency safe, tests cover collisions + validation errors, logs include correlation IDs.",
+    "dependencies": [
+      "I3.T1"
+    ],
+    "parallelizable": false,
+    "done": false
+  },
+  {
+    "task_id": "I3.T3",
+    "iteration_id": "I3",
+    "iteration_goal": "Ship the democracy stack (poll schema, services, UI, hash chain diagrams) enabling informal + binding voting with receipts and optional notifications.",
+    "description": "Author Democracy Hash Chain sequence diagram (PlantUML) illustrating vote submission, hash computation, receipt verification, email dispatch, and audit logging for both success/failure flows.",
+    "agent_type_hint": "DiagrammingAgent",
+    "inputs": "Task 3.2 implementation notes, requirements sequence description",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Diagram source + rendered image referenced in docs + release notes.",
+    "acceptance_criteria": "Diagram compiles, includes Resident/CommunityWebApp/ApiGateway/DemocracyService/VoteIntegrityEngine/EmailNotificationService, highlights transactional boundaries, reviewers approve semantics.",
+    "dependencies": [
+      "I3.T2"
+    ],
+    "parallelizable": true,
+    "done": false
+  },
+  {
+    "task_id": "I3.T4",
+    "iteration_id": "I3",
+    "iteration_goal": "Ship the democracy stack (poll schema, services, UI, hash chain diagrams) enabling informal + binding voting with receipts and optional notifications.",
+    "description": "Build frontend `Polls.tsx`, `PollDetail.tsx`, `PollReceiptPage.tsx`, and supporting components (option cards, result bars, receipt chips) leveraging Accessibility tokens + React Query; include React Hook Form for creation modals and integrate helper icons.",
+    "agent_type_hint": "FrontendAgent",
+    "inputs": "Backend endpoints, accessibility patterns",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Poll list/detail UI, receipt view, tests covering binding flows, accessibility compliance, and helper icon gating.",
+    "acceptance_criteria": "Poll list filters (type/status) work, vote submissions show receipt + copy functionality, receipts viewable via route, tests cover TTL/resume flows, axe tests pass.",
+    "dependencies": [
+      "I3.T2",
+      "I2"
+    ],
+    "parallelizable": true,
+    "done": false
+  },
+  {
+    "task_id": "I3.T5",
+    "iteration_id": "I3",
+    "iteration_goal": "Ship the democracy stack (poll schema, services, UI, hash chain diagrams) enabling informal + binding voting with receipts and optional notifications.",
+    "description": "Update OpenAPI spec for `/polls`, `/polls/{id}/votes`, `/polls/{id}/receipts/{hash}`, `/polls/{id}/options`, `/polls/{id}/notify`, including error schemas, rate limit headers, and feature flag metadata; add JSON examples for binding/informal polls.",
+    "agent_type_hint": "DocumentationAgent",
+    "inputs": "Task 3.2 + 3.4 outputs",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Updated spec + changelog entry describing democracy module scope + rollout instructions.",
+    "acceptance_criteria": "OpenAPI lints cleanly, examples validated, changelog references feature flags (`polls.binding-enabled`, `polls.notify-members-enabled`), documentation cross-links to diagrams.",
+    "dependencies": [
+      "I3.T2",
+      "I3.T4"
+    ],
+    "parallelizable": true,
+    "done": false
+  },
+  {
+    "task_id": "I3.T6",
+    "iteration_id": "I3",
+    "iteration_goal": "Ship the democracy stack (poll schema, services, UI, hash chain diagrams) enabling informal + binding voting with receipts and optional notifications.",
+    "description": "Extend `email.service.js` + notification log writer to support poll notification + optional receipt emails, batching recipients, logging to `ResidentNotificationLog`, and capturing correlation IDs for audit.",
+    "agent_type_hint": "BackendAgent",
+    "inputs": "Task 3.2 service design",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Updated service + models + tests + runbook describing notify flow + throttling expectations.",
+    "acceptance_criteria": "Email payload handles BCC batching, retries with backoff, tests simulate success/failure, runbook documents rate limits + audit access.",
+    "dependencies": [
+      "I3.T2"
+    ],
+    "parallelizable": true,
+    "done": false
+  }
+]

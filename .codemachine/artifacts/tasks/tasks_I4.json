@@ -1,0 +1,108 @@
+[
+  {
+    "task_id": "I4.T1",
+    "iteration_id": "I4",
+    "iteration_goal": "Deliver vendor schema + moderation flow, resident-facing vendor directory, admin management tooling, and supporting docs while refining notification infrastructure for future outreach.",
+    "description": "Create SQLite migration for `Vendors` (name, category, contact_info, rating, notes, visibility_scope, moderation_state, created_by, timestamps) plus indexes `(visibility_scope, service_category)`; seed baseline categories; generate Vendor Moderation Flowchart (Mermaid) mapping submission→approval pipeline.",
+    "agent_type_hint": "DatabaseAgent",
+    "inputs": "Requirements 2.4, architecture docs",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Migration + seed + Mermaid flowchart.",
+    "acceptance_criteria": "Schema matches spec, indexes created, seeds populate canonical categories, Mermaid compiles + shows states (pending/approved/denied) with admin touches.",
+    "dependencies": [
+      "I1.T1"
+    ],
+    "parallelizable": false,
+    "done": false
+  },
+  {
+    "task_id": "I4.T2",
+    "iteration_id": "I4",
+    "iteration_goal": "Deliver vendor schema + moderation flow, resident-facing vendor directory, admin management tooling, and supporting docs while refining notification infrastructure for future outreach.",
+    "description": "Implement backend vendor model, controller (`vendor.controller.js`), routes, and service enforcing moderation + visibility config (`vendors.public-categories`), caching, search filters, role-based CRUD; update OpenAPI for vendor endpoints.",
+    "agent_type_hint": "BackendAgent",
+    "inputs": "Task 4.1 schema, config registry",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Vendor backend stack + tests + spec updates integrated with config flags + audit logging.",
+    "acceptance_criteria": "CRUD endpoints enforce auth + moderation states, caching TTL logged, tests cover guest/member/admin scopes, OpenAPI validated.",
+    "dependencies": [
+      "I4.T1"
+    ],
+    "parallelizable": false,
+    "done": false
+  },
+  {
+    "task_id": "I4.T3",
+    "iteration_id": "I4",
+    "iteration_goal": "Deliver vendor schema + moderation flow, resident-facing vendor directory, admin management tooling, and supporting docs while refining notification infrastructure for future outreach.",
+    "description": "Build resident-facing `Vendors.tsx` page with grid/list toggle, filters (category, rating), detail drawer, and vendor submission form gated by role; integrate Accessibility tokens + helper icons; add React Query hooks + caching.",
+    "agent_type_hint": "FrontendAgent",
+    "inputs": "Backend APIs, accessibility patterns",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Vendor listing UI + submission form + tests.",
+    "acceptance_criteria": "Filters + search responsive, accessibility toggle adjusts layout, tests cover guest vs member scope, React Query caches invalidated on submission.",
+    "dependencies": [
+      "I4.T2",
+      "I2"
+    ],
+    "parallelizable": true,
+    "done": false
+  },
+  {
+    "task_id": "I4.T4",
+    "iteration_id": "I4",
+    "iteration_goal": "Deliver vendor schema + moderation flow, resident-facing vendor directory, admin management tooling, and supporting docs while refining notification infrastructure for future outreach.",
+    "description": "Create admin Vendor Management page (pending/approved tabs, bulk status updates, audit log view), integrate FeatureFlagAdmin UI improvements for vendor-related flags, and expose vendor moderation stats via `/metrics`.",
+    "agent_type_hint": "FrontendAgent",
+    "inputs": "Backend vendor service + metrics requirement",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Admin UI + metrics wiring + runbook covering moderation process + config flags.",
+    "acceptance_criteria": "Admin UI supports approve/deny/visibility toggles with confirmation modals, metrics counter increments, runbook describes steps + escalation path, tests verify role gating.",
+    "dependencies": [
+      "I4.T2"
+    ],
+    "parallelizable": true,
+    "done": false
+  },
+  {
+    "task_id": "I4.T5",
+    "iteration_id": "I4",
+    "iteration_goal": "Deliver vendor schema + moderation flow, resident-facing vendor directory, admin management tooling, and supporting docs while refining notification infrastructure for future outreach.",
+    "description": "Extend EmailNotificationService + ResidentNotificationLog to capture vendor submission notifications (admin alerts) and optional resident broadcast when new vendor approved; ensure templates align with board tone + include unsubscribe instructions.",
+    "agent_type_hint": "BackendAgent",
+    "inputs": "Existing email service, vendor requirements",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "Email service enhancements + tests + runbook updates summarizing vendor notification path.",
+    "acceptance_criteria": "Emails include proper subjects + recipients, logs store summary, tests cover success/failure, documentation updated.",
+    "dependencies": [
+      "I3.T6"
+    ],
+    "parallelizable": true,
+    "done": false
+  },
+  {
+    "task_id": "I4.T6",
+    "iteration_id": "I4",
+    "iteration_goal": "Deliver vendor schema + moderation flow, resident-facing vendor directory, admin management tooling, and supporting docs while refining notification infrastructure for future outreach.",
+    "description": "Execute integrated QA: vendor flows, poll notifications, accessibility toggles, ensuring CI builds pass; craft release checklist + pilot instructions referencing vendor + democracy modules.",
+    "agent_type_hint": "QAAgent",
+    "inputs": "All prior tasks + docs",
+    "target_files": [],
+    "input_files": [],
+    "deliverables": "QA report, updated checklist, changelog entries summarizing vendor directory + notification improvements.",
+    "acceptance_criteria": "QA report documents test matrix results, release checklist includes vendor-specific verifications, changelog ready for board review.",
+    "dependencies": [
+      "I4.T2",
+      "I4.T3",
+      "I4.T4",
+      "I4.T5"
+    ],
+    "parallelizable": false,
+    "done": false
+  }
+]
