@@ -22,12 +22,23 @@ info:
     - Support for informal, binding, and straw-poll types
     - Anonymous and identified voting modes
 
+    ## Vendor Directory Features
+
+    The vendor directory module provides curated vendor listings with moderation:
+    - Public/member/admin tiered visibility with category filtering
+    - Member submissions with admin moderation workflow
+    - Rating and contact information managed by admins
+    - Guest access limited to approved vendors in public categories
+    - TTL-cached config for `vendors.public-categories` (60s)
+    - Full audit trail for vendor CRUD and moderation actions
+
     ## Feature Flags
 
     - **board.visibility**: Controls roster exposure (`public` or `members-only`, 60s cache TTL)
     - **board.history-visibility**: Controls history access (`public` or `members-only`, 60s cache TTL)
     - **polls.binding-enabled**: Allows creation of binding vote type polls (60s cache TTL)
     - **polls.notify-members-enabled**: Enables email notifications for poll announcements (60s cache TTL)
+    - **vendors.public-categories**: Comma-separated list of vendor categories visible to guests (60s cache TTL)
 
     ## Rate Limiting
 
@@ -61,6 +72,10 @@ tags:
     description: Democracy module endpoints for polls and voting
   - name: Polls Admin
     description: Administrative endpoints for poll management and integrity verification
+  - name: Vendors
+    description: Vendor directory endpoints for residents and guests
+  - name: Vendors Admin
+    description: Administrative endpoints for vendor moderation and management
 
 paths:
   /board:
@@ -1485,6 +1500,451 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /vendors:
+    get:
+      tags:
+        - Vendors
+      summary: Get vendors with optional filtering
+      description: |
+        Returns vendors based on user authentication status and role.
+
+        **Guest Users (unauthenticated):**
+        - See only vendors in categories listed in `vendors.public-categories` config flag
+        - See only approved vendors with public visibility
+        - See only name and category (no contact info or ratings)
+
+        **Authenticated Members:**
+        - See approved vendors with public or member visibility
+        - See name, category, contact info, and ratings
+
+        **Admins:**
+        - See all vendors regardless of moderation state or visibility
+        - See all fields including moderation state and notes
+
+        Results are sorted by category (ascending), then name (ascending).
+      operationId: getVendors
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          description: Filter by service category
+          schema:
+            type: string
+          example: "Landscaping"
+        - name: search
+          in: query
+          description: Search vendors by name (partial match)
+          schema:
+            type: string
+          example: "Green"
+        - name: status
+          in: query
+          description: Filter by moderation state (admin only)
+          schema:
+            type: string
+            enum: [pending, approved, denied]
+          example: "pending"
+      responses:
+        '200':
+          description: Vendors retrieved successfully
+          headers:
+            RateLimit-Limit:
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              schema:
+                type: integer
+            RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - vendors
+                  - count
+                properties:
+                  vendors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vendor'
+                  count:
+                    type: integer
+                    description: Number of vendors returned
+                  filters:
+                    type: object
+                    properties:
+                      category:
+                        type: string
+                        nullable: true
+                      search:
+                        type: string
+                        nullable: true
+                      status:
+                        type: string
+                        nullable: true
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Vendors
+      summary: Create a new vendor
+      description: |
+        Submit a new vendor entry.
+
+        **Members:** Vendor submitted for moderation (returns HTTP 202 Accepted)
+        **Admins:** Vendor directly approved (returns HTTP 201 Created)
+
+        Rate-limited to prevent abuse.
+      operationId: createVendor
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - service_category
+              properties:
+                name:
+                  type: string
+                  description: Vendor business name
+                  example: "Green Thumb Landscaping"
+                service_category:
+                  type: string
+                  description: Service category
+                  example: "Landscaping"
+                contact_info:
+                  type: string
+                  nullable: true
+                  description: Contact information (phone, email, address)
+                  example: "555-1234, info@greenthumb.com"
+                rating:
+                  type: integer
+                  nullable: true
+                  minimum: 1
+                  maximum: 5
+                  description: Internal rating (1-5 scale)
+                  example: 4
+                notes:
+                  type: string
+                  nullable: true
+                  description: Internal notes about vendor
+                  example: "Reliable service, good pricing"
+                visibility_scope:
+                  type: string
+                  enum: [public, members, admins]
+                  description: Visibility level
+                  example: "members"
+      responses:
+        '201':
+          description: Vendor created successfully (admin)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Vendor created successfully"
+                  vendor:
+                    $ref: '#/components/schemas/VendorFull'
+        '202':
+          description: Vendor submitted for moderation (member)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Vendor submitted for moderation"
+                  vendor:
+                    $ref: '#/components/schemas/VendorFull'
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /vendors/stats:
+    get:
+      tags:
+        - Vendors Admin
+      summary: Get vendor statistics
+      description: |
+        Returns vendor statistics including:
+        - Count by moderation state (pending, approved, denied)
+        - Count by service category (approved vendors only)
+
+        Admin access required.
+      operationId: getVendorStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Vendor statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    type: object
+                    properties:
+                      byModerationState:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            state:
+                              type: string
+                              enum: [pending, approved, denied]
+                            count:
+                              type: integer
+                      byCategory:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            category:
+                              type: string
+                            count:
+                              type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /vendors/{id}:
+    get:
+      tags:
+        - Vendors
+      summary: Get vendor details by ID
+      description: |
+        Returns vendor details based on user authentication and visibility rules.
+        Returns HTTP 404 if vendor not found or not visible to requester.
+      operationId: getVendorById
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Vendor ID
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Vendor retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vendor:
+                    $ref: '#/components/schemas/Vendor'
+        '404':
+          description: Vendor not found or not visible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Vendors Admin
+      summary: Update a vendor
+      description: |
+        Update vendor details. Admin access required.
+        All fields are optional - only provided fields will be updated.
+      operationId: updateVendor
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Vendor ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                service_category:
+                  type: string
+                contact_info:
+                  type: string
+                  nullable: true
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  nullable: true
+                notes:
+                  type: string
+                  nullable: true
+                visibility_scope:
+                  type: string
+                  enum: [public, members, admins]
+                moderation_state:
+                  type: string
+                  enum: [pending, approved, denied]
+      responses:
+        '200':
+          description: Vendor updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Vendor updated successfully"
+                  vendor:
+                    $ref: '#/components/schemas/VendorFull'
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Vendor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Vendors Admin
+      summary: Delete a vendor
+      description: Delete a vendor. Admin access required. This action is logged in the audit trail.
+      operationId: deleteVendor
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Vendor ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Vendor deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Vendor deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Vendor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /vendors/{id}/moderate:
+    patch:
+      tags:
+        - Vendors Admin
+      summary: Update vendor moderation state
+      description: |
+        Update the moderation state of a vendor (pending, approved, denied).
+        Admin access required. This action is logged in the audit trail.
+      operationId: moderateVendor
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Vendor ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - moderation_state
+              properties:
+                moderation_state:
+                  type: string
+                  enum: [pending, approved, denied]
+                  description: New moderation state
+                  example: "approved"
+      responses:
+        '200':
+          description: Moderation state updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Vendor moderation state updated successfully"
+                  vendor:
+                    $ref: '#/components/schemas/VendorFull'
+        '400':
+          description: Bad request - invalid moderation state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Vendor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -2005,6 +2465,95 @@ components:
         vote_count:
           type: integer
           description: Number of votes for this option
+
+    Vendor:
+      type: object
+      description: Vendor DTO with fields visible based on user role
+      required:
+        - id
+        - name
+        - service_category
+        - visibility_scope
+      properties:
+        id:
+          type: integer
+          description: Vendor ID
+        name:
+          type: string
+          description: Vendor business name
+        service_category:
+          type: string
+          description: Service category
+        visibility_scope:
+          type: string
+          enum: [public, members, admins]
+          description: Visibility level
+        contact_info:
+          type: string
+          nullable: true
+          description: Contact information (visible to members and admins only)
+        rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+          description: Internal rating (visible to members and admins only)
+
+    VendorFull:
+      type: object
+      description: Full vendor object with all fields (admin view)
+      required:
+        - id
+        - name
+        - service_category
+        - visibility_scope
+        - moderation_state
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Vendor ID
+        name:
+          type: string
+          description: Vendor business name
+        service_category:
+          type: string
+          description: Service category
+        contact_info:
+          type: string
+          nullable: true
+          description: Contact information
+        rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+          description: Internal rating (1-5 scale)
+        notes:
+          type: string
+          nullable: true
+          description: Internal notes about vendor
+        visibility_scope:
+          type: string
+          enum: [public, members, admins]
+          description: Visibility level
+        moderation_state:
+          type: string
+          enum: [pending, approved, denied]
+          description: Moderation status
+        created_by:
+          type: integer
+          nullable: true
+          description: User ID who created this vendor
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when vendor was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when vendor was last updated
 
   responses:
     Unauthorized:

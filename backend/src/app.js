@@ -50,6 +50,7 @@ const auditRoutes = require('./routes/audit.routes'); // Routes for admin audit 
 const publicDocumentRoutes = require('./routes/public.document.routes'); // For public document access
 const boardRoutes = require('./routes/board.routes'); // Routes for board governance
 const pollRoutes = require('./routes/poll.routes'); // Routes for democracy/polls
+const vendorRoutes = require('./routes/vendor.routes'); // Routes for vendor directory
 
 const app = express();
 
@@ -105,6 +106,7 @@ app.use('/api/admin/audit-logs', auditRoutes); // Mount admin audit log routes
 app.use('/api/documents', publicDocumentRoutes); // For public listing/downloading
 app.use('/api/board', boardRoutes); // Mount board governance routes
 app.use('/api/polls', pollRoutes); // Mount democracy/poll routes
+app.use('/api/vendors', vendorRoutes); // Mount vendor directory routes
 
 // Sentry error handler (must be before other error handlers)
 app.use(sentryErrorHandler());

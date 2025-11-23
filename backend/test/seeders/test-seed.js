@@ -18,6 +18,16 @@ module.exports = {
     // Test member users with different statuses
     await queryInterface.bulkInsert('users', [
       {
+        name: 'Test Member',
+        email: 'testmember@example.com',
+        password: await bcrypt.hash('testmember123', 10),
+        role: 'member',
+        status: 'approved',
+        email_verified: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
         name: 'Active Member',
         email: 'active@example.com',
         password: await bcrypt.hash('member123', 10),
@@ -67,6 +77,7 @@ module.exports = {
     await queryInterface.bulkDelete('users', {
       email: [
         'testadmin@example.com',
+        'testmember@example.com',
         'active@example.com',
         'pending@example.com',
         'rejected@example.com'
