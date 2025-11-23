@@ -106,6 +106,7 @@ const VendorFilters: React.FC<VendorFiltersProps> = ({
       {/* Search bar */}
       <Box display="flex" gap={spacing} mb={spacing} alignItems="center">
         <TextField
+          id="vendor-search"
           fullWidth
           placeholder="Search vendors by name..."
           value={localSearch}
@@ -117,12 +118,14 @@ const VendorFilters: React.FC<VendorFiltersProps> = ({
               fontSize: fontSize,
             },
           }}
+          inputProps={{
+            'aria-label': 'Search vendors by name',
+          }}
           sx={{
             '& .MuiOutlinedInput-root': {
               borderWidth: isHighVisibility ? 2 : 1,
             },
           }}
-          aria-label="Search vendors"
         />
 
         {showHelpers && (

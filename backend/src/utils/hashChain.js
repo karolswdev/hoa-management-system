@@ -15,7 +15,7 @@ const computeVoteHash = ({ user_id, option_id, timestamp, prev_hash }) => {
   // Normalize inputs for consistent hashing
   const userId = user_id !== null && user_id !== undefined ? String(user_id) : '';
   const optionId = String(option_id);
-  const ts = timestamp;
+  const ts = timestamp instanceof Date ? timestamp.toISOString() : String(timestamp);
   const previousHash = prev_hash || 'GENESIS';
 
   // Concatenate components
@@ -73,12 +73,15 @@ const validateHashChain = (votes) => {
 
   for (let i = 0; i < votes.length; i++) {
     const vote = votes[i];
+    const timestamp = vote.timestamp instanceof Date
+      ? vote.timestamp.toISOString()
+      : vote.timestamp;
 
     // Verify individual vote hash
     const hashValid = verifyVoteHash({
       user_id: vote.user_id,
       option_id: vote.option_id,
-      timestamp: vote.timestamp,
+      timestamp,
       prev_hash: vote.prev_hash,
       vote_hash: vote.vote_hash
     });

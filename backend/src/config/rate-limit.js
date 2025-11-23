@@ -1,12 +1,16 @@
 const rateLimit = require('express-rate-limit');
 const logger = require('./logger');
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+const skipInTest = () => isTestEnv;
+
 // Default rate limit for all API endpoints
 const defaultLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: skipInTest,
   message: {
     message: 'Too many requests from this IP, please try again later.',
   },
@@ -27,6 +31,7 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // Limit each IP to 10 requests per windowMs
   skipSuccessfulRequests: false,
+  skip: skipInTest,
   message: {
     message: 'Too many authentication attempts, please try again later.',
   },
@@ -47,6 +52,7 @@ const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 login attempts per IP per 15 minutes
   skipSuccessfulRequests: true, // Don't count successful logins
+  skip: skipInTest,
   keyGenerator: (req) => {
     // Create key from IP + email for more granular limiting
     return `${req.ip}-${req.body.email || 'unknown'}`;
@@ -70,6 +76,7 @@ const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 registrations per IP per hour
   skipSuccessfulRequests: false,
+  skip: skipInTest,
   message: {
     message: 'Too many registration attempts, please try again later.',
   },
@@ -89,6 +96,7 @@ const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 password reset requests per IP per hour
   skipSuccessfulRequests: false,
+  skip: skipInTest,
   keyGenerator: (req) => {
     // Create key from IP + email
     return `${req.ip}-${req.body.email || 'unknown'}`;
@@ -112,6 +120,7 @@ const verificationResendLimiter = rateLimit({
   windowMs: 6 * 60 * 60 * 1000, // 6 hours
   max: 1, // Only one resend in the window to stay on free tier
   skipSuccessfulRequests: false,
+  skip: skipInTest,
   keyGenerator: (req) => `${req.ip}-${req.body.email || 'unknown'}`,
   message: {
     message: 'Verification email already sent recently. Please try again later.',
@@ -131,6 +140,7 @@ const verificationResendLimiter = rateLimit({
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // 10 file uploads per IP per 15 minutes
+  skip: skipInTest,
   message: {
     message: 'Too many file uploads, please try again later.',
   },
@@ -150,6 +160,7 @@ const boardContactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 contact requests per IP + email per hour
   skipSuccessfulRequests: false,
+  skip: skipInTest,
   keyGenerator: (req) => {
     return `${req.ip}-${req.body.requestor_email || 'unknown'}`;
   },

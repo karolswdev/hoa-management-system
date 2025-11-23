@@ -9,6 +9,8 @@ node_modules/
 # Database
 src/database/*.db
 src/database/*.db-journal
+backend/database/*.db
+backend/database/*.db-journal
 
 # Logs
 logs/
