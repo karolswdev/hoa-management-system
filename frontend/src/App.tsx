@@ -7,6 +7,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { AccessibilityProvider } from './contexts/AccessibilityContext';
 import { theme } from './theme/theme';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
@@ -44,9 +45,10 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <NotificationProvider>
-          <AuthProvider>
-            <Router>
+        <AccessibilityProvider>
+          <NotificationProvider>
+            <AuthProvider>
+              <Router>
             <Routes>
               {/* Public Routes */}
               <Route
@@ -193,10 +195,11 @@ const App: React.FC = () => {
 
               {/* Fallback route */}
               <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            </Router>
-          </AuthProvider>
-        </NotificationProvider>
+              </Routes>
+              </Router>
+            </AuthProvider>
+          </NotificationProvider>
+        </AccessibilityProvider>
       </LocalizationProvider>
     </ThemeProvider>
   );
