@@ -32,6 +32,7 @@ import {
   Settings,
   History,
   Logout,
+  HowToVote,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import ReleaseBadge from '../common/ReleaseBadge';
@@ -53,6 +54,7 @@ const navigationItems: NavigationItem[] = [
   { text: 'Events', icon: <Event />, path: '/events' },
   { text: 'Documents', icon: <Description />, path: '/documents' },
   { text: 'Discussions', icon: <Forum />, path: '/discussions' },
+  { text: 'Polls', icon: <HowToVote />, path: '/polls' },
   { text: 'Profile', icon: <Person />, path: '/profile' },
 ];
 

@@ -237,6 +237,89 @@ export interface BoardContactRequest {
   captchaToken?: string;
 }
 
+// Poll Types
+export type PollType = 'informal' | 'binding';
+export type PollStatus = 'draft' | 'active' | 'closed';
+
+export interface PollOption {
+  id: number;
+  poll_id: number;
+  option_text: string;
+  display_order: number;
+  vote_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Poll {
+  id: number;
+  title: string;
+  description: string | null;
+  poll_type: PollType;
+  status: PollStatus;
+  start_time: string;
+  end_time: string;
+  created_by: number;
+  allow_multiple: boolean;
+  show_results_before_close: boolean;
+  created_at: string;
+  updated_at: string;
+  options?: PollOption[];
+  total_votes?: number;
+  user_has_voted?: boolean;
+  time_remaining?: number;
+}
+
+export interface Vote {
+  id: number;
+  poll_id: number;
+  user_id: number | null;
+  option_id: number;
+  vote_hash: string | null;
+  prev_hash: string | null;
+  timestamp: string;
+  created_at: string;
+}
+
+export interface VoteReceipt {
+  vote_hash: string;
+  poll_id: number;
+  poll_title: string;
+  option_text: string;
+  timestamp: string;
+  verified: boolean;
+}
+
+export interface PollFilter {
+  type?: PollType;
+  status?: PollStatus;
+  search?: string;
+}
+
+// Poll Request Types
+export interface CreatePollRequest {
+  title: string;
+  description?: string;
+  poll_type: PollType;
+  start_time: string;
+  end_time: string;
+  allow_multiple: boolean;
+  show_results_before_close: boolean;
+  options: string[];
+}
+
+export interface SubmitVoteRequest {
+  option_ids: number[];
+  request_receipt?: boolean;
+}
+
+export interface VoteResponse {
+  success: boolean;
+  message: string;
+  receipt?: VoteReceipt;
+  vote_hash?: string;
+}
+
 // Error Response
 export interface ApiError {
   message: string;

@@ -41,6 +41,9 @@ import DiscussionsPage from './pages/member/DiscussionsPage';
 import DiscussionThreadPage from './pages/member/DiscussionThreadPage';
 import ProfilePage from './pages/member/ProfilePage';
 import BoardPage from './pages/BoardPage';
+import PollsPage from './pages/Polls';
+import PollDetailPage from './pages/PollDetail';
+import PollReceiptPage from './pages/PollReceipt';
 
 // Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -119,6 +122,12 @@ const App: React.FC = () => {
                 }
               />
 
+              {/* Public Poll Receipt Verification Route */}
+              <Route
+                path="/polls/:pollId/receipts/:hash"
+                element={<PollReceiptPage />}
+              />
+
               {/* Protected Member Routes */}
               <Route
                 path="/"
@@ -136,6 +145,8 @@ const App: React.FC = () => {
                 <Route path="discussions" element={<DiscussionsPage />} />
                 <Route path="discussions/:id" element={<DiscussionThreadPage />} />
                 <Route path="board" element={<BoardPage />} />
+                <Route path="polls" element={<PollsPage />} />
+                <Route path="polls/:id" element={<PollDetailPage />} />
                 <Route path="profile" element={<ProfilePage />} />
 
                 {/* Admin Routes */}

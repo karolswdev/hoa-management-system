@@ -31,6 +31,11 @@ import type {
   BoardHistoryItem,
   BoardConfig,
   BoardContactRequest,
+  Poll,
+  SubmitVoteRequest,
+  VoteResponse,
+  VoteReceipt,
+  CreatePollRequest,
 } from '../types/api';
 
 class ApiService {
@@ -341,6 +346,46 @@ class ApiService {
   async submitBoardContact(data: BoardContactRequest): Promise<{ message: string }> {
     const response = await this.api.post('/board/contact', data);
     return response.data;
+  }
+
+  // Polls
+  async getPolls(params?: {
+    type?: 'informal' | 'binding';
+    status?: 'draft' | 'active' | 'closed';
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<Poll>> {
+    const response: AxiosResponse<PaginatedResponse<Poll>> = await this.api.get('/polls', { params });
+    return response.data;
+  }
+
+  async getPoll(id: number): Promise<Poll> {
+    const response: AxiosResponse<Poll> = await this.api.get(`/polls/${id}`);
+    return response.data;
+  }
+
+  async submitVote(pollId: number, data: SubmitVoteRequest): Promise<VoteResponse> {
+    const response: AxiosResponse<VoteResponse> = await this.api.post(`/polls/${pollId}/votes`, data);
+    return response.data;
+  }
+
+  async getReceipt(pollId: number, hash: string): Promise<VoteReceipt> {
+    const response: AxiosResponse<VoteReceipt> = await this.api.get(`/polls/${pollId}/receipts/${hash}`);
+    return response.data;
+  }
+
+  async createPoll(data: CreatePollRequest): Promise<Poll> {
+    const response: AxiosResponse<Poll> = await this.api.post('/admin/polls', data);
+    return response.data;
+  }
+
+  async updatePoll(id: number, data: Partial<CreatePollRequest>): Promise<Poll> {
+    const response: AxiosResponse<Poll> = await this.api.put(`/admin/polls/${id}`, data);
+    return response.data;
+  }
+
+  async deletePoll(id: number): Promise<void> {
+    await this.api.delete(`/admin/polls/${id}`);
   }
 }
 
