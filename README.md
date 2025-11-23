@@ -31,8 +31,9 @@ Notes
 6.  [Running the Application](#running-the-application)
 7.  [Running Tests](#running-tests)
 8.  [API Documentation](#api-documentation)
-9.  [Deployment (Production)](#deployment-production)
-10. [Contributing & Security](#contributing--security)
+9.  [CI/CD Pipeline](#cicd-pipeline)
+10. [Deployment (Production)](#deployment-production)
+11. [Contributing & Security](#contributing--security)
 
 ---
 
@@ -194,21 +195,47 @@ Notes
 
 ## Running Tests
 
-The backend includes a full suite of integration tests to ensure API reliability.
+The project includes comprehensive test coverage for both backend and frontend components, enforced by CI/CD pipelines.
 
-*   **To run all backend tests:**
+### Backend Tests
+
+*   **Integration tests with coverage:**
     ```bash
     # From the backend/ directory
-    npm test:integration
+    npm run test:integration -- --coverage
     ```
-    This includes tests for password reset rate limiting and announcement email notifications (email sending is mocked in tests).
-*   **To run a specific test file (e.g., for debugging):**
+    This includes tests for password reset rate limiting, announcement email notifications (mocked), and vote hashchain integrity.
+
+*   **Specific test file (debugging):**
     ```bash
     # From the backend/ directory
     npm run test:debugging -- test/debugging/users.test.js
     ```
-    This runs just the provided file with verbose logging (the helper script keeps the process alive for easier inspection).
-*   **To generate end-to-end screenshots for the user guides:**
+
+*   **Hashchain integrity tests:**
+    ```bash
+    npx jest --testPathPattern=poll.test.js --testNamePattern="(integrity|hashchain|tamper)"
+    ```
+
+### Frontend Tests
+
+*   **Unit tests with coverage:**
+    ```bash
+    # From the frontend/ directory
+    npm run test:coverage
+    ```
+
+*   **Accessibility tests (WCAG 2.1 AA compliance):**
+    ```bash
+    npm run test -- src/tests/*.a11y.test.tsx
+    ```
+
+*   **Interactive test UI:**
+    ```bash
+    npm run test:ui
+    ```
+
+*   **E2E screenshot generation for user guides:**
     ```bash
     # From the repository root
     npm run --prefix frontend generate-screenshots
@@ -499,6 +526,84 @@ GRAFANA_ADMIN_PASSWORD=your-secure-password
 ```
 
 See `.env.example` for complete list.
+
+---
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment. All pull requests must pass comprehensive quality gates before merging.
+
+### Pipeline Jobs
+
+The CI workflow (`.github/workflows/ci.yml`) runs 10 parallel jobs:
+
+**Backend Quality Checks:**
+- **Lint:** ESLint with strict error enforcement
+- **Tests:** Jest integration tests with 80% coverage threshold
+- **Hashchain Integrity:** Vote tampering detection and integrity validation
+- **Security Audit:** npm audit with critical vulnerability blocking
+
+**Frontend Quality Checks:**
+- **Lint:** ESLint + TypeScript type checking
+- **Tests:** Vitest unit tests with 75% coverage threshold
+- **Accessibility:** WCAG 2.1 AA compliance via axe-core
+- **Security Audit:** npm audit with critical vulnerability blocking
+
+**Security & Hygiene:**
+- **Hygiene:** Prevents `.env` file commits and scans for hardcoded secrets
+- **Aggregate:** Final summary job ensuring all checks passed
+
+### Viewing CI Results
+
+**Status Badge:**
+The CI badge at the top of this README shows current pipeline status.
+
+**Artifacts:**
+Failed runs produce downloadable artifacts (30-day retention):
+- Coverage reports (HTML + JSON)
+- Lint logs (JSON format)
+- Security audit reports
+- Accessibility violation reports
+- Test results
+
+**Troubleshooting:**
+For detailed troubleshooting guides, see [docs/runbooks/ci-pipeline.md](./docs/runbooks/ci-pipeline.md).
+
+### Running CI Locally
+
+Replicate CI checks locally before pushing:
+
+```bash
+# Backend
+cd backend
+npm ci
+npx eslint .
+NODE_ENV=test npx sequelize-cli db:migrate
+npm run test:integration -- --coverage
+npm audit --audit-level=critical
+
+# Frontend
+cd frontend
+npm ci
+npm run lint
+npm run test:coverage -- --run
+npm run test -- --run src/tests/*.a11y.test.tsx
+npm audit --audit-level=critical
+```
+
+### Coverage Thresholds
+
+- **Backend:** 80% lines, statements, functions, branches
+- **Frontend:** 75% lines, statements, functions, branches
+
+Coverage below thresholds blocks merge. Download coverage artifacts to identify untested code paths.
+
+### Security Policy
+
+- Critical vulnerabilities block CI immediately
+- Dependabot alerts must be triaged within 48 hours
+- No `.env` files may be committed to the repository
+- Secret scanning runs on every push
 
 ---
 

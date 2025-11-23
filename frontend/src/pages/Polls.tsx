@@ -61,7 +61,7 @@ const PollsPage: React.FC = () => {
     status: statusFilter !== 'all' ? statusFilter : undefined,
   };
 
-  const { polls, isLoading, isSkeleton, error } = usePolls(filters);
+  const { polls, isSkeleton, error } = usePolls(filters);
 
   // Invalidate poll cache when accessibility mode changes
   useEffect(() => {

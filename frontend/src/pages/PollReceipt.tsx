@@ -10,7 +10,6 @@ import {
   Paper,
   Divider,
   useTheme,
-  Chip,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -48,7 +47,7 @@ const PollReceiptPage: React.FC = () => {
   const theme = useTheme();
   const { isHighVisibility } = useAccessibility();
 
-  const { receipt, isVerified, isLoading, error } = useReceiptLookup(
+  const { receipt, isLoading, error } = useReceiptLookup(
     pollId,
     hash || '',
     !!(pollId && hash)
