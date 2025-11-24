@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import PollsPage from '../pages/Polls';
 import { AccessibilityProvider } from '../contexts/AccessibilityContext';
+import { AuthProvider } from '../contexts/AuthContext';
+import { NotificationProvider } from '../contexts/NotificationContext';
 import { ThemeWrapper } from '../theme/ThemeWrapper';
 import * as pollHooks from '../hooks/usePolls';
 import type { Poll } from '../types/api';
@@ -75,7 +77,11 @@ const mockPolls: Poll[] = [
 ];
 
 // Test wrapper component
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const TestWrapper: React.FC<{ children: React.ReactNode; highVis?: boolean; reducedMotion?: boolean }> = ({
+  children,
+  highVis = false,
+  reducedMotion = false,
+}) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -86,10 +92,14 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AccessibilityProvider>
-        <ThemeWrapper>
-          <BrowserRouter>{children}</BrowserRouter>
-        </ThemeWrapper>
+      <AccessibilityProvider initialPreferences={{ mode: highVis ? 'high-vis' : 'standard', reducedMotion }}>
+        <NotificationProvider>
+          <AuthProvider>
+            <ThemeWrapper>
+              <BrowserRouter>{children}</BrowserRouter>
+            </ThemeWrapper>
+          </AuthProvider>
+        </NotificationProvider>
       </AccessibilityProvider>
     </QueryClientProvider>
   );
@@ -325,24 +335,10 @@ describe('PollsPage', () => {
     });
 
     it('displays larger elements in high visibility mode', () => {
-      const queryClient = new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
-          },
-        },
-      });
-
       render(
-        <QueryClientProvider client={queryClient}>
-          <AccessibilityProvider initialPreferences={{ mode: 'high-vis' }}>
-            <ThemeWrapper>
-              <BrowserRouter>
-                <PollsPage />
-              </BrowserRouter>
-            </ThemeWrapper>
-          </AccessibilityProvider>
-        </QueryClientProvider>
+        <TestWrapper highVis>
+          <PollsPage />
+        </TestWrapper>
       );
 
       const title = screen.getByText('Community Polls');
