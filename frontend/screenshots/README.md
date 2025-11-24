@@ -9,30 +9,23 @@ This directory contains automatically generated screenshots for the HOA Manageme
 To generate screenshots locally:
 
 ```bash
-# From the frontend directory
-cd frontend
-
-# Install dependencies if not already installed
-npm install
-
-# Install Playwright browsers
-npx playwright install chromium
-
-# Make sure backend and frontend servers are running
-# In one terminal:
-cd ../backend
-NODE_ENV=test npm start
-
-# In another terminal:
-cd ../frontend
-npm run dev
-
-# In a third terminal, generate screenshots:
-cd frontend
-npm run generate-screenshots
+# From repo root
+./scripts/run-screenshots.sh
 ```
 
 Screenshots will be saved in the `frontend/screenshots/` directory.
+
+### Build the PDF User Guide
+
+Run the full pipeline (screenshots + PDF):
+
+```bash
+./scripts/build-user-guide.sh
+```
+
+PDF outputs:
+- `dist/user-guide.pdf`
+- `frontend/public/user-guide.pdf`
 
 ### GitHub Actions
 

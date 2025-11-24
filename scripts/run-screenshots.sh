@@ -34,6 +34,8 @@ popd >/dev/null
 
 echo "==> Starting frontend on port ${FRONT_PORT} (logs: ${FRONT_LOG})"
 pushd "$ROOT_DIR/frontend" >/dev/null
+echo "==> Ensuring Playwright browsers are installed"
+npx playwright install chromium >/dev/null 2>&1
 PORT="${FRONT_PORT}" npm run dev:screenshots -- --host 0.0.0.0 --port "${FRONT_PORT}" --strictPort >"${FRONT_LOG}" 2>&1 &
 FRONT_PID=$!
 
@@ -47,7 +49,7 @@ wait_for "http://localhost:${BACK_PORT}/api/health"
 wait_for "http://localhost:${FRONT_PORT}"
 
 echo "==> Generating screenshots with Playwright"
-BASE_URL="http://localhost:${FRONT_PORT}" npm run generate-screenshots -- --project=chromium
+BASE_URL="http://localhost:${FRONT_PORT}" npm run generate-screenshots
 popd >/dev/null
 
 echo "==> Done. Screenshots are in: ${ROOT_DIR}/frontend/screenshots"

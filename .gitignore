@@ -11,6 +11,11 @@ src/database/*.db
 src/database/*.db-journal
 backend/database/*.db
 backend/database/*.db-journal
+dist/
+frontend/screenshots/*.png
+frontend/test-results/
+frontend/playwright-report/
+frontend/public/user-guide.pdf
 
 # Logs
 logs/
