@@ -86,8 +86,7 @@ async function createAnnouncement(announcementData, userId) {
 
     return created; // Return plain JSON object
   } catch (error) {
-    // Log the error for server-side debugging if necessary
-    // console.error('Error creating announcement:', error);
+    console.error('Error creating announcement:', error);
     throw error; // Re-throw the error to be handled by the controller
   }
 }
@@ -160,8 +159,7 @@ async function listAnnouncements(options) {
       limit: numLimit,
     };
   } catch (error) {
-    // Optional: Log error for server-side debugging
-    // console.error('Error listing announcements:', error);
+    console.error('Error listing announcements:', error);
     throw error; // Re-throw the error to be handled by the controller/error middleware
   }
 }
@@ -188,11 +186,11 @@ async function updateAnnouncement(announcementId, updateData, adminUserId) {
     }
 
     const updatedFields = [];
-    if (updateData.hasOwnProperty('title') && updateData.title !== announcement.title) {
+    if (Object.prototype.hasOwnProperty.call(updateData, 'title') && updateData.title !== announcement.title) {
       announcement.title = updateData.title;
       updatedFields.push('title');
     }
-    if (updateData.hasOwnProperty('content')) {
+    if (Object.prototype.hasOwnProperty.call(updateData, 'content')) {
       const sanitizedNewContent = DOMPurify.sanitize(updateData.content);
       if (sanitizedNewContent !== announcement.content) {
         announcement.content = sanitizedNewContent;
@@ -200,7 +198,7 @@ async function updateAnnouncement(announcementId, updateData, adminUserId) {
       }
     }
     // For expires_at, handle explicit null to clear the date
-    if (updateData.hasOwnProperty('expires_at') && updateData.expires_at !== announcement.expires_at) {
+    if (Object.prototype.hasOwnProperty.call(updateData, 'expires_at') && updateData.expires_at !== announcement.expires_at) {
       // Ensure null is correctly handled if the current value is a date string or vice-versa
       if (updateData.expires_at === null && announcement.expires_at !== null) {
         announcement.expires_at = null;
@@ -223,7 +221,7 @@ async function updateAnnouncement(announcementId, updateData, adminUserId) {
 
     return announcement.toJSON();
   } catch (error) {
-    // console.error('Error updating announcement:', error);
+    console.error('Error updating announcement:', error);
     throw error;
   }
 }
@@ -254,7 +252,7 @@ async function deleteAnnouncement(announcementId, adminUserId) {
     }
     return true; // Or return nothing for a 204 No Content response handling in controller
   } catch (error) {
-    // console.error('Error deleting announcement:', error);
+    console.error('Error deleting announcement:', error);
     throw error;
   }
 }

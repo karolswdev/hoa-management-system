@@ -16,6 +16,7 @@ router.get('/', optionalAuth, pollController.getPollsController);
 // GET /api/polls/receipts/:code - Verify vote receipt
 // Public verification endpoint (constant-time response)
 router.get('/receipts/:code', pollController.verifyReceiptController);
+router.get('/:id/receipts/:code', pollController.verifyReceiptController);
 
 // GET /api/polls/:id - Get poll details
 // Accessible to all users

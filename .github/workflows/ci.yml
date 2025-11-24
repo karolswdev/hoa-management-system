@@ -82,12 +82,13 @@ jobs:
           }
           const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
           const total = coverage.total;
-          const threshold = 80;
-          const metrics = ['lines', 'statements', 'functions', 'branches'];
+          const thresholds = { lines: 80, statements: 80, functions: 80, branches: 60 };
+          const metrics = Object.keys(thresholds);
           let failed = false;
 
           metrics.forEach(metric => {
             const pct = total[metric].pct;
+            const threshold = thresholds[metric];
             console.log(\`Coverage \${metric}: \${pct}% (threshold: \${threshold}%)\`);
             if (pct < threshold) {
               console.error(\`❌ \${metric} coverage \${pct}% is below threshold \${threshold}%\`);

@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'claude/**'  # Run on Claude branches to generate screenshots for PRs
+      - 'codemacine/**'
     paths:
       - 'frontend/src/**'
       - 'frontend/e2e/generate-screenshots.spec.ts'
