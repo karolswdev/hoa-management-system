@@ -1,0 +1,9 @@
+title = "HOA Management System Gitleaks Config"
+
+[allowlist]
+  description = "Allow demo/example content"
+  paths = [
+    "backend/docs/API_DEMOCRACY.md",
+    ".codemachine/.*"
+  ]
+
