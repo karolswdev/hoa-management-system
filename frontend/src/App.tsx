@@ -1,16 +1,27 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
-import { theme } from './theme/theme';
+import { AccessibilityProvider } from './contexts/AccessibilityContext';
+import { ThemeWrapper } from './theme/ThemeWrapper';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
 import Layout from './components/layout/Layout';
+
+// Create a React Query client with default options
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+      staleTime: 30 * 1000, // 30 seconds default
+    },
+  },
+});
 
 // Public Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -29,6 +40,11 @@ import DocumentsPage from './pages/member/DocumentsPage';
 import DiscussionsPage from './pages/member/DiscussionsPage';
 import DiscussionThreadPage from './pages/member/DiscussionThreadPage';
 import ProfilePage from './pages/member/ProfilePage';
+import BoardPage from './pages/BoardPage';
+import PollsPage from './pages/Polls';
+import PollDetailPage from './pages/PollDetail';
+import PollReceiptPage from './pages/PollReceipt';
+import Vendors from './pages/Vendors';
 
 // Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -38,15 +54,17 @@ import AdminEventsPage from './pages/admin/AdminEventsPage';
 import AdminDocumentsPage from './pages/admin/AdminDocumentsPage';
 import AdminConfigPage from './pages/admin/AdminConfigPage';
 import AdminAuditPage from './pages/admin/AdminAuditPage';
+import VendorManagement from './pages/admin/VendorManagement';
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <NotificationProvider>
-          <AuthProvider>
-            <Router>
+    <QueryClientProvider client={queryClient}>
+      <AccessibilityProvider>
+        <ThemeWrapper>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <NotificationProvider>
+              <AuthProvider>
+                <Router>
             <Routes>
               {/* Public Routes */}
               <Route
@@ -106,6 +124,12 @@ const App: React.FC = () => {
                 }
               />
 
+              {/* Public Poll Receipt Verification Route */}
+              <Route
+                path="/polls/:pollId/receipts/:hash"
+                element={<PollReceiptPage />}
+              />
+
               {/* Protected Member Routes */}
               <Route
                 path="/"
@@ -122,6 +146,10 @@ const App: React.FC = () => {
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="discussions" element={<DiscussionsPage />} />
                 <Route path="discussions/:id" element={<DiscussionThreadPage />} />
+                <Route path="board" element={<BoardPage />} />
+                <Route path="polls" element={<PollsPage />} />
+                <Route path="polls/:id" element={<PollDetailPage />} />
+                <Route path="vendors" element={<Vendors />} />
                 <Route path="profile" element={<ProfilePage />} />
 
                 {/* Admin Routes */}
@@ -189,16 +217,26 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="admin/vendors"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <VendorManagement />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
 
               {/* Fallback route */}
               <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            </Router>
-          </AuthProvider>
-        </NotificationProvider>
-      </LocalizationProvider>
-    </ThemeProvider>
+              </Routes>
+                </Router>
+              </AuthProvider>
+            </NotificationProvider>
+          </LocalizationProvider>
+        </ThemeWrapper>
+      </AccessibilityProvider>
+    </QueryClientProvider>
   );
 };
 

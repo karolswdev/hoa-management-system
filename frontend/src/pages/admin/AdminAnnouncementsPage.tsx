@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -10,14 +10,12 @@ import {
   TextField,
   Alert,
   Chip,
-  IconButton,
   Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -58,7 +56,7 @@ const AdminAnnouncementsPage: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Load announcements data
-  const loadAnnouncements = async () => {
+  const loadAnnouncements = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -72,17 +70,20 @@ const AdminAnnouncementsPage: React.FC = () => {
       
       setAnnouncements(response.data);
       setTotalItems(response.pagination.totalItems);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load announcements');
-      enqueueSnackbar('Failed to load announcements', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to load announcements';
+      setError(message);
+      enqueueSnackbar(message, { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, sortColumn, sortDirection, enqueueSnackbar]);
 
   useEffect(() => {
     loadAnnouncements();
-  }, [currentPage, sortColumn, sortDirection]);
+  }, [loadAnnouncements]);
 
   // Handle sorting
   const handleSort = (column: string, direction: 'asc' | 'desc') => {
@@ -128,8 +129,11 @@ const AdminAnnouncementsPage: React.FC = () => {
       setCreateModalOpen(false);
       resetForm();
       loadAnnouncements();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to create announcement', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to create announcement';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 
@@ -151,8 +155,11 @@ const AdminAnnouncementsPage: React.FC = () => {
       setSelectedAnnouncement(null);
       resetForm();
       loadAnnouncements();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to update announcement', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to update announcement';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 
@@ -167,8 +174,11 @@ const AdminAnnouncementsPage: React.FC = () => {
       setDeleteModalOpen(false);
       setSelectedAnnouncement(null);
       loadAnnouncements();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to delete announcement', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to delete announcement';
+      enqueueSnackbar(message, { variant: 'error' });
     }
   };
 

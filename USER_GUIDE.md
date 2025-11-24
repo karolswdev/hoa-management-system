@@ -77,6 +77,18 @@ The system supports two main user roles:
 - Search and filter documents
 - View document descriptions and upload dates
 
+### **🏷️ Vendor Directory**
+- Browse approved vendors in grid or list view
+- Filter by category, search by name, and view details
+- Members see contact info and ratings; guests see limited info
+- Submit a new vendor for review (members) or manage visibility if you’re an admin
+
+### **🗳️ Democracy & Polls**
+- View active and closed polls
+- Vote on active polls (anonymous polls hide voter identity)
+- Review receipts for your votes and see results after a poll closes
+- Admins can validate hash-chain integrity for auditability
+
 ### **💬 Discussions**
 - **View Discussions**: Browse community discussion threads
 - **Create New Thread**: Start a new discussion topic
@@ -119,6 +131,16 @@ Admins have access to all member features plus additional administrative capabil
 - **Edit Events**: Update event details, dates, and locations
 - **Delete Events**: Remove cancelled or past events
 - **Event Details**: Set start/end dates, location, and descriptions
+
+### **🏷️ Vendor Management**
+- Moderate vendor submissions (approve/deny)
+- Edit vendor visibility (public, members-only, admin-only) and categories
+- Configure which categories are visible to guests
+
+### **🗳️ Poll Management**
+- Create binding or informal polls with start/end dates
+- Enable anonymous voting and member notifications
+- View vote receipts and run hash-chain integrity checks for compliance
 
 ### **📄 Document Management**
 - **Upload Documents**: Add new documents to the system

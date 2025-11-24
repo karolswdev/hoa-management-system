@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -15,7 +15,6 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
   Reply as ReplyIcon,
-  Person as PersonIcon,
   Schedule as ScheduleIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
@@ -23,7 +22,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useApiNotifications } from '../../hooks/useApiNotifications';
-import type { Discussion, DiscussionThreadResponse } from '../../types/api';
+import type { DiscussionThreadResponse } from '../../types/api';
 
 const DiscussionThreadPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,7 +36,7 @@ const DiscussionThreadPage: React.FC = () => {
   const [submittingReply, setSubmittingReply] = useState(false);
   const [replyError, setReplyError] = useState('');
 
-  const fetchThread = async () => {
+  const fetchThread = useCallback(async () => {
     if (!id) return;
     
     try {
@@ -52,24 +51,25 @@ const DiscussionThreadPage: React.FC = () => {
         setThreadData(null);
         showError('Invalid discussion thread data received.');
       }
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error ||
-                          err.response?.data?.message ||
-                          'Failed to load discussion thread. Please try again.';
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { error?: string; message?: string }; status?: number } }).response?.data?.error ||
+        (err as { response?: { data?: { error?: string; message?: string }; status?: number } }).response?.data?.message ||
+        'Failed to load discussion thread. Please try again.';
       showError(errorMessage);
       
       // If thread not found, redirect back to discussions
-      if (err.response?.status === 404) {
+      if ((err as { response?: { status?: number } }).response?.status === 404) {
         setTimeout(() => navigate('/discussions'), 2000);
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate, showError]);
 
   useEffect(() => {
     fetchThread();
-  }, [id]);
+  }, [fetchThread]);
 
   const handleBackClick = () => {
     navigate('/discussions');
@@ -238,7 +238,7 @@ const DiscussionThreadPage: React.FC = () => {
         </Card>
       ) : (
         <Box display="flex" flexDirection="column" gap={2} mb={3}>
-          {replies && replies.map((reply, index) => (
+          {replies && replies.map((reply) => (
             <Card key={reply.id}>
               <CardContent>
                 <Box display="flex" alignItems="flex-start" gap={2}>

@@ -70,11 +70,18 @@ frontend/screenshots/
 
 To regenerate screenshots:
 ```bash
-cd frontend
-npm run generate-screenshots
+./scripts/run-screenshots.sh
 ```
 
 See [frontend/screenshots/README.md](../frontend/screenshots/README.md) for details.
+
+## PDF User Guide (auto-generated)
+
+We publish a downloadable PDF as part of the static frontend (`frontend/public/user-guide.pdf`). The PDF is built from this README + fresh screenshots.
+
+- Local build (screenshots + PDF): `./scripts/build-user-guide.sh`
+- PDF outputs: `dist/user-guide.pdf` and `frontend/public/user-guide.pdf`
+- Release gate: the production deploy workflow runs the build and will fail the release if screenshots or PDF generation fail.
 
 ---
 
@@ -110,14 +117,45 @@ Update user guides when:
    - `ADMIN_USER_GUIDE.md` for admin documentation
 
 2. **Update Screenshots:**
-   - Regenerate with `npm run generate-screenshots`
-   - Or use GitHub Actions workflow
+   - Run `./scripts/run-screenshots.sh` locally
+   - Or use the GitHub Actions workflow (also runs on release)
    - Replace outdated screenshot references
 
 3. **Review and Test:**
    - Verify all links work
    - Check screenshot references
    - Test instructions with actual system
+
+---
+
+## Visual Walkthrough (auto-generated screenshots)
+
+**Public & Authentication**
+- Login: ![Login](../frontend/screenshots/01-login-page.png)
+- Validation errors: ![Login validation](../frontend/screenshots/02-login-validation-errors.png)
+- Registration: ![Registration](../frontend/screenshots/03-registration-page.png)
+- Forgot password: ![Forgot password](../frontend/screenshots/04-forgot-password-page.png)
+
+**Member Experience**
+- Dashboard: ![Member dashboard](../frontend/screenshots/06-member-dashboard.png)
+- Announcements: ![Announcements](../frontend/screenshots/07-member-announcements-list.png)
+- Events (upcoming/past): ![Events](../frontend/screenshots/08-member-events-upcoming.png)
+- Documents: ![Documents](../frontend/screenshots/10-member-documents-page.png)
+- Discussions: ![Discussions](../frontend/screenshots/11-member-discussions-list.png)
+- Polls overview: ![Polls](../frontend/screenshots/30-member-polls.png)
+- Poll detail: ![Poll detail](../frontend/screenshots/31-poll-detail.png)
+- Poll receipt verification (public): ![Poll receipt](../frontend/screenshots/32-poll-receipt.png)
+- Vendor directory: ![Vendor directory](../frontend/screenshots/33-vendor-directory-member.png)
+- Profile: ![Profile](../frontend/screenshots/13-member-profile-page.png)
+
+**Admin Experience**
+- Dashboard: ![Admin dashboard](../frontend/screenshots/14-admin-dashboard.png)
+- Users: ![Users](../frontend/screenshots/15-admin-users-management.png)
+- Announcements: ![Admin announcements](../frontend/screenshots/17-admin-announcements-management.png)
+- Events: ![Admin events](../frontend/screenshots/20-admin-events-management.png)
+- Documents: ![Admin documents](../frontend/screenshots/22-admin-documents-management.png)
+- Audit logs: ![Audit logs](../frontend/screenshots/25-admin-audit-logs.png)
+- Vendor management: ![Vendor management](../frontend/screenshots/34-admin-vendor-management.png)
    - Proofread content
 
 4. **Version Control:**

@@ -20,9 +20,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  user-guide:
+    name: Build User Guide (PDF + Screenshots)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Build user guide PDF (screenshots + markdown)
+        run: bash scripts/build-user-guide.sh
+
+      - name: Upload user guide artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: user-guide-assets
+          path: |
+            frontend/public/user-guide.pdf
+          retention-days: 30
+
   build-images:
     name: Build & Push Images
     runs-on: ubuntu-latest
+    needs: user-guide
     permissions:
       contents: read
       packages: write
@@ -38,6 +80,12 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - name: Download user guide artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: user-guide-assets
+          path: frontend/public
 
       - name: Prepare runtime env vars
         run: |
@@ -63,7 +111,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push backend image
+      - name: Build backend image (local)
         env:
           IMAGE: ghcr.io/${{ steps.meta.outputs.owner }}/hoa-backend:${{ steps.meta.outputs.version }}
           APP_VERSION: ${{ steps.meta.outputs.version }}
@@ -72,9 +120,9 @@ jobs:
             -t "$IMAGE" \
             --build-arg APP_VERSION="$APP_VERSION" \
             -f backend/Dockerfile backend \
-            --push
+            --load
 
-      - name: Build & push frontend image
+      - name: Build frontend image (local)
         env:
           IMAGE: ghcr.io/${{ steps.meta.outputs.owner }}/hoa-frontend:${{ steps.meta.outputs.version }}
           VITE_API_BASE_URL: https://${{ secrets.DEPLOY_DOMAIN }}/api
@@ -89,7 +137,158 @@ jobs:
             --build-arg VITE_APP_NAME="$VITE_APP_NAME" \
             --build-arg VITE_TURNSTILE_SITE_KEY="$VITE_TURNSTILE_SITE_KEY" \
             --build-arg VITE_APP_VERSION="$VITE_APP_VERSION" \
-            --push
+            --load
+
+      - name: Create health gate network and volumes
+        run: |
+          docker network create hoa-health-gate-network || true
+          mkdir -p ${{ runner.temp }}/health-gate-db
+          mkdir -p ${{ runner.temp }}/health-gate-uploads
+
+      - name: Start backend container for health gate
+        env:
+          BACKEND_IMAGE: ghcr.io/${{ steps.meta.outputs.owner }}/hoa-backend:${{ steps.meta.outputs.version }}
+          APP_PORT: 3001
+        run: |
+          docker run -d \
+            --name hoa_backend_health_gate \
+            --network hoa-health-gate-network \
+            -p 3001:3001 \
+            -e NODE_ENV=production \
+            -e PORT=$APP_PORT \
+            -e JWT_SECRET=test-jwt-secret-for-health-gate \
+            -e JWT_EXPIRES_IN=7d \
+            -e DB_PATH=/usr/src/app/backend/database/hoa.db \
+            -e MAX_FILE_SIZE_MB=10 \
+            -e EMAIL_PROVIDER=console \
+            -e EMAIL_FROM=noreply@example.com \
+            -e EMAIL_FROM_NAME="HOA Management" \
+            -e FRONTEND_BASE_URL=http://localhost:3000 \
+            -v ${{ runner.temp }}/health-gate-db:/usr/src/app/backend/database \
+            -v ${{ runner.temp }}/health-gate-uploads:/usr/src/app/backend/uploads \
+            "$BACKEND_IMAGE"
+
+      - name: Run database migrations in health gate
+        env:
+          BACKEND_IMAGE: ghcr.io/${{ steps.meta.outputs.owner }}/hoa-backend:${{ steps.meta.outputs.version }}
+        run: |
+          echo "Running migrations on temporary database..."
+          docker run --rm \
+            --network hoa-health-gate-network \
+            -e NODE_ENV=production \
+            -e DB_PATH=/usr/src/app/backend/database/hoa.db \
+            -v ${{ runner.temp }}/health-gate-db:/usr/src/app/backend/database \
+            "$BACKEND_IMAGE" \
+            npx sequelize-cli db:migrate
+          echo "Migrations completed successfully"
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend to start..."
+          max_attempts=30
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            if docker ps | grep -q hoa_backend_health_gate; then
+              echo "Backend container is running"
+              sleep 5
+              break
+            fi
+            echo "Attempt $((attempt + 1))/$max_attempts: Backend not ready yet..."
+            sleep 2
+            attempt=$((attempt + 1))
+          done
+
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Backend failed to start within timeout"
+            docker logs hoa_backend_health_gate || true
+            exit 1
+          fi
+
+      - name: Health gate - curl /healthz endpoint
+        id: health_check
+        run: |
+          echo "Checking /api/health endpoint..."
+          max_attempts=15
+          attempt=0
+
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -f -s http://localhost:3001/api/health > ${{ runner.temp }}/healthz-response.json; then
+              echo "✅ Health check passed"
+              cat ${{ runner.temp }}/healthz-response.json
+              echo "health_status=passed" >> "$GITHUB_OUTPUT"
+              break
+            fi
+            echo "Attempt $((attempt + 1))/$max_attempts: Health check failed, retrying..."
+            sleep 2
+            attempt=$((attempt + 1))
+          done
+
+          if [ $attempt -eq $max_attempts ]; then
+            echo "❌ Health check failed after $max_attempts attempts"
+            echo "Backend logs:"
+            docker logs hoa_backend_health_gate || true
+            exit 1
+          fi
+
+      - name: Health gate - curl /metrics endpoint
+        id: metrics_check
+        run: |
+          echo "Checking /api/metrics endpoint..."
+          if curl -f -s http://localhost:3001/api/metrics > ${{ runner.temp }}/metrics-response.json; then
+            echo "✅ Metrics endpoint accessible"
+            cat ${{ runner.temp }}/metrics-response.json
+            echo "metrics_status=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "❌ Metrics endpoint check failed"
+            docker logs hoa_backend_health_gate || true
+            exit 1
+          fi
+
+      - name: Capture health gate logs
+        if: always()
+        run: |
+          echo "Capturing health gate dry run logs..."
+          docker logs hoa_backend_health_gate > ${{ runner.temp }}/health-gate-backend.log 2>&1 || true
+          docker ps -a > ${{ runner.temp }}/health-gate-containers.log 2>&1 || true
+          ls -la ${{ runner.temp }}/health-gate-db > ${{ runner.temp }}/health-gate-db-contents.log 2>&1 || true
+
+      - name: Upload health gate dry run logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-gate-dry-run-logs
+          path: |
+            ${{ runner.temp }}/health-gate-backend.log
+            ${{ runner.temp }}/health-gate-containers.log
+            ${{ runner.temp }}/health-gate-db-contents.log
+            ${{ runner.temp }}/healthz-response.json
+            ${{ runner.temp }}/metrics-response.json
+          retention-days: 30
+
+      - name: Cleanup health gate containers
+        if: always()
+        run: |
+          docker stop hoa_backend_health_gate || true
+          docker rm hoa_backend_health_gate || true
+          docker network rm hoa-health-gate-network || true
+
+      - name: Push backend image to GHCR
+        env:
+          IMAGE: ghcr.io/${{ steps.meta.outputs.owner }}/hoa-backend:${{ steps.meta.outputs.version }}
+        run: |
+          echo "Health gate passed - pushing backend image to GHCR..."
+          docker push "$IMAGE"
+          docker tag "$IMAGE" "ghcr.io/${{ steps.meta.outputs.owner }}/hoa-backend:latest"
+          docker push "ghcr.io/${{ steps.meta.outputs.owner }}/hoa-backend:latest"
+
+      - name: Push frontend image to GHCR
+        env:
+          IMAGE: ghcr.io/${{ steps.meta.outputs.owner }}/hoa-frontend:${{ steps.meta.outputs.version }}
+        run: |
+          echo "Pushing frontend image to GHCR..."
+          docker push "$IMAGE"
+          docker tag "$IMAGE" "ghcr.io/${{ steps.meta.outputs.owner }}/hoa-frontend:latest"
+          docker push "ghcr.io/${{ steps.meta.outputs.owner }}/hoa-frontend:latest"
 
       - name: Publish image metadata
         id: images

@@ -1,0 +1,94 @@
+---
+title: Vendor Moderation Flowchart
+---
+flowchart LR
+    %% Define color-coded states
+    classDef pendingStyle fill:#FFF4E6,stroke:#F59E0B,stroke-width:2px,color:#000
+    classDef approvedStyle fill:#D1FAE5,stroke:#10B981,stroke-width:2px,color:#000
+    classDef deniedStyle fill:#FEE2E2,stroke:#EF4444,stroke-width:2px,color:#000
+    classDef systemStyle fill:#DBEAFE,stroke:#3B82F6,stroke-width:2px,color:#000
+    classDef adminStyle fill:#F3E8FF,stroke:#A855F7,stroke-width:2px,color:#000
+
+    %% Submission Flow
+    START([Resident/Admin Submits Vendor]):::systemStyle
+    INTAKE[VendorDirectoryService: Intake]:::systemStyle
+    VALIDATE{Validate Input<br/>Name, Category, Contact}:::systemStyle
+
+    %% Validation Branches
+    REJECT_INVALID[Return Validation Error]:::deniedStyle
+    CREATE_PENDING[Create Vendor Record<br/>moderation_state = pending<br/>visibility_scope = admins]:::pendingStyle
+
+    %% Notification & Queue
+    NOTIFY_ADMIN[Log AuditEvent<br/>Notify Admin Queue]:::adminStyle
+    ADMIN_QUEUE[(Admin Moderation Queue<br/>Status: PENDING)]:::pendingStyle
+
+    %% Admin Review
+    ADMIN_REVIEW{Admin Reviews<br/>Vendor Details}:::adminStyle
+
+    %% Approval Path
+    APPROVE[Set moderation_state = approved<br/>Update visibility_scope<br/>based on vendors.public-categories]:::approvedStyle
+    LOG_APPROVE[Log AuditEvent: Approved]:::systemStyle
+    PUBLISH[(Vendor Directory<br/>Status: APPROVED)]:::approvedStyle
+
+    %% Denial Path
+    DENY[Set moderation_state = denied<br/>Keep visibility_scope = admins]:::deniedStyle
+    LOG_DENY[Log AuditEvent: Denied<br/>Store denial reason in notes]:::systemStyle
+    ARCHIVE[(Archive<br/>Status: DENIED)]:::deniedStyle
+
+    %% Edit & Resubmit Path
+    REQUEST_EDIT[Request Changes<br/>Add notes for submitter]:::pendingStyle
+    EDIT[Submitter Edits<br/>Vendor Details]:::systemStyle
+
+    %% Guest/Member Access
+    GUEST_VIEW{Guest Access?<br/>Check visibility_scope<br/>& public-categories}:::systemStyle
+    MEMBER_VIEW{Member Access?<br/>Check visibility_scope}:::systemStyle
+    SHOW_PUBLIC[Display Vendor<br/>Name + Category Only]:::approvedStyle
+    SHOW_FULL[Display Full Details<br/>Including Contact Info]:::approvedStyle
+    HIDE[Do Not Display]:::deniedStyle
+
+    %% Flow Connections
+    START --> INTAKE
+    INTAKE --> VALIDATE
+
+    VALIDATE -->|Invalid| REJECT_INVALID
+    VALIDATE -->|Valid| CREATE_PENDING
+
+    CREATE_PENDING --> NOTIFY_ADMIN
+    NOTIFY_ADMIN --> ADMIN_QUEUE
+    ADMIN_QUEUE --> ADMIN_REVIEW
+
+    ADMIN_REVIEW -->|Approve| APPROVE
+    ADMIN_REVIEW -->|Deny| DENY
+    ADMIN_REVIEW -->|Request Edit| REQUEST_EDIT
+
+    APPROVE --> LOG_APPROVE
+    LOG_APPROVE --> PUBLISH
+
+    DENY --> LOG_DENY
+    LOG_DENY --> ARCHIVE
+
+    REQUEST_EDIT --> EDIT
+    EDIT --> VALIDATE
+
+    %% Public Access Flow
+    PUBLISH --> GUEST_VIEW
+    GUEST_VIEW -->|visibility_scope = public<br/>& category in public-categories| SHOW_PUBLIC
+    GUEST_VIEW -->|Otherwise| HIDE
+
+    PUBLISH --> MEMBER_VIEW
+    MEMBER_VIEW -->|visibility_scope = public<br/>OR members| SHOW_FULL
+    MEMBER_VIEW -->|visibility_scope = admins| HIDE
+
+    %% Legend
+    subgraph LEGEND[" LEGEND "]
+        L1[Pending Review]:::pendingStyle
+        L2[Approved & Published]:::approvedStyle
+        L3[Denied/Rejected]:::deniedStyle
+        L4[System Process]:::systemStyle
+        L5[Admin Action Required]:::adminStyle
+    end
+
+    %% Notes
+    NOTE1["⚠️ Transaction Boundaries:<br/>- Vendor creation + AuditEvent = atomic<br/>- State transitions logged before commit"]
+    NOTE2["🔍 Config Integration:<br/>- vendors.public-categories flag controls<br/>  which approved vendors show to guests"]
+    NOTE3["📊 Visibility Matrix:<br/>• public: All users (if in public-categories)<br/>• members: Authenticated users<br/>• admins: Privileged users only"]

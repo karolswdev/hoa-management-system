@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -16,7 +16,6 @@ import {
 } from '@mui/material';
 import {
   Upload as UploadIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
   CheckCircle as ApproveIcon,
   GetApp as DownloadIcon,
@@ -54,9 +53,11 @@ const AdminDocumentsPage: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const getErrorMessage = (err: unknown, fallback: string) =>
+    (err as { response?: { data?: { message?: string } } }).response?.data?.message || fallback;
 
   // Load documents data
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -69,17 +70,18 @@ const AdminDocumentsPage: React.FC = () => {
       
       setDocuments(response.documents);
       setTotalItems(response.count);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load documents');
-      enqueueSnackbar('Failed to load documents', { variant: 'error' });
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Failed to load documents');
+      setError(message);
+      enqueueSnackbar(message, { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, enqueueSnackbar]);
 
   useEffect(() => {
     loadDocuments();
-  }, [currentPage]);
+  }, [loadDocuments]);
 
   // Form validation
   const validateForm = () => {
@@ -156,8 +158,8 @@ const AdminDocumentsPage: React.FC = () => {
       setUploadModalOpen(false);
       resetUploadForm();
       loadDocuments();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to upload document', { variant: 'error' });
+    } catch (err: unknown) {
+      enqueueSnackbar(getErrorMessage(err, 'Failed to upload document'), { variant: 'error' });
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -170,8 +172,8 @@ const AdminDocumentsPage: React.FC = () => {
       await apiService.approveDocument(document.id);
       enqueueSnackbar('Document approved successfully', { variant: 'success' });
       loadDocuments();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to approve document', { variant: 'error' });
+    } catch (err: unknown) {
+      enqueueSnackbar(getErrorMessage(err, 'Failed to approve document'), { variant: 'error' });
     }
   };
 
@@ -191,8 +193,8 @@ const AdminDocumentsPage: React.FC = () => {
       window.URL.revokeObjectURL(url);
       
       enqueueSnackbar('Document downloaded successfully', { variant: 'success' });
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to download document', { variant: 'error' });
+    } catch (err: unknown) {
+      enqueueSnackbar(getErrorMessage(err, 'Failed to download document'), { variant: 'error' });
     }
   };
 
@@ -207,8 +209,8 @@ const AdminDocumentsPage: React.FC = () => {
       setDeleteModalOpen(false);
       setSelectedDocument(null);
       loadDocuments();
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to delete document', { variant: 'error' });
+    } catch (err: unknown) {
+      enqueueSnackbar(getErrorMessage(err, 'Failed to delete document'), { variant: 'error' });
     }
   };
 

@@ -1,4 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -48,8 +49,14 @@ test.describe('Generate User Guide Screenshots', () => {
 
     test('02 - Login Page with Validation Errors', async ({ page }) => {
       await page.goto('/login');
-      await page.getByRole('button', { name: /sign in/i }).click();
-      await expect(page.locator('text=/email is required/i')).toBeVisible();
+      const emailField = page.getByLabel(/email address/i);
+      const passwordField = page.getByLabel(/password/i);
+      await emailField.focus();
+      await passwordField.focus();
+      await emailField.blur();
+      await passwordField.blur();
+      await expect(page.getByText(/email is required/i)).toBeVisible();
+      await expect(page.getByText(/password is required/i)).toBeVisible();
       await takeScreenshot(page, '02-login-validation-errors');
     });
 
@@ -320,6 +327,42 @@ test.describe('Generate User Guide Screenshots', () => {
         await page.waitForTimeout(1500);
         await takeScreenshot(page, '29-success-notification');
       }
+    });
+  });
+
+  test.describe('Democracy & Vendor Screens', () => {
+    test('30 - Member Polls Overview', async ({ page }) => {
+      await loginAsMember(page);
+      await page.goto('/polls');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '30-member-polls', true);
+    });
+
+    test('31 - Poll Detail', async ({ page }) => {
+      await loginAsMember(page);
+      await page.goto('/polls/1');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '31-poll-detail', true);
+    });
+
+    test('32 - Poll Receipt Verification', async ({ page }) => {
+      await page.goto('/polls/1/receipts/RCPT-DEMO-001');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '32-poll-receipt', true);
+    });
+
+    test('33 - Vendor Directory (Member)', async ({ page }) => {
+      await loginAsMember(page);
+      await page.goto('/vendors');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '33-vendor-directory-member', true);
+    });
+
+    test('34 - Vendor Management (Admin)', async ({ page }) => {
+      await loginAsAdmin(page);
+      await page.goto('/admin/vendors');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '34-admin-vendor-management', true);
     });
   });
 });

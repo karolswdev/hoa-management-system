@@ -32,9 +32,12 @@ import {
   Settings,
   History,
   Logout,
+  HowToVote,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import ReleaseBadge from '../common/ReleaseBadge';
+import AccessibilityToggle from '../Accessibility/Toggle';
+import { trackAccessibilityToggle } from '../../utils/analytics';
 
 const drawerWidth = 240;
 
@@ -51,6 +54,7 @@ const navigationItems: NavigationItem[] = [
   { text: 'Events', icon: <Event />, path: '/events' },
   { text: 'Documents', icon: <Description />, path: '/documents' },
   { text: 'Discussions', icon: <Forum />, path: '/discussions' },
+  { text: 'Polls', icon: <HowToVote />, path: '/polls' },
   { text: 'Profile', icon: <Person />, path: '/profile' },
 ];
 
@@ -128,13 +132,13 @@ const Layout: React.FC = () => {
           <Divider />
           <List>
             <ListItem>
-              <ListItemText 
-                primary="Administration" 
-                primaryTypographyProps={{ 
-                  variant: 'overline', 
+              <ListItemText
+                primary="Administration"
+                primaryTypographyProps={{
+                  variant: 'overline',
                   color: 'text.secondary',
                   fontWeight: 'bold'
-                }} 
+                }}
               />
             </ListItem>
             {adminNavigationItems.map((item) => (
@@ -151,8 +155,22 @@ const Layout: React.FC = () => {
           </List>
         </>
       )}
-      <Box sx={{ mt: 'auto', p: 2 }}>
-        <ReleaseBadge />
+
+      {/* Accessibility Toggle in Drawer */}
+      <Box sx={{ mt: 'auto' }}>
+        <Divider />
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AccessibilityToggle
+            variant="drawer"
+            onAnalytics={(event) => trackAccessibilityToggle(event.context, event.featureFlagState.highVis)}
+          />
+          <Typography variant="body2" sx={{ flexGrow: 1 }}>
+            High Visibility Mode
+          </Typography>
+        </Box>
+        <Box sx={{ px: 2, pb: 2 }}>
+          <ReleaseBadge />
+        </Box>
       </Box>
     </Box>
   );
@@ -180,6 +198,14 @@ const Layout: React.FC = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {/* Page title could be dynamic based on current route */}
           </Typography>
+
+          {/* Accessibility Toggle */}
+          <Box sx={{ mr: 2 }}>
+            <AccessibilityToggle
+              variant="navbar"
+              onAnalytics={(event) => trackAccessibilityToggle(event.context, event.featureFlagState.highVis)}
+            />
+          </Box>
 
           {/* User Profile Menu */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

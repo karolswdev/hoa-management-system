@@ -67,19 +67,47 @@ fi
 info "Verifying services"
 $COMPOSE ps
 
+info "Running endpoint health checks"
 set +e
 APEX=$(curl -s -o /dev/null -w "%{http_code}" "https://$DOMAIN/")
 API=$(curl -s -o /dev/null -w "%{http_code}" "https://$DOMAIN/api/")
+HEALTH=$(curl -s -o /dev/null -w "%{http_code}" "https://$DOMAIN/api/health")
+METRICS=$(curl -s -o /dev/null -w "%{http_code}" "https://$DOMAIN/api/metrics")
 set -e
-echo "Apex: $APEX  API: $API"
+
+echo "Endpoint Status:"
+echo "  Apex:    $APEX"
+echo "  API:     $API"
+echo "  Health:  $HEALTH"
+echo "  Metrics: $METRICS"
+
+CHECKS_FAILED=0
 
 if [ "$APEX" != "200" ]; then
   warn "Apex did not return 200"
+  CHECKS_FAILED=$((CHECKS_FAILED + 1))
 fi
 
 if [ "$API" != "200" ] && [ "$API" != "404" ]; then
-  warn "API did not return 200/404; tailing backend logs"
+  warn "API did not return 200/404"
+  CHECKS_FAILED=$((CHECKS_FAILED + 1))
+fi
+
+if [ "$HEALTH" != "200" ]; then
+  warn "Health endpoint did not return 200"
+  CHECKS_FAILED=$((CHECKS_FAILED + 1))
+fi
+
+if [ "$METRICS" != "200" ]; then
+  warn "Metrics endpoint did not return 200"
+  CHECKS_FAILED=$((CHECKS_FAILED + 1))
+fi
+
+if [ $CHECKS_FAILED -gt 0 ]; then
+  warn "$CHECKS_FAILED health check(s) failed; tailing backend logs"
   $COMPOSE logs -n 150 backend || true
+else
+  log "All health checks passed"
 fi
 
 log "Remote deploy finished"

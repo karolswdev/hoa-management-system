@@ -1,0 +1,141 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_LEFT_RIGHT()
+SHOW_LEGEND()
+
+title Component Diagram - Board Governance & Democracy Modules
+
+' External Actors
+Person(resident, "Resident", "Authenticated homeowner casting votes and viewing board information")
+Person(boardMember, "Board Member", "Elected leader managing rosters and governance")
+Person(adminVolunteer, "Admin Volunteer", "Trusted operator managing polls and feature flags")
+Person_Ext(guest, "Public Guest", "Unauthenticated visitor with limited access")
+
+' External Systems
+System_Ext(sendgrid, "SendGrid Email API", "External email delivery provider")
+Container_Ext(sqlite, "SQLite Database", "SQLite 3", "Stores users, board members, polls, votes, vendors, configs, audit logs")
+
+' Frontend Containers
+Container_Boundary(frontend, "Frontend Application (React SPA)") {
+  Component(webapp, "CommunityWebApp", "React + Vite + Material UI", "Resident-facing pages: Board roster, Poll list/voting, Vendor directory with AccessibilityContext")
+  Component(adminConsole, "AdminConsole", "React Protected Views", "Admin-only pages: Board management, Poll creation, Vendor CRUD, Feature flag toggles")
+  Component(accessibilityContext, "AccessibilityContext", "React Context Provider", "Manages high-visibility theme preferences, localStorage sync, and shared styling tokens")
+  Component(featureFlagHook, "useFeatureFlag Hook", "React Custom Hook", "Fetches and caches feature flag values from ConfigRegistry API")
+}
+
+' API Gateway Container with Internal Components
+Container_Boundary(apiGateway, "ApiGateway (Node.js 18 Express)") {
+  ' Middleware Layer
+  Component(authGuard, "AuthGuardMiddleware", "Express Middleware", "Validates session/JWT tokens and enforces role-based access (member/admin)")
+  Component(rateLimiter, "RateLimiterMiddleware", "Express Middleware", "Protects contact endpoints with IP throttling and CAPTCHA validation")
+  Component(loggingMiddleware, "LoggingMiddleware", "Pino Logger", "Structured JSON logs with correlation IDs for request tracing")
+
+  ' Controllers
+  Component(boardController, "BoardController", "Express Router", "GET /board, GET /board/history, POST /board/contact, admin board CRUD operations")
+  Component(pollController, "PollController", "Express Router", "GET /polls, POST /polls, POST /polls/{id}/votes, GET /polls/{id}/receipts/{hash}")
+  Component(vendorController, "VendorController", "Express Router", "GET /vendors, POST /vendors with filtering and member/public scopes")
+  Component(configController, "ConfigController", "Express Router", "GET /config/flags, PATCH /config/flags/{key} for admin flag management")
+
+  ' Domain Services
+  Component(boardService, "BoardGovernanceService", "Service Module", "Handles board title/member CRUD, roster visibility logic, history queries, contact form orchestration")
+  Component(democracyService, "DemocracyService", "Service Module", "Poll lifecycle management, voting window enforcement, vote recording, notification coordination")
+  Component(vendorService, "VendorDirectoryService", "Service Module", "Vendor CRUD, filtering by category, member/public visibility scoping, caching")
+  Component(configRegistry, "ConfigRegistry", "Cache + Repository", "TTL-cached config flag reads/writes, exposes typed values, invalidates on admin edits")
+  Component(emailService, "EmailNotificationService", "Service Module", "Builds board contact and poll notification payloads, SendGrid integration, audit logging")
+
+  ' Supporting Components
+  Component(voteEngine, "VoteIntegrityEngine", "Utility Module", "SHA256 hash chain computation (prev_hash + vote_hash), receipt generation, verification")
+  Component(notificationLog, "ResidentNotificationLog Writer", "Repository Wrapper", "Persists EmailAudit and ResidentNotificationLog records for accountability")
+  Component(auditService, "AuditLogStore Adapter", "Repository Wrapper", "Writes AuditEvent records for admin actions and vote hash chains")
+  Component(accessibilityAdapter, "AccessibilityPreferenceAdapter", "Repository", "Syncs user high-visibility preferences between localStorage and profile database")
+}
+
+' External Systems (within boundary for cleaner layout)
+System_Boundary(external, "External Services") {
+  Component_Ext(sendgridSDK, "SendGrid SDK", "Node.js Library", "Handles email API calls with retry logic")
+  Component_Ext(rateLimiterStore, "In-memory RateLimiter Store", "Express middleware cache", "Tracks IP counters and CAPTCHA tokens under 1GB limit")
+}
+
+' === Relationships - Frontend to API Gateway ===
+Rel(resident, webapp, "Uses via browser", "HTTPS")
+Rel(boardMember, adminConsole, "Manages board roster and polls", "HTTPS + Auth")
+Rel(adminVolunteer, adminConsole, "Manages content and feature flags", "HTTPS + Auth")
+Rel(guest, webapp, "Views public board and vendors", "HTTPS")
+
+Rel(webapp, boardController, "Fetches board roster and history", "REST/JSON")
+Rel(webapp, pollController, "Fetches polls and submits votes", "REST/JSON")
+Rel(webapp, vendorController, "Fetches vendor listings", "REST/JSON")
+Rel(webapp, configController, "Fetches feature flags on bootstrap", "REST/JSON")
+
+Rel(adminConsole, boardController, "Admin board CRUD operations", "REST/JSON")
+Rel(adminConsole, pollController, "Creates polls with notify_members flag", "REST/JSON")
+Rel(adminConsole, vendorController, "Admin vendor CRUD", "REST/JSON")
+Rel(adminConsole, configController, "Toggles feature flags", "REST/JSON + PATCH")
+
+Rel(webapp, accessibilityContext, "Reads theme preferences", "React Context")
+Rel(adminConsole, accessibilityContext, "Shares theme with admin views", "React Context")
+Rel(webapp, featureFlagHook, "Queries flag state", "Hook API")
+Rel(adminConsole, featureFlagHook, "Queries flag state for UI toggles", "Hook API")
+
+' === Relationships - Middleware Flow ===
+Rel(boardController, authGuard, "Enforces member/admin scopes", "Middleware chain")
+Rel(boardController, rateLimiter, "Applies IP throttling + CAPTCHA", "Middleware chain")
+Rel(pollController, authGuard, "Validates voting eligibility", "Middleware chain")
+Rel(vendorController, authGuard, "Ensures vendor CRUD permissions", "Middleware chain")
+Rel(configController, authGuard, "Restricts config to admins only", "Middleware chain")
+
+Rel(boardController, loggingMiddleware, "Logs request metadata", "Pino structured logs")
+Rel(pollController, loggingMiddleware, "Logs vote submissions", "Pino structured logs")
+
+' === Relationships - Controllers to Services ===
+Rel(boardController, boardService, "Delegates roster/history/contact logic", "Function calls")
+Rel(boardController, emailService, "Triggers board contact email", "Function calls with DTO")
+Rel(boardController, notificationLog, "Records contact request metadata", "Function calls")
+
+Rel(pollController, democracyService, "Delegates poll CRUD and vote commands", "Function calls")
+Rel(pollController, voteEngine, "Requests hash chain receipt", "Function calls with vote DTO")
+Rel(pollController, configRegistry, "Reads poll feature flags", "Function calls")
+
+Rel(vendorController, vendorService, "Handles vendor listing and creation", "Function calls")
+
+Rel(configController, configRegistry, "Reads/writes flag values with TTL", "Function calls")
+Rel(configController, auditService, "Persists FeatureFlagAudit entries", "Function calls")
+
+' === Relationships - Services to Services ===
+Rel(boardService, configRegistry, "Reads board.visibility flag", "Function calls")
+Rel(boardService, emailService, "Passes sanitized contact payloads", "Typed DTOs")
+Rel(boardService, notificationLog, "Updates ResidentNotificationLog", "Function calls")
+
+Rel(democracyService, voteEngine, "Obtains prev_hash and new vote_hash", "Function calls with sequential locking")
+Rel(democracyService, emailService, "Triggers poll notification if notify_members=true", "Typed DTOs")
+Rel(democracyService, auditService, "Writes poll creation events", "Function calls")
+
+Rel(vendorService, auditService, "Logs vendor CRUD actions", "Function calls")
+
+' === Relationships - Services to Data/External ===
+Rel(boardService, sqlite, "Queries BoardTitle, BoardMember, ContactRequest tables", "SQL via Sequelize")
+Rel(democracyService, sqlite, "CRUD for Poll, PollOption, Vote tables with transactions", "SQL via Sequelize")
+Rel(vendorService, sqlite, "Reads/writes Vendor records", "SQL via Sequelize")
+Rel(configRegistry, sqlite, "Loads/stores ConfigFlag rows with TTL cache", "SQL via Sequelize")
+Rel(notificationLog, sqlite, "Persists EmailAudit + ResidentNotificationLog", "SQL via Sequelize")
+Rel(auditService, sqlite, "Writes AuditEvent + FeatureFlagAudit records", "SQL via Sequelize")
+Rel(accessibilityAdapter, sqlite, "Reads/writes AccessibilityPreference", "SQL via Sequelize")
+
+Rel(emailService, sendgridSDK, "Sends board contact and poll notifications", "HTTPS API calls")
+Rel(emailService, notificationLog, "Logs email audit metadata", "Function calls")
+
+Rel(rateLimiter, rateLimiterStore, "Tracks IP counters in-memory", "In-process state")
+
+' === Cross-cutting Relationships ===
+Rel(boardController, accessibilityAdapter, "Syncs board contact help text preferences", "Function calls")
+Rel(democracyService, accessibilityAdapter, "Reads user preference for receipt help cues", "Function calls")
+
+Rel(accessibilityContext, configController, "Fetches accessibility.high-vis-default flag", "REST/JSON")
+Rel(featureFlagHook, configController, "Polls flags on app bootstrap", "REST/JSON")
+
+' === Additional Critical Relationships ===
+Rel_Back(voteEngine, democracyService, "Returns computed hash synchronously to maintain chain integrity")
+Rel(emailService, sendgrid, "Async email dispatch with retry logic")
+
+@enduml

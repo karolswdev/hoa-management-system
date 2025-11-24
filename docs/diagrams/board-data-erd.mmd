@@ -1,0 +1,112 @@
+---
+title: Board Governance Data Model - Entity Relationship Diagram
+---
+erDiagram
+    %% Core User Entity (referenced by multiple tables)
+    users {
+        integer id PK "Auto-increment primary key"
+        string name "User full name"
+        string email UK "Unique email address"
+        string password "Hashed password"
+        string role "User role (admin, member, resident)"
+        string status "Account status"
+        boolean email_verified "Email verification status"
+        boolean is_system_user "System-generated user flag"
+        datetime created_at "Record creation timestamp"
+        datetime updated_at "Last update timestamp"
+    }
+
+    %% Board Governance Entities
+    board_titles {
+        integer id PK "Auto-increment primary key"
+        string title UK "Board position title (unique)"
+        integer rank "Display order (lower = higher priority)"
+        datetime created_at "Record creation timestamp"
+        datetime updated_at "Last update timestamp"
+    }
+
+    board_members {
+        integer id PK "Auto-increment primary key"
+        integer user_id FK "References users.id"
+        integer title_id FK "References board_titles.id"
+        date start_date "Position start date"
+        date end_date "Position end date (NULL = current)"
+        text bio "Optional member biography"
+        datetime created_at "Record creation timestamp"
+        datetime updated_at "Last update timestamp"
+    }
+
+    %% Configuration & Feature Flags
+    config {
+        string key PK "Configuration key (e.g., board.visibility)"
+        text value "Configuration value"
+    }
+
+    %% Contact Management
+    contact_requests {
+        integer id PK "Auto-increment primary key"
+        string requestor_email "Email of person submitting request"
+        string subject "Contact request subject"
+        text message "Contact request message body"
+        string captcha_token "CAPTCHA verification token"
+        string status "Request status (pending, processed, etc.)"
+        datetime submitted_at "Submission timestamp"
+    }
+
+    %% Accessibility Features
+    accessibility_preferences {
+        integer id PK "Auto-increment primary key"
+        integer user_id FK "References users.id (nullable for anonymous)"
+        boolean is_high_visibility "High contrast mode enabled"
+        datetime last_updated "Last preference update"
+        string source "Preference source (user, system, default)"
+    }
+
+    theme_presets {
+        integer id PK "Auto-increment primary key"
+        string mode "Theme mode (light, dark, high-contrast)"
+        string primary_color "Primary color hex code"
+        string background_color "Background color hex code"
+        decimal font_scale "Font scaling factor"
+        string button_padding "Button padding CSS value"
+        datetime updated_at "Last preset update"
+    }
+
+    %% Relationships
+
+    %% Board Governance Relationships
+    users ||--o{ board_members : "serves as"
+    board_titles ||--o{ board_members : "assigns title"
+
+    %% Accessibility Relationships
+    users ||--o{ accessibility_preferences : "stores preferences"
+    theme_presets ||--o{ accessibility_preferences : "references mode"
+
+    %% Notes and Constraints
+    %% Board Titles Constraints
+    %% - Unique title constraint ensures no duplicate position names
+    %% - Indexes: idx_board_titles_rank (rank) for efficient sorting
+
+    %% Board Members Constraints
+    %% - FK user_id: CASCADE on update/delete (removes history if user deleted)
+    %% - FK title_id: RESTRICT on delete (prevents deletion of in-use titles)
+    %% - end_date IS NULL indicates current active position
+    %% - Indexes: idx_board_members_title_start (title_id, start_date)
+    %%           idx_board_members_user_end (user_id, end_date)
+    %%           idx_board_members_end_date (end_date)
+
+    %% Config Table Notes
+    %% - Singleton pattern with key as PK
+    %% - Stores board.visibility (public/members_only)
+    %% - Stores board.history-visibility (public/members_only)
+    %% - No timestamps (managed by ConfigRegistry with TTL cache)
+
+    %% Contact Requests Notes
+    %% - Planned entity (not yet implemented in migrations)
+    %% - Rate-limited by IP + CAPTCHA verification
+    %% - Links to EmailAudit/ResidentNotificationLog (future)
+
+    %% Accessibility Notes
+    %% - accessibility_preferences.user_id is nullable for anonymous sessions
+    %% - theme_presets defines versioned design tokens
+    %% - Preferences reference mode field from theme_presets

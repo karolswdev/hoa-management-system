@@ -1,0 +1,149 @@
+---
+title: CI/CD Deployment Pipeline - Gate Sequence
+description: End-to-end deployment workflow with health gates and verification steps
+---
+graph TB
+    %% Trigger Events
+    START([Release Published / Manual Dispatch])
+
+    %% Build Phase
+    CHECKOUT[Checkout Source Code]
+    META[Extract Version Metadata]
+    BUILDX[Setup Docker Buildx]
+    LOGIN[Login to GHCR]
+
+    %% Image Build Phase
+    BUILD_BE[Build Backend Image --load]
+    BUILD_FE[Build Frontend Image --load]
+
+    %% Health Gate Phase
+    subgraph HEALTH_GATE["🚦 Health Gate (Pre-Push Validation)"]
+        direction TB
+        NET[Create Temp Network & Volumes]
+        START_BE[Start Backend Container]
+        MIGRATE[Run DB Migrations in Temp Volume]
+        WAIT[Wait for Backend Ready]
+        CURL_HEALTH[curl /api/health]
+        CURL_METRICS[curl /api/metrics]
+        LOGS[Capture Dry Run Logs]
+        UPLOAD_LOGS[Upload Logs Artifact]
+        CLEANUP[Cleanup Temp Containers]
+    end
+
+    %% Push Phase
+    PUSH_BE[Push Backend to GHCR :version + :latest]
+    PUSH_FE[Push Frontend to GHCR :version + :latest]
+    PUBLISH_META[Publish Image Metadata]
+
+    %% Deploy Phase
+    subgraph DEPLOY_JOB["📦 Deploy to Linode"]
+        direction TB
+        VALIDATE_SECRETS[Validate Deployment Secrets]
+        PREP_SSH[Prepare SSH Key]
+        ENSURE_DIR[Ensure Remote Directory Exists]
+        SYNC_REPO[Rsync Repository to Server]
+        UPLOAD_SCRIPT[Upload remote.deploy.sh]
+        EXEC_DEPLOY[Execute Remote Deployment]
+    end
+
+    %% Remote Execution Phase
+    subgraph REMOTE_EXEC["🖥️ Remote Server Execution (via SSH)"]
+        direction TB
+        BACKUP[Create Backups: DB, Uploads, Code]
+        PULL[docker compose pull]
+        STOP[Stop Old Containers]
+        UP[docker compose up -d]
+        REMOTE_MIGRATE[Run Migrations if enabled]
+        VERIFY_PS[docker compose ps]
+        CURL_APEX[curl /]
+        CURL_API[curl /api/]
+        CURL_HEALTH_REMOTE[curl /healthz]
+        CURL_METRICS_REMOTE[curl /metrics]
+        TAIL_LOGS[Tail Backend Logs]
+    end
+
+    %% Post-Deploy
+    SUCCESS([✅ Deployment Complete])
+    FAIL([❌ Deployment Failed])
+
+    %% Flow Connections - Trigger to Build
+    START --> CHECKOUT
+    CHECKOUT --> META
+    META --> BUILDX
+    BUILDX --> LOGIN
+    LOGIN --> BUILD_BE
+    LOGIN --> BUILD_FE
+
+    %% Build to Health Gate
+    BUILD_BE --> NET
+    BUILD_FE --> NET
+    NET --> START_BE
+    START_BE --> MIGRATE
+    MIGRATE --> WAIT
+    WAIT --> CURL_HEALTH
+    CURL_HEALTH -->|Pass| CURL_METRICS
+    CURL_HEALTH -->|Fail| LOGS
+    CURL_METRICS -->|Pass| LOGS
+    CURL_METRICS -->|Fail| LOGS
+    LOGS --> UPLOAD_LOGS
+    UPLOAD_LOGS --> CLEANUP
+
+    %% Health Gate Decision
+    CLEANUP -->|Health Gate PASS| PUSH_BE
+    CLEANUP -->|Health Gate FAIL| FAIL
+
+    %% Push Phase
+    PUSH_BE --> PUSH_FE
+    PUSH_FE --> PUBLISH_META
+
+    %% Deploy Job Flow
+    PUBLISH_META --> VALIDATE_SECRETS
+    VALIDATE_SECRETS --> PREP_SSH
+    PREP_SSH --> ENSURE_DIR
+    ENSURE_DIR --> SYNC_REPO
+    SYNC_REPO --> UPLOAD_SCRIPT
+    UPLOAD_SCRIPT --> EXEC_DEPLOY
+
+    %% Remote Execution Flow
+    EXEC_DEPLOY --> BACKUP
+    BACKUP --> PULL
+    PULL --> STOP
+    STOP --> UP
+    UP --> REMOTE_MIGRATE
+    REMOTE_MIGRATE --> VERIFY_PS
+    VERIFY_PS --> CURL_APEX
+    CURL_APEX --> CURL_API
+    CURL_API --> CURL_HEALTH_REMOTE
+    CURL_HEALTH_REMOTE --> CURL_METRICS_REMOTE
+    CURL_METRICS_REMOTE -->|All Checks Pass| TAIL_LOGS
+    CURL_METRICS_REMOTE -->|Any Check Fails| FAIL
+    TAIL_LOGS --> SUCCESS
+
+    %% Styling
+    classDef triggerStyle fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef buildStyle fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef gateStyle fill:#ffebee,stroke:#c62828,stroke-width:3px
+    classDef pushStyle fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef deployStyle fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    classDef remoteStyle fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    classDef successStyle fill:#c8e6c9,stroke:#388e3c,stroke-width:3px
+    classDef failStyle fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
+
+    class START,SUCCESS,FAIL triggerStyle
+    class CHECKOUT,META,BUILDX,LOGIN,BUILD_BE,BUILD_FE buildStyle
+    class NET,START_BE,MIGRATE,WAIT,CURL_HEALTH,CURL_METRICS,LOGS,UPLOAD_LOGS,CLEANUP gateStyle
+    class PUSH_BE,PUSH_FE,PUBLISH_META pushStyle
+    class VALIDATE_SECRETS,PREP_SSH,ENSURE_DIR,SYNC_REPO,UPLOAD_SCRIPT,EXEC_DEPLOY deployStyle
+    class BACKUP,PULL,STOP,UP,REMOTE_MIGRATE,VERIFY_PS,CURL_APEX,CURL_API,CURL_HEALTH_REMOTE,CURL_METRICS_REMOTE,TAIL_LOGS remoteStyle
+    class SUCCESS successStyle
+    class FAIL failStyle
+
+    %% Legend
+    subgraph LEGEND["📖 Legend"]
+        direction LR
+        L1[Build Phase]:::buildStyle
+        L2[Health Gate]:::gateStyle
+        L3[Push to Registry]:::pushStyle
+        L4[Deploy Job]:::deployStyle
+        L5[Remote Execution]:::remoteStyle
+    end

@@ -27,6 +27,20 @@ import type {
   UpdateUserStatusRequest,
   UpdateUserRoleRequest,
   UpdateConfigRequest,
+  BoardMember,
+  BoardHistoryItem,
+  BoardConfig,
+  BoardContactRequest,
+  Poll,
+  SubmitVoteRequest,
+  VoteResponse,
+  VoteReceipt,
+  CreatePollRequest,
+  Vendor,
+  VendorFilter,
+  VendorsResponse,
+  CreateVendorRequest,
+  UpdateVendorRequest,
 } from '../types/api';
 
 class ApiService {
@@ -312,6 +326,105 @@ class ApiService {
   // Admin - Audit Logs
   async getAuditLogs(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<AuditLog>> {
     const response: AxiosResponse<PaginatedResponse<AuditLog>> = await this.api.get('/admin/audit-logs', { params });
+    return response.data;
+  }
+
+  // Board
+  async getBoardRoster(): Promise<{ members: BoardMember[]; lastFetched: string }> {
+    const response = await this.api.get('/board/roster');
+    return {
+      members: response.data.members || response.data,
+      lastFetched: new Date().toISOString(),
+    };
+  }
+
+  async getBoardHistory(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<BoardHistoryItem>> {
+    const response: AxiosResponse<PaginatedResponse<BoardHistoryItem>> = await this.api.get('/board/history', { params });
+    return response.data;
+  }
+
+  async getBoardConfig(): Promise<BoardConfig> {
+    const response: AxiosResponse<BoardConfig> = await this.api.get('/board/config');
+    return response.data;
+  }
+
+  async submitBoardContact(data: BoardContactRequest): Promise<{ message: string }> {
+    const response = await this.api.post('/board/contact', data);
+    return response.data;
+  }
+
+  // Polls
+  async getPolls(params?: {
+    type?: 'informal' | 'binding';
+    status?: 'draft' | 'active' | 'closed';
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<Poll>> {
+    const response: AxiosResponse<PaginatedResponse<Poll>> = await this.api.get('/polls', { params });
+    return response.data;
+  }
+
+  async getPoll(id: number): Promise<Poll> {
+    const response: AxiosResponse<Poll> = await this.api.get(`/polls/${id}`);
+    return response.data;
+  }
+
+  async submitVote(pollId: number, data: SubmitVoteRequest): Promise<VoteResponse> {
+    const response: AxiosResponse<VoteResponse> = await this.api.post(`/polls/${pollId}/votes`, data);
+    return response.data;
+  }
+
+  async getReceipt(pollId: number, hash: string): Promise<VoteReceipt> {
+    const response: AxiosResponse<VoteReceipt> = await this.api.get(`/polls/${pollId}/receipts/${hash}`);
+    return response.data;
+  }
+
+  async createPoll(data: CreatePollRequest): Promise<Poll> {
+    const response: AxiosResponse<Poll> = await this.api.post('/admin/polls', data);
+    return response.data;
+  }
+
+  async updatePoll(id: number, data: Partial<CreatePollRequest>): Promise<Poll> {
+    const response: AxiosResponse<Poll> = await this.api.put(`/admin/polls/${id}`, data);
+    return response.data;
+  }
+
+  async deletePoll(id: number): Promise<void> {
+    await this.api.delete(`/admin/polls/${id}`);
+  }
+
+  // Vendors
+  async getVendors(params?: VendorFilter): Promise<VendorsResponse> {
+    const response: AxiosResponse<VendorsResponse> = await this.api.get('/vendors', { params });
+    return response.data;
+  }
+
+  async getVendor(id: number): Promise<Vendor> {
+    const response: AxiosResponse<{ vendor: Vendor }> = await this.api.get(`/vendors/${id}`);
+    return response.data.vendor;
+  }
+
+  async createVendor(data: CreateVendorRequest): Promise<{ message: string; vendor: Vendor }> {
+    const response = await this.api.post('/vendors', data);
+    return response.data;
+  }
+
+  async updateVendor(id: number, data: UpdateVendorRequest): Promise<Vendor> {
+    const response: AxiosResponse<{ message: string; vendor: Vendor }> = await this.api.put(`/vendors/${id}`, data);
+    return response.data.vendor;
+  }
+
+  async deleteVendor(id: number): Promise<void> {
+    await this.api.delete(`/vendors/${id}`);
+  }
+
+  async moderateVendor(id: number, moderation_state: 'pending' | 'approved' | 'denied'): Promise<Vendor> {
+    const response: AxiosResponse<{ message: string; vendor: Vendor }> = await this.api.patch(`/vendors/${id}/moderate`, { moderation_state });
+    return response.data.vendor;
+  }
+
+  async getVendorStats(): Promise<{ stats: { byModerationState: Array<{ state: string; count: number }>; byCategory: Array<{ category: string; count: number }> } }> {
+    const response = await this.api.get('/vendors/stats');
     return response.data;
   }
 }

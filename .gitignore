@@ -9,6 +9,13 @@ node_modules/
 # Database
 src/database/*.db
 src/database/*.db-journal
+backend/database/*.db
+backend/database/*.db-journal
+dist/
+frontend/screenshots/*.png
+frontend/test-results/
+frontend/playwright-report/
+frontend/public/user-guide.pdf
 
 # Logs
 logs/
@@ -22,3 +29,9 @@ npm-debug.log*
 # Misc
 .DS_Store
 coverage/
+.codemachine/memory
+.codemachine/prompts
+.codemachine/agents
+.codemachine/template.json
+.codemachine/logs
+.codemachine/

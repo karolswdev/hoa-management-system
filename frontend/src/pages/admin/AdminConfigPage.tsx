@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -106,7 +106,7 @@ const AdminConfigPage: React.FC = () => {
   const [hasChanges, setHasChanges] = useState<Record<string, boolean>>({});
 
   // Load configuration data
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -122,17 +122,20 @@ const AdminConfigPage: React.FC = () => {
       setFormValues(initialValues);
       setHasChanges({});
       
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load configuration');
-      enqueueSnackbar('Failed to load configuration', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to load configuration';
+      setError(message);
+      enqueueSnackbar(message, { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [enqueueSnackbar]);
 
   useEffect(() => {
     loadConfig();
-  }, []);
+  }, [loadConfig]);
 
   // Handle form value changes
   const handleValueChange = (key: string, value: string) => {
@@ -187,8 +190,11 @@ const AdminConfigPage: React.FC = () => {
       setHasChanges(prev => ({ ...prev, [field.key]: false }));
       
       enqueueSnackbar(`${field.label} updated successfully`, { variant: 'success' });
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || `Failed to update ${field.label}`, { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        `Failed to update ${field.label}`;
+      enqueueSnackbar(message, { variant: 'error' });
     } finally {
       setSaving(prev => ({ ...prev, [field.key]: false }));
     }
@@ -233,8 +239,11 @@ const AdminConfigPage: React.FC = () => {
       
       setHasChanges({});
       enqueueSnackbar('All settings saved successfully', { variant: 'success' });
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Failed to save settings', { variant: 'error' });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        'Failed to save settings';
+      enqueueSnackbar(message, { variant: 'error' });
     } finally {
       setSaving({});
     }
