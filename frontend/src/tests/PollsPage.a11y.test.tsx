@@ -7,6 +7,7 @@ import PollsPage from '../pages/Polls';
 import PollDetailPage from '../pages/PollDetail';
 import { AccessibilityProvider } from '../contexts/AccessibilityContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
+import { AuthProvider } from '../contexts/AuthContext';
 import { ThemeWrapper } from '../theme/ThemeWrapper';
 import * as pollHooks from '../hooks/usePolls';
 import type { Poll, PollOption } from '../types/api';
@@ -89,7 +90,8 @@ const mockPolls: Poll[] = [
 const TestWrapper: React.FC<{
   children: React.ReactNode;
   highVis?: boolean;
-}> = ({ children, highVis = false }) => {
+  reducedMotion?: boolean;
+}> = ({ children, highVis = false, reducedMotion = false }) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -100,12 +102,16 @@ const TestWrapper: React.FC<{
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AccessibilityProvider initialPreferences={{ mode: highVis ? 'high-vis' : 'standard' }}>
-        <ThemeWrapper>
-          <NotificationProvider>
-            <BrowserRouter>{children}</BrowserRouter>
-          </NotificationProvider>
-        </ThemeWrapper>
+      <AccessibilityProvider
+        initialPreferences={{ mode: highVis ? 'high-vis' : 'standard', reducedMotion }}
+      >
+        <NotificationProvider>
+          <AuthProvider>
+            <ThemeWrapper>
+              <BrowserRouter>{children}</BrowserRouter>
+            </ThemeWrapper>
+          </AuthProvider>
+        </NotificationProvider>
       </AccessibilityProvider>
     </QueryClientProvider>
   );
@@ -410,24 +416,10 @@ describe('Polls Accessibility Tests', () => {
     });
 
     it('should respect reduced motion preferences', () => {
-      const queryClient = new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
-          },
-        },
-      });
-
       const { container } = render(
-        <QueryClientProvider client={queryClient}>
-          <AccessibilityProvider initialPreferences={{ reducedMotion: true }}>
-            <ThemeWrapper>
-              <BrowserRouter>
-                <PollsPage />
-              </BrowserRouter>
-            </ThemeWrapper>
-          </AccessibilityProvider>
-        </QueryClientProvider>
+        <TestWrapper reducedMotion>
+          <PollsPage />
+        </TestWrapper>
       );
 
       // Component should render without motion-dependent features
