@@ -33,6 +33,7 @@ import {
   History,
   Logout,
   HowToVote,
+  Store,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import ReleaseBadge from '../common/ReleaseBadge';
@@ -55,6 +56,7 @@ const navigationItems: NavigationItem[] = [
   { text: 'Documents', icon: <Description />, path: '/documents' },
   { text: 'Discussions', icon: <Forum />, path: '/discussions' },
   { text: 'Polls', icon: <HowToVote />, path: '/polls' },
+  { text: 'Vendors', icon: <Store />, path: '/vendors' },
   { text: 'Profile', icon: <Person />, path: '/profile' },
 ];
 
@@ -64,6 +66,7 @@ const adminNavigationItems: NavigationItem[] = [
   { text: 'Manage Announcements', icon: <Announcement />, path: '/admin/announcements', adminOnly: true },
   { text: 'Manage Events', icon: <Event />, path: '/admin/events', adminOnly: true },
   { text: 'Manage Documents', icon: <Description />, path: '/admin/documents', adminOnly: true },
+  { text: 'Manage Vendors', icon: <Store />, path: '/admin/vendors', adminOnly: true },
   { text: 'Site Configuration', icon: <Settings />, path: '/admin/config', adminOnly: true },
   { text: 'Audit Logs', icon: <History />, path: '/admin/audit', adminOnly: true },
 ];

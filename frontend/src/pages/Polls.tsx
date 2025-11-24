@@ -14,6 +14,16 @@ import {
   Alert,
   Grid,
   useTheme,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControlLabel,
+  Switch,
+  Stack,
+  MenuItem,
 } from '@mui/material';
 import {
   HowToVote,
@@ -21,12 +31,14 @@ import {
   CheckCircle,
   Schedule,
   FilterList,
+  AddCircle,
 } from '@mui/icons-material';
 import { useAccessibility } from '../contexts/AccessibilityContext';
-import { usePolls, pollKeys } from '../hooks/usePolls';
+import { usePolls, pollKeys, useCreatePoll } from '../hooks/usePolls';
 import { useQueryClient } from '@tanstack/react-query';
-import type { PollType, PollStatus, Poll } from '../types/api';
+import type { PollType, PollStatus, Poll, CreatePollRequest } from '../types/api';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
  * Polls Page Component
@@ -51,9 +63,27 @@ const PollsPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isHighVisibility } = useAccessibility();
+   const { isAdmin } = useAuth();
+  const createPoll = useCreatePoll();
 
   const [typeFilter, setTypeFilter] = useState<PollType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<PollStatus | 'all'>('all');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newPoll, setNewPoll] = useState<CreatePollRequest>({
+    title: '',
+    description: '',
+    type: 'informal',
+    is_anonymous: false,
+    notify_members: false,
+    start_at: new Date().toISOString(),
+    end_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    options: [
+      { text: 'Yes', order_index: 1 },
+      { text: 'No', order_index: 2 },
+    ],
+  });
+  const [optionsInput, setOptionsInput] = useState('Yes\nNo');
+  const [formError, setFormError] = useState<string>('');
 
   // Build filters object
   const filters = {
@@ -77,6 +107,57 @@ const PollsPage: React.FC = () => {
   const handleStatusFilterChange = (_: React.MouseEvent<HTMLElement>, newValue: string | null) => {
     if (newValue !== null) {
       setStatusFilter(newValue as PollStatus | 'all');
+    }
+  };
+
+  const handleCreateFieldChange = (field: keyof CreatePollRequest, value: any) => {
+    setNewPoll((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateSubmit = async () => {
+    setFormError('');
+    const optionLines = optionsInput
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (optionLines.length < 2) {
+      setFormError('Please provide at least two poll options (one per line).');
+      return;
+    }
+
+    const startDate = new Date(newPoll.start_at);
+    const endDate = new Date(newPoll.end_at);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      setFormError('Please provide valid start and end dates.');
+      return;
+    }
+    if (endDate <= startDate) {
+      setFormError('End date must be after start date.');
+      return;
+    }
+
+    const payload: CreatePollRequest = {
+      ...newPoll,
+      start_at: startDate.toISOString(),
+      end_at: endDate.toISOString(),
+      options: optionLines.map((text, idx) => ({
+        text,
+        order_index: idx + 1,
+      })),
+    };
+
+    try {
+      await createPoll.mutateAsync(payload);
+      setCreateOpen(false);
+      setNewPoll((prev) => ({
+        ...prev,
+        title: '',
+        description: '',
+        options: payload.options,
+      }));
+    } catch (err: any) {
+      const apiError = err?.response?.data?.message || err?.message || 'Failed to create poll';
+      setFormError(apiError);
     }
   };
 
@@ -216,6 +297,18 @@ const PollsPage: React.FC = () => {
         >
           Vote on community decisions and view poll results
         </Typography>
+        {isAdmin && (
+          <Box mb={3}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddCircle />}
+              onClick={() => setCreateOpen(true)}
+            >
+              Create New Poll
+            </Button>
+          </Box>
+        )}
 
         {/* Filters */}
         <Box mb={4} display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
@@ -320,6 +413,100 @@ const PollsPage: React.FC = () => {
           <Grid container spacing={2}>
             {polls.map((poll) => renderPollCard(poll))}
           </Grid>
+        )}
+
+        {isAdmin && (
+          <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
+            <DialogTitle>Create New Poll</DialogTitle>
+            <DialogContent dividers>
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField
+                  label="Title"
+                  value={newPoll.title}
+                  onChange={(e) => handleCreateFieldChange('title', e.target.value)}
+                  required
+                  fullWidth
+                />
+                <TextField
+                  label="Description"
+                  value={newPoll.description}
+                  onChange={(e) => handleCreateFieldChange('description', e.target.value)}
+                  multiline
+                  minRows={3}
+                  fullWidth
+                />
+                <TextField
+                  label="Poll Type"
+                  select
+                  value={newPoll.type}
+                  onChange={(e) => handleCreateFieldChange('type', e.target.value as PollType)}
+                  fullWidth
+                >
+                  <MenuItem value="informal">Informal (advisory)</MenuItem>
+                  <MenuItem value="binding">Binding (decisive)</MenuItem>
+                </TextField>
+                <Stack direction="row" spacing={2}>
+                  <TextField
+                    label="Start"
+                    type="datetime-local"
+                    value={newPoll.start_at.slice(0, 16)}
+                    onChange={(e) => handleCreateFieldChange('start_at', new Date(e.target.value).toISOString())}
+                    InputLabelProps={{ shrink: true }}
+                    fullWidth
+                  />
+                  <TextField
+                    label="End"
+                    type="datetime-local"
+                    value={newPoll.end_at.slice(0, 16)}
+                    onChange={(e) => handleCreateFieldChange('end_at', new Date(e.target.value).toISOString())}
+                    InputLabelProps={{ shrink: true }}
+                    fullWidth
+                  />
+                </Stack>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={newPoll.is_anonymous}
+                      onChange={(e) => handleCreateFieldChange('is_anonymous', e.target.checked)}
+                    />
+                  }
+                  label="Anonymous voting"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={newPoll.notify_members}
+                      onChange={(e) => handleCreateFieldChange('notify_members', e.target.checked)}
+                    />
+                  }
+                  label="Notify members (email)"
+                />
+                <TextField
+                  label="Options (one per line, at least two)"
+                  value={optionsInput}
+                  onChange={(e) => setOptionsInput(e.target.value)}
+                  multiline
+                  minRows={3}
+                  fullWidth
+                />
+                {formError && (
+                  <Alert severity="error">{formError}</Alert>
+                )}
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setCreateOpen(false)} color="secondary">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateSubmit}
+                variant="contained"
+                disabled={createPoll.isPending}
+              >
+                {createPoll.isPending ? 'Creating…' : 'Create Poll'}
+              </Button>
+            </DialogActions>
+          </Dialog>
         )}
       </Box>
     </Container>
