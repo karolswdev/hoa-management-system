@@ -89,6 +89,14 @@ const configFields: ConfigField[] = [
     type: 'textarea',
     maxLength: 500,
   },
+  {
+    key: 'discussion_code_of_conduct',
+    label: 'Community Discussions Code of Conduct',
+    description: 'Code of conduct that members must accept before using community discussions. Updating this will require all members to accept the new version.',
+    type: 'textarea',
+    maxLength: 5000,
+    required: false,
+  },
 ];
 
 const AdminConfigPage: React.FC = () => {

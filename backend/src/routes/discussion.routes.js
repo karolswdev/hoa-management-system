@@ -52,4 +52,18 @@ router.delete(
   discussionController.deleteReplyController
 );
 
+// GET /api/discussions/code-of-conduct/acceptance - Get user's CoC acceptance status
+router.get(
+  '/code-of-conduct/acceptance',
+  verifyToken,
+  discussionController.getCodeOfConductAcceptanceController
+);
+
+// POST /api/discussions/code-of-conduct/accept - Accept Code of Conduct
+router.post(
+  '/code-of-conduct/accept',
+  verifyToken,
+  discussionController.acceptCodeOfConductController
+);
+
 module.exports = router;

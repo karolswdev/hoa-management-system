@@ -181,8 +181,26 @@ export const createAppTheme = (mode: AccessibilityMode): Theme => {
             boxShadow: mode === 'standard' ? modeTokens.component.elevation.sm : 'none',
             backgroundColor: modeTokens.component.surface.card.background,
             color: modeTokens.component.surface.card.textColor,
+            transition: `all ${modeTokens.animation.duration.standard}ms ${modeTokens.animation.easing.standard}`,
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': mode === 'standard' ? {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: `linear-gradient(90deg, ${modeTokens.color.primary.deepNavy}, ${modeTokens.color.accent.sunlitAmber})`,
+              opacity: 0,
+              transition: `opacity ${modeTokens.animation.duration.standard}ms ${modeTokens.animation.easing.standard}`,
+            } : {},
             '&:hover': {
               boxShadow: mode === 'standard' ? modeTokens.component.elevation.md : 'none',
+              transform: mode === 'standard' ? 'translateY(-2px)' : 'none',
+              '&::before': mode === 'standard' ? {
+                opacity: 1,
+              } : {},
             },
           },
         },
@@ -235,10 +253,14 @@ export const createAppTheme = (mode: AccessibilityMode): Theme => {
       MuiAppBar: {
         styleOverrides: {
           root: {
-            boxShadow: mode === 'standard' ? modeTokens.component.elevation.sm : 'none',
+            boxShadow: mode === 'standard' ? modeTokens.component.elevation.md : 'none',
             borderBottom: mode === 'high-vis'
               ? `2px solid ${modeTokens.color.special.highVisOutline}`
               : 'none',
+            // Add gradient background for standard mode
+            background: mode === 'standard'
+              ? `linear-gradient(135deg, ${modeTokens.color.primary.deepNavy} 0%, ${modeTokens.color.secondary.sage} 100%)`
+              : modeTokens.color.primary.deepNavy,
           },
         },
       },
@@ -249,6 +271,9 @@ export const createAppTheme = (mode: AccessibilityMode): Theme => {
             borderRight: mode === 'high-vis'
               ? `2px solid ${modeTokens.color.special.highVisOutline}`
               : '1px solid rgba(0,0,0,0.12)',
+            background: mode === 'standard'
+              ? `linear-gradient(to bottom, #f8f9fb 0%, ${modeTokens.color.neutral.cloud} 120px, ${modeTokens.color.neutral.white} 120px)`
+              : modeTokens.color.neutral.white,
           },
         },
       },
@@ -258,14 +283,37 @@ export const createAppTheme = (mode: AccessibilityMode): Theme => {
             borderRadius: modeTokens.component.borderRadius.core,
             margin: `${modeTokens.spacing.unit.xs / 2}px ${modeTokens.spacing.unit.xs}px`,
             minHeight: modeTokens.sizing.target.button,
+            transition: `all ${modeTokens.animation.duration.standard}ms ${modeTokens.animation.easing.standard}`,
+            position: 'relative',
+            '&::before': mode === 'standard' ? {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '3px',
+              height: '0%',
+              background: `linear-gradient(to bottom, ${modeTokens.color.primary.deepNavy}, ${modeTokens.color.accent.sunlitAmber})`,
+              borderRadius: '0 3px 3px 0',
+              transition: `height ${modeTokens.animation.duration.standard}ms ${modeTokens.animation.easing.standard}`,
+            } : {},
             '&:hover': {
               backgroundColor: `rgba(0, 51, 102, 0.08)`,
+              '&::before': mode === 'standard' ? {
+                height: '60%',
+              } : {},
             },
             '&.Mui-selected': {
-              backgroundColor: `rgba(0, 51, 102, 0.12)`,
+              backgroundColor: mode === 'standard'
+                ? 'rgba(0, 51, 102, 0.12)'
+                : 'rgba(0, 51, 102, 0.12)',
               border: mode === 'high-vis'
                 ? `2px solid ${modeTokens.color.primary.deepNavy}`
                 : 'none',
+              fontWeight: modeTokens.typography.fontWeight.semibold,
+              '&::before': mode === 'standard' ? {
+                height: '80%',
+              } : {},
               '&:hover': {
                 backgroundColor: `rgba(0, 51, 102, 0.16)`,
               },
@@ -282,6 +330,13 @@ export const createAppTheme = (mode: AccessibilityMode): Theme => {
           root: {
             borderRadius: modeTokens.component.borderRadius.pill,
             fontSize: `${modeTokens.typography.fontSize.sm}px`,
+            fontWeight: modeTokens.typography.fontWeight.medium,
+            transition: `all ${modeTokens.animation.duration.fast}ms ${modeTokens.animation.easing.standard}`,
+          },
+          colorPrimary: {
+            background: mode === 'standard'
+              ? `linear-gradient(135deg, ${modeTokens.color.primary.deepNavy}, ${modeTokens.color.secondary.sage})`
+              : modeTokens.color.primary.deepNavy,
           },
         },
       },

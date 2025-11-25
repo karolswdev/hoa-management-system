@@ -1,4 +1,4 @@
-const { Discussion, User, sequelize } = require('../../models'); // Assuming User model is in the same directory
+const { Discussion, User, CodeOfConductAcceptance, Config, sequelize } = require('../../models'); // Assuming User model is in the same directory
 const { Op, fn, col } = require('sequelize');
 const createDOMPurify = require('dompurify');
 const { JSDOM } = require('jsdom');
@@ -200,6 +200,74 @@ const deleteReply = async (replyId, adminUserId) => {
   }
 };
 
+/**
+ * Get user's Code of Conduct acceptance status
+ * @param {number} userId
+ * @returns {Promise<Object|null>}
+ */
+const getCodeOfConductAcceptance = async (userId) => {
+  // Get the current CoC version from config
+  const cocVersionConfig = await Config.findOne({ where: { key: 'discussion_code_of_conduct_version' } });
+  const currentVersion = cocVersionConfig?.value || '1';
+
+  // Get user's latest acceptance
+  const acceptance = await CodeOfConductAcceptance.findOne({
+    where: { user_id: userId },
+    order: [['accepted_at', 'DESC']],
+  });
+
+  if (!acceptance) {
+    return null;
+  }
+
+  return {
+    user_id: acceptance.user_id,
+    version: acceptance.version,
+    accepted_at: acceptance.accepted_at,
+    current_version_accepted: acceptance.version === currentVersion,
+  };
+};
+
+/**
+ * Accept Code of Conduct
+ * @param {number} userId
+ * @param {string} version
+ * @returns {Promise<Object>}
+ */
+const acceptCodeOfConduct = async (userId, version) => {
+  // Check if user already accepted this version
+  const existingAcceptance = await CodeOfConductAcceptance.findOne({
+    where: {
+      user_id: userId,
+      version: version,
+    },
+  });
+
+  if (existingAcceptance) {
+    // Already accepted, return existing record
+    return {
+      user_id: existingAcceptance.user_id,
+      version: existingAcceptance.version,
+      accepted_at: existingAcceptance.accepted_at,
+      current_version_accepted: true,
+    };
+  }
+
+  // Create new acceptance record
+  const acceptance = await CodeOfConductAcceptance.create({
+    user_id: userId,
+    version: version,
+    accepted_at: new Date(),
+  });
+
+  return {
+    user_id: acceptance.user_id,
+    version: acceptance.version,
+    accepted_at: acceptance.accepted_at,
+    current_version_accepted: true,
+  };
+};
+
 module.exports = {
   createThread,
   createReply,
@@ -207,4 +275,6 @@ module.exports = {
   viewThread,
   deleteThread,
   deleteReply,
+  getCodeOfConductAcceptance,
+  acceptCodeOfConduct,
 };

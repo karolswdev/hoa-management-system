@@ -73,13 +73,38 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Welcome back, {user?.name}!
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Here's what's happening in your community.
-      </Typography>
+      {/* Welcome Header with Visual Interest */}
+      <Box sx={{
+        mb: 4,
+        p: 3,
+        borderRadius: 2,
+        background: (theme) => theme.palette.mode === 'light'
+          ? 'linear-gradient(135deg, rgba(0, 51, 102, 0.05) 0%, rgba(79, 107, 90, 0.05) 100%)'
+          : 'rgba(0, 51, 102, 0.1)',
+        border: '1px solid',
+        borderColor: 'divider',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: -50,
+          right: -50,
+          width: 150,
+          height: 150,
+          borderRadius: '50%',
+          background: 'rgba(255, 179, 71, 0.1)',
+          filter: 'blur(40px)',
+        }
+      }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', position: 'relative' }}>
+          Welcome back, {user?.name}! 👋
+        </Typography>
+
+        <Typography variant="body1" color="text.secondary" sx={{ position: 'relative' }}>
+          Here's what's happening in your community.
+        </Typography>
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -90,16 +115,25 @@ const DashboardPage: React.FC = () => {
       <Grid container spacing={3}>
         {/* Quick Actions */}
         <Grid size={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Quick Actions
-              </Typography>
+          <Card elevation={2}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+                <Box sx={{
+                  width: 6,
+                  height: 24,
+                  borderRadius: 1,
+                  background: 'linear-gradient(to bottom, #003366, #FFB347)',
+                }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  Quick Actions
+                </Typography>
+              </Box>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined"
                   startIcon={<AnnouncementIcon />}
                   onClick={() => navigate('/announcements')}
+                  sx={{ flex: { xs: '1 1 100%', sm: '0 1 auto' } }}
                 >
                   View Announcements
                 </Button>
@@ -107,6 +141,7 @@ const DashboardPage: React.FC = () => {
                   variant="outlined"
                   startIcon={<EventIcon />}
                   onClick={() => navigate('/events')}
+                  sx={{ flex: { xs: '1 1 100%', sm: '0 1 auto' } }}
                 >
                   View Events
                 </Button>
@@ -114,6 +149,7 @@ const DashboardPage: React.FC = () => {
                   variant="outlined"
                   startIcon={<DocumentIcon />}
                   onClick={() => navigate('/documents')}
+                  sx={{ flex: { xs: '1 1 100%', sm: '0 1 auto' } }}
                 >
                   Browse Documents
                 </Button>
@@ -121,6 +157,7 @@ const DashboardPage: React.FC = () => {
                   variant="outlined"
                   startIcon={<ForumIcon />}
                   onClick={() => navigate('/discussions')}
+                  sx={{ flex: { xs: '1 1 100%', sm: '0 1 auto' } }}
                 >
                   Join Discussions
                 </Button>
@@ -131,26 +168,55 @@ const DashboardPage: React.FC = () => {
 
         {/* Recent Announcements */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  Recent Announcements
-                </Typography>
-                <Button size="small" onClick={() => navigate('/announcements')}>
-                  View All
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ p: 3, flex: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AnnouncementIcon sx={{ color: 'primary.main' }} />
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    Recent Announcements
+                  </Typography>
+                </Box>
+                <Button size="small" onClick={() => navigate('/announcements')} sx={{ fontWeight: 'medium' }}>
+                  View All →
                 </Button>
               </Box>
-              
+
               {announcements.length === 0 ? (
-                <Typography color="text.secondary">
-                  No recent announcements
-                </Typography>
+                <Box sx={{
+                  textAlign: 'center',
+                  py: 6,
+                  color: 'text.secondary'
+                }}>
+                  <AnnouncementIcon sx={{ fontSize: 64, opacity: 0.3, mb: 2 }} />
+                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    No recent announcements
+                  </Typography>
+                  <Typography variant="body2">
+                    Check back later for updates
+                  </Typography>
+                </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {announcements.map((announcement) => (
-                    <Box key={announcement.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                      <Typography variant="subtitle2" gutterBottom>
+                    <Box
+                      key={announcement.id}
+                      sx={{
+                        p: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          backgroundColor: 'rgba(0, 51, 102, 0.02)',
+                          transform: 'translateX(4px)',
+                        }
+                      }}
+                      onClick={() => navigate('/announcements')}
+                    >
+                      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'semibold' }}>
                         {announcement.title}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -169,40 +235,70 @@ const DashboardPage: React.FC = () => {
 
         {/* Upcoming Events */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  Upcoming Events
-                </Typography>
-                <Button size="small" onClick={() => navigate('/events')}>
-                  View All
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ p: 3, flex: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <EventIcon sx={{ color: 'secondary.main' }} />
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    Upcoming Events
+                  </Typography>
+                </Box>
+                <Button size="small" onClick={() => navigate('/events')} sx={{ fontWeight: 'medium' }}>
+                  View All →
                 </Button>
               </Box>
-              
+
               {events.length === 0 ? (
-                <Typography color="text.secondary">
-                  No upcoming events
-                </Typography>
+                <Box sx={{
+                  textAlign: 'center',
+                  py: 6,
+                  color: 'text.secondary'
+                }}>
+                  <EventIcon sx={{ fontSize: 64, opacity: 0.3, mb: 2 }} />
+                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    No upcoming events
+                  </Typography>
+                  <Typography variant="body2">
+                    Stay tuned for community events
+                  </Typography>
+                </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {events.map((event) => (
-                    <Box key={event.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                      <Typography variant="subtitle2" gutterBottom>
+                    <Box
+                      key={event.id}
+                      sx={{
+                        p: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          borderColor: 'secondary.main',
+                          backgroundColor: 'rgba(79, 107, 90, 0.02)',
+                          transform: 'translateX(4px)',
+                        }
+                      }}
+                      onClick={() => navigate('/events')}
+                    >
+                      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'semibold' }}>
                         {event.title}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         {event.description.substring(0, 100)}...
                       </Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="caption" color="text.secondary">
-                          {event.location}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          📍 {event.location}
                         </Typography>
-                        <Chip 
-                          label={new Date(event.start_date).toLocaleDateString()} 
-                          size="small" 
-                          color="primary" 
+                        <Chip
+                          label={new Date(event.start_date).toLocaleDateString()}
+                          size="small"
+                          color="primary"
                           variant="outlined"
+                          sx={{ fontWeight: 'medium' }}
                         />
                       </Box>
                     </Box>

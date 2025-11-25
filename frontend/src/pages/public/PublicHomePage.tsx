@@ -16,14 +16,17 @@ import {
   GetApp as DownloadIcon,
   Description as DocumentIcon,
   Home as HomeIcon,
+  Help as HelpIcon,
 } from '@mui/icons-material';
 import { apiService } from '../../services/api';
+import { useCommunityConfig } from '../../contexts/CommunityConfigContext';
 import type { Document, DocumentsResponse } from '../../types/api';
 
 const PublicHomePage: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { config } = useCommunityConfig();
 
   // Load public documents
   const loadPublicDocuments = async () => {
@@ -73,33 +76,59 @@ const PublicHomePage: React.FC = () => {
     <Container component="main" maxWidth="lg">
       <Box sx={{ py: 4 }}>
         {/* Header Section */}
-        <Paper elevation={2} sx={{ p: 4, mb: 4, textAlign: 'center' }}>
-          <HomeIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-          <Typography variant="h3" gutterBottom color="primary">
-            Welcome to Our Community
+        <Paper elevation={2} sx={{ p: 4, mb: 4, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+          <Box sx={{
+            position: 'absolute',
+            top: -50,
+            right: -50,
+            width: 200,
+            height: 200,
+            borderRadius: '50%',
+            background: 'rgba(255, 179, 71, 0.1)',
+            filter: 'blur(60px)',
+          }} />
+          <HomeIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2, position: 'relative' }} />
+          <Typography variant="h3" gutterBottom sx={{
+            fontWeight: 'bold',
+            background: 'linear-gradient(135deg, #003366 0%, #4F6B5A 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            position: 'relative',
+          }}>
+            Welcome to {config.hoa_name || 'Our Community'}
           </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-            Homeowners Association Information Portal
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 2, position: 'relative' }}>
+            {config.hoa_description || 'Homeowners Association Information Portal'}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Access public documents and information about our community. 
+          <Typography variant="body1" color="text.secondary" sx={{ position: 'relative' }}>
+            Access public documents and information about our community.
             For full access to announcements, events, and discussions, please log in to your member account.
           </Typography>
-          <Box sx={{ mt: 3 }}>
-            <Button 
-              variant="contained" 
-              color="primary" 
+          <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              color="primary"
               href="/login"
-              sx={{ mr: 2 }}
             >
               Member Login
             </Button>
-            <Button 
-              variant="outlined" 
-              color="primary" 
+            <Button
+              variant="outlined"
+              color="primary"
               href="/register"
             >
               Register
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<HelpIcon />}
+              href="/user-guide.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              User Guide
             </Button>
           </Box>
         </Paper>

@@ -14,6 +14,7 @@ import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import type { LoginRequest } from '../../types/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCommunityConfig } from '../../contexts/CommunityConfigContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import ReleaseBadge from '../../components/common/ReleaseBadge';
 
@@ -29,6 +30,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { config } = useCommunityConfig();
   const { showSuccess, showError } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,10 +70,19 @@ const LoginPage: React.FC = () => {
       >
         <Paper elevation={3} sx={{ p: 4 }}>
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography component="h1" variant="h4" gutterBottom>
-              HOA Community Hub
+            <Typography component="h1" variant="h4" gutterBottom sx={{
+              fontWeight: 'bold',
+              background: 'linear-gradient(135deg, #003366 0%, #4F6B5A 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              {config.hoa_name || 'HOA Community Hub'}
             </Typography>
-            <Typography variant="h5" color="text.secondary">
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+              {config.hoa_description || 'Your neighborhood, connected'}
+            </Typography>
+            <Typography variant="h5" color="text.primary" sx={{ fontWeight: 'medium' }}>
               Sign In
             </Typography>
           </Box>

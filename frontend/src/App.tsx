@@ -7,9 +7,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AccessibilityProvider } from './contexts/AccessibilityContext';
+import { CommunityConfigProvider } from './contexts/CommunityConfigContext';
 import { ThemeWrapper } from './theme/ThemeWrapper';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
+import DynamicTitle from './components/common/DynamicTitle';
 import Layout from './components/layout/Layout';
 
 // Create a React Query client with default options
@@ -59,13 +61,15 @@ import VendorManagement from './pages/admin/VendorManagement';
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <AccessibilityProvider>
-        <ThemeWrapper>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <NotificationProvider>
-              <AuthProvider>
-                <Router>
-            <Routes>
+      <CommunityConfigProvider>
+        <AccessibilityProvider>
+          <ThemeWrapper>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <NotificationProvider>
+                <AuthProvider>
+                  <Router>
+                    <DynamicTitle />
+              <Routes>
               {/* Public Routes */}
               <Route
                 path="/login"
@@ -229,13 +233,14 @@ const App: React.FC = () => {
 
               {/* Fallback route */}
               <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-                </Router>
-              </AuthProvider>
-            </NotificationProvider>
-          </LocalizationProvider>
-        </ThemeWrapper>
-      </AccessibilityProvider>
+                </Routes>
+                  </Router>
+                </AuthProvider>
+              </NotificationProvider>
+            </LocalizationProvider>
+          </ThemeWrapper>
+        </AccessibilityProvider>
+      </CommunityConfigProvider>
     </QueryClientProvider>
   );
 };

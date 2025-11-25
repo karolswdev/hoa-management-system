@@ -79,6 +79,15 @@ export interface Discussion {
 
 export interface Config {
   [key: string]: string;
+  discussion_code_of_conduct?: string;
+  discussion_code_of_conduct_version?: string;
+}
+
+export interface CodeOfConductAcceptance {
+  user_id: number;
+  version: string;
+  accepted_at: string;
+  current_version_accepted: boolean;
 }
 
 export interface AuditLog {

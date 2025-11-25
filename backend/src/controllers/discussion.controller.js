@@ -46,6 +46,37 @@ const deleteReplyController = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const getCodeOfConductAcceptanceController = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const acceptance = await discussionService.getCodeOfConductAcceptance(userId);
+
+  if (!acceptance) {
+    return res.status(httpStatus.NOT_FOUND).send({
+      message: 'No Code of Conduct acceptance found for this user'
+    });
+  }
+
+  res.send(acceptance);
+});
+
+const acceptCodeOfConductController = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const { version } = req.body;
+
+  if (!version) {
+    return res.status(httpStatus.BAD_REQUEST).send({
+      message: 'Version is required'
+    });
+  }
+
+  const acceptance = await discussionService.acceptCodeOfConduct(userId, version);
+
+  res.status(httpStatus.CREATED).send({
+    message: 'Code of Conduct accepted successfully',
+    acceptance
+  });
+});
+
 module.exports = {
   createThreadController,
   createReplyController,
@@ -53,4 +84,6 @@ module.exports = {
   viewThreadController,
   deleteThreadController,
   deleteReplyController,
+  getCodeOfConductAcceptanceController,
+  acceptCodeOfConductController,
 };
