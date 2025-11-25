@@ -363,6 +363,38 @@ Connect with your neighbors!
 
 Discussions are like an online message board where community members can ask questions, share information, and have conversations.
 
+### Accepting the Code of Conduct
+
+Before you can participate in discussions, you may need to accept your community's Code of Conduct.
+
+#### What is the Code of Conduct?
+
+The Code of Conduct is a set of guidelines your HOA board has created to ensure discussions remain respectful, constructive, and appropriate for the community.
+
+#### When Will I See It?
+
+The first time you visit the Discussions page (or any time the Code of Conduct is updated), you'll see a popup window.
+
+![Code of Conduct Modal](12-discussions-code-of-conduct-modal.png)
+*Review and accept the Code of Conduct to participate in discussions*
+
+#### How to Accept It
+
+1. Read through the Code of Conduct carefully
+2. Check the box that says **"I have read and agree to the Code of Conduct"**
+3. Click **"Accept and Continue"**
+
+> **💡 TIP:** The acceptance checkbox won't be enabled until you scroll through the entire document!
+
+#### What If the Code of Conduct Changes?
+
+If your HOA administrators update the Code of Conduct:
+- You'll see the popup again the next time you visit Discussions
+- You must accept the new version before posting or replying
+- This ensures everyone is aware of any new guidelines
+
+> **⚠️ IMPORTANT:** You cannot dismiss this popup without accepting. If you don't agree with the Code of Conduct, contact your HOA board to discuss your concerns.
+
 ### Viewing Discussions
 
 1. Click **"Discussions"** in the left menu
@@ -765,6 +797,7 @@ For important votes, you can verify no votes were tampered with:
 - **HOA Name**: Your community's official name
 - **Contact Email**: Where members can reach HOA board
 - **Time Zone**: For correct event times
+- **Community Discussions Code of Conduct**: Guidelines for discussion behavior
 - **Other settings**: Various system options
 
 ### How to Update a Setting
@@ -775,6 +808,64 @@ For important votes, you can verify no votes were tampered with:
 4. Click **"Save"**
 
 > **⚠️ WARNING:** Be careful changing system settings! If you're unsure, ask for help first.
+
+### Setting Up the Code of Conduct for Discussions
+
+The Code of Conduct helps maintain respectful and constructive community discussions.
+
+#### Creating Your First Code of Conduct
+
+1. Go to **Admin → Configuration**
+2. Find **"Community Discussions Code of Conduct"**
+3. Click **"Edit"**
+4. Type your Code of Conduct guidelines (you can use up to 5,000 characters)
+5. Click **"Save"**
+
+**Example Code of Conduct:**
+```
+We expect all community members to:
+- Be respectful and courteous to neighbors
+- Stay on topic and provide constructive feedback
+- Avoid personal attacks, harassment, or offensive language
+- Not post spam, advertisements, or solicitations
+- Respect privacy - don't share others' personal information
+- Report inappropriate content to administrators
+
+Violations may result in removal of posts or account suspension.
+```
+
+#### How It Works for Members
+
+- The first time a member visits Discussions, they'll see a popup with your Code of Conduct
+- They must read and accept it before participating
+- You can use the Code of Conduct as guidelines for moderating discussions
+
+#### Updating the Code of Conduct
+
+When you need to change the guidelines:
+
+1. Go to **Admin → Configuration**
+2. Find **"Community Discussions Code of Conduct"**
+3. Click **"Edit"**
+4. Make your changes
+5. Click **"Save"**
+
+> **💡 IMPORTANT:** When you update the Code of Conduct, ALL members will be required to accept the new version the next time they visit Discussions. This ensures everyone is aware of any policy changes.
+
+#### Version Management
+
+The system automatically tracks Code of Conduct versions:
+- Each time you update it, a new version is created
+- Members who accepted previous versions must re-accept
+- This is tracked in the audit logs for accountability
+
+> **💡 TIP:** Keep your Code of Conduct clear and concise. Members are more likely to read and follow shorter guidelines!
+
+#### Monitoring Compliance
+
+- All Code of Conduct acceptances are logged in audit logs
+- You can see when each member accepted and which version
+- Use this for accountability if discussion guidelines are violated
 
 ---
 

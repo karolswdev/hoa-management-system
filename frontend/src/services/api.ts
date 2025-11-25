@@ -41,6 +41,7 @@ import type {
   VendorsResponse,
   CreateVendorRequest,
   UpdateVendorRequest,
+  CodeOfConductAcceptance,
 } from '../types/api';
 
 class ApiService {
@@ -312,6 +313,12 @@ class ApiService {
     await this.api.delete(`/admin/users/${id}`);
   }
 
+  // Public - Community Configuration (read-only for all users)
+  async getCommunityConfig(): Promise<Config> {
+    const response: AxiosResponse<Config> = await this.api.get('/config');
+    return response.data;
+  }
+
   // Admin - Site Configuration
   async getConfig(): Promise<Config> {
     const response: AxiosResponse<Config> = await this.api.get('/admin/config');
@@ -425,6 +432,17 @@ class ApiService {
 
   async getVendorStats(): Promise<{ stats: { byModerationState: Array<{ state: string; count: number }>; byCategory: Array<{ category: string; count: number }> } }> {
     const response = await this.api.get('/vendors/stats');
+    return response.data;
+  }
+
+  // Code of Conduct
+  async getCodeOfConductAcceptance(): Promise<CodeOfConductAcceptance> {
+    const response: AxiosResponse<CodeOfConductAcceptance> = await this.api.get('/discussions/code-of-conduct/acceptance');
+    return response.data;
+  }
+
+  async acceptCodeOfConduct(version: string): Promise<{ message: string; acceptance: CodeOfConductAcceptance }> {
+    const response = await this.api.post('/discussions/code-of-conduct/accept', { version });
     return response.data;
   }
 }

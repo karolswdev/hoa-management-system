@@ -29,7 +29,22 @@ const updateConfigController = async (req, res, next) => {
   }
 };
 
+/**
+ * Get public-facing configurations (no authentication required)
+ * Returns all configs for use by frontend (community name, description, CoC, etc.)
+ */
+const getPublicConfigsController = async (req, res, next) => {
+  try {
+    const configs = await configService.getAllConfigs();
+    // Return all configs - they're meant to be public
+    res.status(200).json(configs);
+  } catch (error) {
+    next(error instanceof ApiError ? error : new ApiError(500, 'Failed to retrieve public configurations'));
+  }
+};
+
 module.exports = {
   getAllConfigsController,
   updateConfigController,
+  getPublicConfigsController,
 };

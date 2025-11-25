@@ -32,32 +32,42 @@ export default defineConfig({
   },
 
   /* Configure projects for major browsers */
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
-  ],
+  projects: process.env.GENERATE_SCREENSHOTS === 'true'
+    ? [
+        // Only use chromium desktop for screenshot generation to ensure consistency
+        {
+          name: 'chromium',
+          use: {
+            ...devices['Desktop Chrome'],
+            // Enforce consistent viewport for all screenshots
+            viewport: { width: 1280, height: 720 },
+          },
+        },
+      ]
+    : [
+        // Full browser matrix for regular E2E tests
+        {
+          name: 'chromium',
+          use: { ...devices['Desktop Chrome'] },
+        },
+        {
+          name: 'firefox',
+          use: { ...devices['Desktop Firefox'] },
+        },
+        {
+          name: 'webkit',
+          use: { ...devices['Desktop Safari'] },
+        },
+        /* Test against mobile viewports */
+        {
+          name: 'Mobile Chrome',
+          use: { ...devices['Pixel 5'] },
+        },
+        {
+          name: 'Mobile Safari',
+          use: { ...devices['iPhone 12'] },
+        },
+      ],
 
   /* Run your local dev server before starting the tests */
   webServer: externalServer

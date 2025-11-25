@@ -7,9 +7,23 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOT_DIR = path.join(__dirname, '..', 'screenshots');
 
+// Helper function to ensure standard accessibility mode for consistent screenshots
+async function ensureStandardMode(page: Page) {
+  await page.evaluate(() => {
+    // Set accessibility preferences to standard mode
+    const preferences = {
+      mode: 'standard',
+      showHelpers: false,
+      reducedMotion: false,
+    };
+    localStorage.setItem('hoa_accessibility_mode', JSON.stringify(preferences));
+  });
+}
+
 // Helper functions for authentication
 async function loginAsAdmin(page: Page) {
   await page.goto('/login');
+  await ensureStandardMode(page);
   await page.getByLabel(/email/i).fill('admin@example.com');
   await page.getByLabel(/password/i).fill('Admin123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
@@ -20,6 +34,7 @@ async function loginAsAdmin(page: Page) {
 
 async function loginAsMember(page: Page) {
   await page.goto('/login');
+  await ensureStandardMode(page);
   await page.getByLabel(/email/i).fill('member@example.com');
   await page.getByLabel(/password/i).fill('Member123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
@@ -43,12 +58,14 @@ test.describe('Generate User Guide Screenshots', () => {
   test.describe('Public/Authentication Screens', () => {
     test('01 - Login Page', async ({ page }) => {
       await page.goto('/login');
+      await ensureStandardMode(page);
       await page.waitForLoadState('networkidle');
       await takeScreenshot(page, '01-login-page', true);
     });
 
     test('02 - Login Page with Validation Errors', async ({ page }) => {
       await page.goto('/login');
+      await ensureStandardMode(page);
       await page.waitForLoadState('networkidle');
       const emailField = page.getByLabel(/email/i);
       const passwordField = page.getByLabel(/password/i);
@@ -62,18 +79,21 @@ test.describe('Generate User Guide Screenshots', () => {
 
     test('03 - Registration Page', async ({ page }) => {
       await page.goto('/register');
+      await ensureStandardMode(page);
       await page.waitForLoadState('networkidle');
       await takeScreenshot(page, '03-registration-page', true);
     });
 
     test('04 - Forgot Password Page', async ({ page }) => {
       await page.goto('/forgot-password');
+      await ensureStandardMode(page);
       await page.waitForLoadState('networkidle');
       await takeScreenshot(page, '04-forgot-password-page', true);
     });
 
     test('05 - Public Home Page', async ({ page }) => {
       await page.goto('/');
+      await ensureStandardMode(page);
       await page.waitForLoadState('networkidle');
       await takeScreenshot(page, '05-public-home-page', true);
     });
@@ -128,32 +148,63 @@ test.describe('Generate User Guide Screenshots', () => {
       await takeScreenshot(page, '11-member-discussions-list', true);
     });
 
-    test('12 - Member Create Discussion', async ({ page }) => {
+    test('12 - Member Discussions - Code of Conduct Modal', async ({ page }) => {
       await loginAsMember(page);
       await page.goto('/discussions');
       await page.waitForLoadState('networkidle');
-      // Click create discussion button
-      const createButton = page.getByRole('button', { name: /create.*discussion|new.*discussion/i });
-      if (await createButton.isVisible({ timeout: 2000 })) {
-        await createButton.click();
+      // Wait for Code of Conduct modal to appear if it exists
+      await page.waitForTimeout(1500);
+      // Check if CoC modal is visible
+      const cocModal = page.getByRole('dialog', { name: /code.*of.*conduct/i });
+      if (await cocModal.isVisible({ timeout: 2000 })) {
         await page.waitForTimeout(500);
-        await takeScreenshot(page, '12-member-create-discussion-dialog');
+        await takeScreenshot(page, '12-discussions-code-of-conduct-modal');
       } else {
-        // Take screenshot of discussion list anyway
-        await takeScreenshot(page, '12-member-create-discussion-dialog');
+        // If no CoC modal, take screenshot of discussions page
+        await takeScreenshot(page, '12-discussions-code-of-conduct-modal');
       }
     });
 
-    test('13 - Member Profile Page', async ({ page }) => {
+    test('13 - Member Create Discussion', async ({ page }) => {
+      await loginAsMember(page);
+      await page.goto('/discussions');
+      await page.waitForLoadState('networkidle');
+      // Accept CoC if modal is present
+      const cocModal = page.getByRole('dialog', { name: /code.*of.*conduct/i });
+      if (await cocModal.isVisible({ timeout: 2000 })) {
+        const checkbox = page.getByRole('checkbox', { name: /read.*agree/i });
+        if (await checkbox.isVisible()) {
+          await checkbox.check();
+          await page.waitForTimeout(300);
+        }
+        const acceptButton = page.getByRole('button', { name: /accept.*continue/i });
+        if (await acceptButton.isVisible()) {
+          await acceptButton.click();
+          await page.waitForTimeout(1000);
+        }
+      }
+      // Click create discussion button
+      const createButton = page.getByRole('button', { name: /create.*discussion|new.*discussion|start.*new/i });
+      if (await createButton.isVisible({ timeout: 2000 })) {
+        await createButton.click();
+        await page.waitForTimeout(500);
+        await takeScreenshot(page, '13-member-create-discussion-dialog');
+      } else {
+        // Take screenshot of discussion list anyway
+        await takeScreenshot(page, '13-member-create-discussion-dialog');
+      }
+    });
+
+    test('14 - Member Profile Page', async ({ page }) => {
       await loginAsMember(page);
       await page.goto('/profile');
       await page.waitForLoadState('networkidle');
-      await takeScreenshot(page, '13-member-profile-page', true);
+      await takeScreenshot(page, '14-member-profile-page', true);
     });
   });
 
   test.describe('Admin Screens', () => {
-    test('14 - Admin Dashboard', async ({ page }) => {
+    test('15 - Admin Dashboard', async ({ page }) => {
       await loginAsAdmin(page);
       await page.goto('/dashboard');
       await page.waitForLoadState('networkidle');
@@ -356,6 +407,7 @@ test.describe('Generate User Guide Screenshots', () => {
 
     test('32 - Poll Receipt Verification', async ({ page }) => {
       await page.goto('/polls/1/receipts/RCPT-DEMO-001');
+      await ensureStandardMode(page);
       await page.waitForLoadState('networkidle');
       await takeScreenshot(page, '32-poll-receipt', true);
     });

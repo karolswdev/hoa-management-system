@@ -25,14 +25,17 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useCommunityConfig } from '../../contexts/CommunityConfigContext';
 import { useApiNotifications } from '../../hooks/useApiNotifications';
+import CodeOfConductModal from '../../components/discussions/CodeOfConductModal';
 import type { Discussion, PaginatedResponse } from '../../types/api';
 
 const DiscussionsPage: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
+  const { config } = useCommunityConfig();
   useApiNotifications(); // Set up API error handling
-  
+
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -41,6 +44,10 @@ const DiscussionsPage: React.FC = () => {
     currentPage: 1,
     limit: 10,
   });
+
+  // Code of Conduct acceptance
+  const [cocAccepted, setCocAccepted] = useState(false);
+  const [checkingCoc, setCheckingCoc] = useState(true);
   
   // New Discussion Dialog
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -79,9 +86,40 @@ const DiscussionsPage: React.FC = () => {
     }
   };
 
+  // Check Code of Conduct acceptance on mount
   useEffect(() => {
-    fetchDiscussions();
-  }, []);
+    const checkCocAcceptance = async () => {
+      // If no CoC is configured, skip the check
+      if (!config.discussion_code_of_conduct || !config.discussion_code_of_conduct.trim()) {
+        setCocAccepted(true);
+        setCheckingCoc(false);
+        return;
+      }
+
+      try {
+        setCheckingCoc(true);
+        const acceptance = await apiService.getCodeOfConductAcceptance();
+
+        // Check if user has accepted the current version
+        const currentVersion = config.discussion_code_of_conduct_version || '1';
+        setCocAccepted(acceptance.version === currentVersion && acceptance.current_version_accepted);
+      } catch (err: any) {
+        // If acceptance check fails (404 = never accepted), show modal
+        setCocAccepted(false);
+      } finally {
+        setCheckingCoc(false);
+      }
+    };
+
+    checkCocAcceptance();
+  }, [config.discussion_code_of_conduct, config.discussion_code_of_conduct_version]);
+
+  useEffect(() => {
+    // Only fetch discussions if CoC is accepted or not required
+    if (cocAccepted) {
+      fetchDiscussions();
+    }
+  }, [cocAccepted]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) => {
     fetchDiscussions(page);
@@ -159,7 +197,8 @@ const DiscussionsPage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  // Show loading while checking CoC
+  if (checkingCoc || (loading && cocAccepted)) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -167,8 +206,27 @@ const DiscussionsPage: React.FC = () => {
     );
   }
 
+  // Show Code of Conduct modal if not accepted
+  const showCocModal = !cocAccepted &&
+    config.discussion_code_of_conduct &&
+    config.discussion_code_of_conduct.trim().length > 0;
+
   return (
     <Box>
+      {/* Code of Conduct Modal */}
+      {showCocModal && (
+        <CodeOfConductModal
+          open={true}
+          content={config.discussion_code_of_conduct || ''}
+          version={config.discussion_code_of_conduct_version || '1'}
+          communityName={config.hoa_name || 'HOA Community Hub'}
+          onAccept={() => {
+            setCocAccepted(true);
+            fetchDiscussions(); // Load discussions after acceptance
+          }}
+          canDismiss={false}
+        />
+      )}
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box display="flex" alignItems="center" gap={1}>
@@ -181,10 +239,18 @@ const DiscussionsPage: React.FC = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleOpenDialog}
+          disabled={!cocAccepted}
         >
           Start New Discussion
         </Button>
       </Box>
+
+      {/* Show message if CoC needs to be accepted */}
+      {!cocAccepted && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Please accept the Code of Conduct to participate in community discussions.
+        </Alert>
+      )}
 
       {/* Discussions List */}
       {!discussions || discussions.length === 0 ? (

@@ -216,4 +216,84 @@ describe('Discussion API Integration Tests', () => {
       });
     });
   });
+
+  describe('Code of Conduct Acceptance', () => {
+    describe('GET /api/discussions/code-of-conduct/acceptance', () => {
+      it('should return 404 when user has not accepted CoC', async () => {
+        const res = await request(app)
+          .get('/api/discussions/code-of-conduct/acceptance')
+          .set('Authorization', `Bearer ${memberToken}`);
+
+        expect(res.statusCode).toEqual(404);
+        expect(res.body.message).toContain('No Code of Conduct acceptance found');
+      });
+
+      it('should fail without authentication', async () => {
+        const res = await request(app)
+          .get('/api/discussions/code-of-conduct/acceptance');
+
+        expect(res.statusCode).toEqual(401);
+      });
+    });
+
+    describe('POST /api/discussions/code-of-conduct/accept', () => {
+      it('should accept Code of Conduct with version', async () => {
+        const res = await request(app)
+          .post('/api/discussions/code-of-conduct/accept')
+          .set('Authorization', `Bearer ${memberToken}`)
+          .send({
+            version: '1'
+          });
+
+        expect(res.statusCode).toEqual(201);
+        expect(res.body.message).toContain('accepted successfully');
+        expect(res.body.acceptance).toHaveProperty('version', '1');
+        expect(res.body.acceptance).toHaveProperty('accepted_at');
+      });
+
+      it('should return existing acceptance if already accepted same version', async () => {
+        const res = await request(app)
+          .post('/api/discussions/code-of-conduct/accept')
+          .set('Authorization', `Bearer ${memberToken}`)
+          .send({
+            version: '1'
+          });
+
+        expect(res.statusCode).toEqual(201);
+        expect(res.body.acceptance).toHaveProperty('version', '1');
+      });
+
+      it('should fail without version', async () => {
+        const res = await request(app)
+          .post('/api/discussions/code-of-conduct/accept')
+          .set('Authorization', `Bearer ${memberToken}`)
+          .send({});
+
+        expect(res.statusCode).toEqual(400);
+        expect(res.body.message).toContain('Version is required');
+      });
+
+      it('should fail without authentication', async () => {
+        const res = await request(app)
+          .post('/api/discussions/code-of-conduct/accept')
+          .send({
+            version: '1'
+          });
+
+        expect(res.statusCode).toEqual(401);
+      });
+
+      it('should retrieve acceptance after accepting', async () => {
+        const res = await request(app)
+          .get('/api/discussions/code-of-conduct/acceptance')
+          .set('Authorization', `Bearer ${memberToken}`);
+
+        expect(res.statusCode).toEqual(200);
+        expect(res.body).toHaveProperty('version', '1');
+        expect(res.body).toHaveProperty('user_id');
+        expect(res.body).toHaveProperty('accepted_at');
+        expect(res.body).toHaveProperty('current_version_accepted');
+      });
+    });
+  });
 });

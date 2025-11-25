@@ -34,8 +34,10 @@ import {
   Logout,
   HowToVote,
   Store,
+  Help,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCommunityConfig } from '../../contexts/CommunityConfigContext';
 import ReleaseBadge from '../common/ReleaseBadge';
 import AccessibilityToggle from '../Accessibility/Toggle';
 import { trackAccessibilityToggle } from '../../utils/analytics';
@@ -79,6 +81,7 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
+  const { config } = useCommunityConfig();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -107,12 +110,31 @@ const Layout: React.FC = () => {
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          HOA Community Hub
+      <Toolbar sx={{
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        pt: 2.5,
+        pb: 2,
+        gap: 0.5,
+      }}>
+        <Typography variant="h6" noWrap component="div" sx={{
+          fontWeight: 'bold',
+          background: (theme) => theme.palette.mode === 'light'
+            ? 'linear-gradient(135deg, #003366 0%, #4F6B5A 100%)'
+            : 'inherit',
+          WebkitBackgroundClip: (theme) => theme.palette.mode === 'light' ? 'text' : 'inherit',
+          WebkitTextFillColor: (theme) => theme.palette.mode === 'light' ? 'transparent' : 'inherit',
+          backgroundClip: (theme) => theme.palette.mode === 'light' ? 'text' : 'inherit',
+        }}>
+          {config.hoa_name || 'HOA Community Hub'}
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'medium' }}>
+          {config.hoa_description || 'Your neighborhood, connected'}
         </Typography>
       </Toolbar>
-      <Divider />
+      <Divider sx={{
+        borderColor: (theme) => theme.palette.mode === 'light' ? 'rgba(0, 51, 102, 0.12)' : 'divider'
+      }} />
       
       {/* Member Navigation */}
       <List>
@@ -170,6 +192,27 @@ const Layout: React.FC = () => {
           <Typography variant="body2" sx={{ flexGrow: 1 }}>
             High Visibility Mode
           </Typography>
+        </Box>
+        <Box sx={{ px: 2, pb: 1 }}>
+          <ListItemButton
+            component="a"
+            href="/user-guide.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              borderRadius: 1,
+              gap: 1.5,
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 'auto' }}>
+              <Help />
+            </ListItemIcon>
+            <ListItemText
+              primary="User Guide"
+              secondary="View PDF documentation"
+              secondaryTypographyProps={{ variant: 'caption' }}
+            />
+          </ListItemButton>
         </Box>
         <Box sx={{ px: 2, pb: 2 }}>
           <ReleaseBadge />

@@ -46,6 +46,7 @@ const eventRoutes = require('./routes/event.routes.js');
 const userRoutes = require('./routes/user.routes'); // Routes for user self-management
 const discussionRoutes = require('./routes/discussion.routes');
 const configRoutes = require('./routes/config.routes'); // Routes for admin config management
+const configController = require('./controllers/config.controller'); // For public config endpoint
 const auditRoutes = require('./routes/audit.routes'); // Routes for admin audit log management
 const publicDocumentRoutes = require('./routes/public.document.routes'); // For public document access
 const boardRoutes = require('./routes/board.routes'); // Routes for board governance
@@ -108,6 +109,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes); // Mount user self-management routes
 app.use('/api/discussions', discussionRoutes);
+app.get('/api/config', configController.getPublicConfigsController); // Public config endpoint (no auth required)
 app.use('/api/admin/config', configRoutes); // Mount admin config routes
 app.use('/api/admin/audit-logs', auditRoutes); // Mount admin audit log routes
 app.use('/api/documents', publicDocumentRoutes); // For public listing/downloading
