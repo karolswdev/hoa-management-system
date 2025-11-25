@@ -103,7 +103,7 @@ const DiscussionsPage: React.FC = () => {
         // Check if user has accepted the current version
         const currentVersion = config.discussion_code_of_conduct_version || '1';
         setCocAccepted(acceptance.version === currentVersion && acceptance.current_version_accepted);
-      } catch (err: any) {
+      } catch {
         // If acceptance check fails (404 = never accepted), show modal
         setCocAccepted(false);
       } finally {
