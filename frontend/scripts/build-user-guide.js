@@ -16,8 +16,7 @@ import { marked } from 'marked';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..', '..');
-const docsRoot = path.join(repoRoot, 'docs');
-const sourceMd = path.join(docsRoot, 'USER_GUIDES_README.md');
+const sourceMd = path.join(repoRoot, 'USER_GUIDE.md');
 const distDir = path.join(repoRoot, 'dist');
 const publicPdf = path.join(repoRoot, 'frontend', 'public', 'user-guide.pdf');
 const htmlOut = path.join(distDir, 'user-guide.html');
@@ -32,14 +31,20 @@ fs.mkdirSync(distDir, { recursive: true });
 
 // Custom renderer to resolve relative image paths to file:// URLs
 const renderer = new marked.Renderer();
-renderer.image = (href, title, text) => {
-  const basePath = path.dirname(sourceMd);
-  const safeHref = typeof href === 'string' ? href : '';
-  const resolved = safeHref && !safeHref.startsWith('http')
-    ? `file://${path.resolve(basePath, safeHref)}`
-    : safeHref;
+const defaultImage = renderer.image.bind(renderer);
+renderer.image = function(token) {
+  const href = token.href || '';
+  const title = token.title || '';
+  const text = token.text || '';
+
+  // Resolve images relative to frontend/screenshots directory
+  const screenshotsDir = path.join(repoRoot, 'frontend', 'screenshots');
+  const resolved = href && !href.startsWith('http')
+    ? `file://${path.resolve(screenshotsDir, href)}`
+    : href;
+
   const titleAttr = title ? ` title="${title}"` : '';
-  return `<figure><img src="${resolved}" alt="${text || ''}"${titleAttr} /><figcaption>${text || ''}</figcaption></figure>`;
+  return `<figure><img src="${resolved}" alt="${text}"${titleAttr} /><figcaption>${text}</figcaption></figure>`;
 };
 
 const markdown = fs.readFileSync(sourceMd, 'utf8');
