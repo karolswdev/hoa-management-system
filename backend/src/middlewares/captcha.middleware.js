@@ -26,6 +26,7 @@ async function verifyTurnstile(req, res, next) {
     const data = await resp.json();
 
     if (!data.success) {
+      console.error('Turnstile verification failed:', JSON.stringify(data));
       return res.status(400).json({ message: 'Captcha verification failed.' });
     }
     return next();

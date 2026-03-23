@@ -14,6 +14,11 @@ on:
         description: 'Force Docker rebuild without cache (legacy)'
         required: true
         default: 'false'
+      skip_user_guide:
+        description: 'Skip user guide build (faster deploys)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-production
@@ -22,6 +27,7 @@ concurrency:
 jobs:
   user-guide:
     name: Build User Guide (PDF + Screenshots)
+    if: ${{ github.event.inputs.skip_user_guide != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -64,6 +70,7 @@ jobs:
   build-images:
     name: Build & Push Images
     runs-on: ubuntu-latest
+    if: ${{ always() && !failure() && !cancelled() }}
     needs: user-guide
     permissions:
       contents: read
@@ -82,6 +89,7 @@ jobs:
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
 
       - name: Download user guide artifact
+        if: ${{ github.event.inputs.skip_user_guide != 'true' }}
         uses: actions/download-artifact@v4
         with:
           name: user-guide-assets
