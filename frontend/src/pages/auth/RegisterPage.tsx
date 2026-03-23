@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -14,6 +14,7 @@ import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import type { RegisterRequest } from '../../types/api';
 import TurnstileWidget from '../../components/auth/TurnstileWidget';
+import type { TurnstileWidgetHandle } from '../../components/auth/TurnstileWidget';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 
@@ -42,11 +43,12 @@ const RegisterPage: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const { register } = useAuth();
   const { showSuccess } = useNotification();
   const navigate = useNavigate();
 
-  const handleSubmit = async (values: RegisterRequest & { confirmPassword: string; captchaToken?: string }) => {
+  const handleSubmit = async (values: RegisterRequest & { confirmPassword: string; captchaToken?: string }, { setFieldValue }: { setFieldValue: (field: string, value: string) => void }) => {
     setError('');
     setIsLoading(true);
 
@@ -56,10 +58,14 @@ const RegisterPage: React.FC = () => {
       const payload: any = { ...registerData };
       if (captchaToken) payload.captchaToken = captchaToken;
       await register(payload);
-      
+
       showSuccess('Registration successful. Please verify your email and wait for admin approval.');
       navigate('/login');
     } catch (err: any) {
+      // Reset Turnstile so user gets a fresh token on retry
+      turnstileRef.current?.reset();
+      setFieldValue('captchaToken', '');
+
       if (err.response?.status === 409) {
         setError('An account with this email address already exists.');
       } else {
@@ -171,6 +177,7 @@ const RegisterPage: React.FC = () => {
                         This site is protected by Turnstile and the Cloudflare Privacy Policy applies.
                       </Typography>
                       <TurnstileWidget
+                        ref={turnstileRef}
                         siteKey={siteKey}
                         onToken={(t) => setFieldValue('captchaToken', t)}
                         onExpire={() => setFieldValue('captchaToken', '')}
