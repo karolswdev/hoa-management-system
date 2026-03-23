@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 
 interface TurnstileAPI {
   render: (container: HTMLElement, options: {
@@ -8,6 +8,11 @@ interface TurnstileAPI {
     'error-callback'?: () => void;
   }) => string;
   remove: (widgetId: string) => void;
+  reset: (widgetId: string) => void;
+}
+
+export interface TurnstileWidgetHandle {
+  reset: () => void;
 }
 
 declare global {
@@ -22,7 +27,7 @@ interface TurnstileWidgetProps {
   onExpire?: () => void;
 }
 
-const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({ siteKey, onToken, onExpire }) => {
+const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(({ siteKey, onToken, onExpire }, fwdRef) => {
   const ref = useRef<HTMLDivElement | null>(null);
   const widgetId = useRef<string | null>(null);
   // Keep latest callbacks in refs so the effect doesn't re-run on each render
@@ -30,6 +35,14 @@ const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({ siteKey, onToken, onE
   const onExpireRef = useRef(onExpire);
   useEffect(() => { onTokenRef.current = onToken; }, [onToken]);
   useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
+
+  useImperativeHandle(fwdRef, () => ({
+    reset: () => {
+      if (widgetId.current && window.turnstile && typeof window.turnstile.reset === 'function') {
+        window.turnstile.reset(widgetId.current);
+      }
+    }
+  }));
 
   useEffect(() => {
     const ensureScript = () => new Promise<void>((resolve) => {
@@ -77,6 +90,8 @@ const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({ siteKey, onToken, onE
   }, [siteKey]);
 
   return <div ref={ref} />;
-};
+});
+
+TurnstileWidget.displayName = 'TurnstileWidget';
 
 export default TurnstileWidget;
