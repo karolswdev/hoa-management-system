@@ -246,6 +246,9 @@ export const createAppTheme = (mode: AccessibilityMode): Theme => {
             },
             '& .MuiInputLabel-root': {
               transform: `translate(14px, ${modeTokens.component.input.labelOffset}px) scale(1)`,
+              '&.MuiInputLabel-shrink': {
+                transform: 'translate(14px, -9px) scale(0.75)',
+              },
             },
           },
         },
