@@ -58,16 +58,14 @@ const checkDatabase = async () => {
 };
 
 /**
- * Check SendGrid availability (if configured)
+ * Check Resend availability (if configured)
  */
-const checkSendGrid = async () => {
+const checkResend = async () => {
   try {
-    const apiKey = process.env.SENDGRID_API_KEY;
+    const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       return { status: 'not_configured' };
     }
-    // We don't actually call SendGrid API in health check to avoid rate limits
-    // Just verify the key is present
     return { status: 'configured' };
   } catch (error) {
     return { status: 'error', error: error.message };
@@ -97,10 +95,10 @@ const healthz = async (req, res) => {
     const startTime = Date.now();
 
     // Parallel health checks
-    const [dbCheck, themeChecksum, sendgridCheck] = await Promise.all([
+    const [dbCheck, themeChecksum, resendCheck] = await Promise.all([
       checkDatabase(),
       computeThemeChecksum(),
-      checkSendGrid()
+      checkResend()
     ]);
 
     const cacheAge = getConfigCacheAge();
@@ -126,7 +124,7 @@ const healthz = async (req, res) => {
         theme: {
           checksum: themeChecksum
         },
-        email: sendgridCheck
+        email: resendCheck
       },
       response_time_ms: Date.now() - startTime
     };

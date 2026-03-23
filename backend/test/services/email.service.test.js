@@ -1,10 +1,10 @@
 // Mock dependencies BEFORE requiring modules
 jest.mock('../../src/config/logger');
 
-// Mock SendGrid provider
+// Mock Resend provider
 const mockSend = jest.fn();
 const mockInit = jest.fn();
-jest.mock('../../src/services/providers/sendgrid.provider', () => ({
+jest.mock('../../src/services/providers/resend.provider', () => ({
   init: mockInit,
   send: mockSend
 }));
@@ -107,14 +107,14 @@ describe('Email Service Tests', () => {
   describe('sendWithRetry', () => {
     beforeEach(() => {
       // Mock environment variables
-      process.env.EMAIL_PROVIDER = 'sendgrid';
-      process.env.SENDGRID_API_KEY = 'test-key';
+      process.env.EMAIL_PROVIDER = 'resend';
+      process.env.RESEND_API_KEY = 'test-key';
       process.env.EMAIL_FROM = 'test@example.com';
     });
 
     afterEach(() => {
       delete process.env.EMAIL_PROVIDER;
-      delete process.env.SENDGRID_API_KEY;
+      delete process.env.RESEND_API_KEY;
       delete process.env.EMAIL_FROM;
     });
 
@@ -137,7 +137,7 @@ describe('Email Service Tests', () => {
     });
 
     it('should retry on failure with exponential backoff', async () => {
-      const error = new Error('SendGrid API error');
+      const error = new Error('Resend API error');
       mockSend
         .mockRejectedValueOnce(error)
         .mockRejectedValueOnce(error)
@@ -158,7 +158,7 @@ describe('Email Service Tests', () => {
     });
 
     it('should fail after max retries exceeded', async () => {
-      const error = new Error('SendGrid API error');
+      const error = new Error('Resend API error');
       mockSend.mockRejectedValue(error);
 
       const payload = {
@@ -168,14 +168,14 @@ describe('Email Service Tests', () => {
         text: 'Test'
       };
 
-      await expect(emailService.sendWithRetry(payload)).rejects.toThrow('SendGrid API error');
+      await expect(emailService.sendWithRetry(payload)).rejects.toThrow('Resend API error');
       expect(mockSend).toHaveBeenCalledTimes(3); // 1 initial + 2 retries
       expect(logger.error).toHaveBeenCalledWith('Email send failed after all retries', expect.any(Object));
     });
 
     it('should simulate email send in log-only mode', async () => {
       delete process.env.EMAIL_PROVIDER;
-      delete process.env.SENDGRID_API_KEY;
+      delete process.env.RESEND_API_KEY;
 
       const payload = {
         to: 'recipient@example.com',
@@ -204,8 +204,8 @@ describe('Email Service Tests', () => {
       };
 
       // Mock environment
-      process.env.EMAIL_PROVIDER = 'sendgrid';
-      process.env.SENDGRID_API_KEY = 'test-key';
+      process.env.EMAIL_PROVIDER = 'resend';
+      process.env.RESEND_API_KEY = 'test-key';
       process.env.EMAIL_FROM = 'test@example.com';
 
       // Mock successful send
@@ -217,7 +217,7 @@ describe('Email Service Tests', () => {
 
     afterEach(async () => {
       delete process.env.EMAIL_PROVIDER;
-      delete process.env.SENDGRID_API_KEY;
+      delete process.env.RESEND_API_KEY;
       delete process.env.EMAIL_FROM;
     });
 
@@ -357,8 +357,8 @@ describe('Email Service Tests', () => {
         finished: false
       };
 
-      process.env.EMAIL_PROVIDER = 'sendgrid';
-      process.env.SENDGRID_API_KEY = 'test-key';
+      process.env.EMAIL_PROVIDER = 'resend';
+      process.env.RESEND_API_KEY = 'test-key';
       process.env.EMAIL_FROM = 'test@example.com';
 
       mockSend.mockResolvedValue({ messageId: 'test-message-id' });
@@ -367,7 +367,7 @@ describe('Email Service Tests', () => {
 
     afterEach(async () => {
       delete process.env.EMAIL_PROVIDER;
-      delete process.env.SENDGRID_API_KEY;
+      delete process.env.RESEND_API_KEY;
       delete process.env.EMAIL_FROM;
     });
 
@@ -441,7 +441,7 @@ describe('Email Service Tests', () => {
       EmailAudit.create.mockResolvedValue(mockEmailAudit);
       ResidentNotificationLog.create.mockResolvedValue({});
 
-      mockSend.mockRejectedValue(new Error('SendGrid API error'));
+      mockSend.mockRejectedValue(new Error('Resend API error'));
 
       await expect(
         emailService.sendPollReceiptEmail({
@@ -453,7 +453,7 @@ describe('Email Service Tests', () => {
           voteHash: 'abc123def456',
           timestamp: new Date()
         })
-      ).rejects.toThrow('SendGrid API error');
+      ).rejects.toThrow('Resend API error');
 
       // Verify status was updated to 'failed'
       expect(mockEmailAudit.update).toHaveBeenCalledWith(
@@ -507,8 +507,8 @@ describe('Email Service Tests', () => {
         finished: false
       };
 
-      process.env.EMAIL_PROVIDER = 'sendgrid';
-      process.env.SENDGRID_API_KEY = 'test-key';
+      process.env.EMAIL_PROVIDER = 'resend';
+      process.env.RESEND_API_KEY = 'test-key';
       process.env.EMAIL_FROM = 'admin@example.com';
 
       mockSend.mockResolvedValue({ messageId: 'test-message-id' });
@@ -517,7 +517,7 @@ describe('Email Service Tests', () => {
 
     afterEach(async () => {
       delete process.env.EMAIL_PROVIDER;
-      delete process.env.SENDGRID_API_KEY;
+      delete process.env.RESEND_API_KEY;
       delete process.env.EMAIL_FROM;
     });
 
@@ -594,7 +594,7 @@ describe('Email Service Tests', () => {
       EmailAudit.create.mockResolvedValue(mockEmailAudit);
       ResidentNotificationLog.create.mockResolvedValue({});
 
-      mockSend.mockRejectedValue(new Error('SendGrid API error'));
+      mockSend.mockRejectedValue(new Error('Resend API error'));
 
       const result = await emailService.sendVendorSubmissionAlert({
         vendorId: 123,
@@ -658,8 +658,8 @@ describe('Email Service Tests', () => {
         finished: false
       };
 
-      process.env.EMAIL_PROVIDER = 'sendgrid';
-      process.env.SENDGRID_API_KEY = 'test-key';
+      process.env.EMAIL_PROVIDER = 'resend';
+      process.env.RESEND_API_KEY = 'test-key';
       process.env.EMAIL_FROM = 'noreply@example.com';
 
       mockSend.mockResolvedValue({ messageId: 'test-message-id' });
@@ -668,7 +668,7 @@ describe('Email Service Tests', () => {
 
     afterEach(async () => {
       delete process.env.EMAIL_PROVIDER;
-      delete process.env.SENDGRID_API_KEY;
+      delete process.env.RESEND_API_KEY;
       delete process.env.EMAIL_FROM;
     });
 
@@ -851,14 +851,14 @@ describe('Email Service Tests', () => {
 
   describe('Legacy sendMail', () => {
     beforeEach(() => {
-      process.env.EMAIL_PROVIDER = 'sendgrid';
-      process.env.SENDGRID_API_KEY = 'test-key';
+      process.env.EMAIL_PROVIDER = 'resend';
+      process.env.RESEND_API_KEY = 'test-key';
       process.env.EMAIL_FROM = 'test@example.com';
     });
 
     afterEach(() => {
       delete process.env.EMAIL_PROVIDER;
-      delete process.env.SENDGRID_API_KEY;
+      delete process.env.RESEND_API_KEY;
       delete process.env.EMAIL_FROM;
     });
 
@@ -879,7 +879,7 @@ describe('Email Service Tests', () => {
 
     it('should log when not configured', async () => {
       delete process.env.EMAIL_PROVIDER;
-      delete process.env.SENDGRID_API_KEY;
+      delete process.env.RESEND_API_KEY;
 
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
