@@ -6,15 +6,15 @@ const { EmailAudit, ResidentNotificationLog, sequelize } = require('../../models
 // Lazy load provider to allow for testing
 let provider = null;
 function getProvider() {
-  if (provider === null && process.env.EMAIL_PROVIDER === 'sendgrid') {
-    provider = require('./providers/sendgrid.provider');
-    provider.init(process.env.SENDGRID_API_KEY);
+  if (provider === null && process.env.EMAIL_PROVIDER === 'resend') {
+    provider = require('./providers/resend.provider');
+    provider.init(process.env.RESEND_API_KEY);
   }
   return provider;
 }
 
 // Constants for batching and retry
-const BATCH_SIZE = 50; // SendGrid recommended batch size
+const BATCH_SIZE = 50; // Resend recommended batch size
 const RETRY_DELAYS = [250, 500]; // Exponential backoff: 250ms, 500ms
 const MAX_RETRIES = RETRY_DELAYS.length;
 
@@ -25,7 +25,7 @@ const MAX_RETRIES = RETRY_DELAYS.length;
  */
 async function sendMail(payload) {
   const prov = getProvider();
-  const configured = !!(prov && process.env.SENDGRID_API_KEY && process.env.EMAIL_FROM);
+  const configured = !!(prov && process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
   if (!configured) {
     console.log('[email:log-only]', JSON.stringify(payload, null, 2));
     return;
@@ -56,12 +56,12 @@ function sleep(ms) {
  * Send email with retry logic and exponential backoff
  * @param {Object} payload - Email payload
  * @param {number} attempt - Current attempt number (1-indexed)
- * @returns {Promise<Object>} SendGrid response
+ * @returns {Promise<Object>} Resend response
  */
 async function sendWithRetry(payload, attempt = 1) {
   try {
     const prov = getProvider();
-    const configured = !!(prov && process.env.SENDGRID_API_KEY && process.env.EMAIL_FROM);
+    const configured = !!(prov && process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
     if (!configured) {
       logger.info('[email:log-only] Simulating email send', { payload });
       return { simulated: true, messageId: 'log-only-' + Date.now() };
@@ -169,7 +169,7 @@ async function sendPollNotificationEmail({
     let failureCount = 0;
     const results = [];
 
-    // Batch recipients for SendGrid
+    // Batch recipients
     const batches = chunkArray(recipients, BATCH_SIZE);
 
     for (const batch of batches) {
@@ -316,7 +316,7 @@ async function sendVendorSubmissionAlert({
     let failureCount = 0;
     const results = [];
 
-    // Batch recipients for SendGrid
+    // Batch recipients
     const batches = chunkArray(adminRecipients, BATCH_SIZE);
 
     for (const batch of batches) {
@@ -467,7 +467,7 @@ async function sendVendorApprovalBroadcast({
     let failureCount = 0;
     const results = [];
 
-    // Batch recipients for SendGrid
+    // Batch recipients
     const batches = chunkArray(recipients, BATCH_SIZE);
 
     for (const batch of batches) {

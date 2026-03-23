@@ -11,7 +11,7 @@ module.exports = {
     'src/controllers/(announcement|audit|auth|config|document|event|user|vendor|admin\\.user)\\.controller\\.js',
     // Services not covered by integration flow
     'src/services/(announcement|audit|auth|config|document|email|event|user|vendorDirectory)\\.service\\.js',
-    'src/services/providers/sendgrid\\.provider\\.js',
+    'src/services/providers/resend\\.provider\\.js',
     // Auxiliary infrastructure we don\'t exercise in integration tests
     'src/config/(logger|sentry|rate-limit)\\.js',
     'src/emails/',

@@ -27,7 +27,7 @@
 ### Accessing the System
 
 1. Open your web browser (the program you use to browse the internet)
-2. Type this web address in the address bar at the top: **http://localhost:5173/login**
+2. Type this web address in the address bar at the top: **https://sandersoncreekhoa.com/login**
 3. Press Enter on your keyboard
 
 > **💡 TIP:** Bookmark this page so you can find it easily next time! Click the star icon in your browser's address bar.

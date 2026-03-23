@@ -379,7 +379,7 @@ jobs:
         run: |
           if command -v rg &> /dev/null; then
             echo "Scanning for potential secrets..."
-            rg -n "(SENDGRID_API_KEY|TURNSTILE_SECRET_KEY|JWT_SECRET|-----BEGIN PRIVATE KEY-----)" --no-heading || echo "No secrets found ✅"
+            rg -n "(RESEND_API_KEY|TURNSTILE_SECRET_KEY|JWT_SECRET|-----BEGIN PRIVATE KEY-----)" --no-heading || echo "No secrets found ✅"
           else
             echo "ripgrep not available, skipping secret scan"
           fi
