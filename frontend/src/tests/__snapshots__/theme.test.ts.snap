@@ -234,6 +234,9 @@ exports[`Theme Factory > createAppTheme > creates high-vis mode theme with corre
       "styleOverrides": {
         "root": {
           "& .MuiInputLabel-root": {
+            "&.MuiInputLabel-shrink": {
+              "transform": "translate(14px, -9px) scale(0.75)",
+            },
             "transform": "translate(14px, 12px) scale(1)",
           },
           "& .MuiOutlinedInput-root": {
@@ -1066,6 +1069,9 @@ exports[`Theme Factory > createAppTheme > creates standard mode theme with corre
       "styleOverrides": {
         "root": {
           "& .MuiInputLabel-root": {
+            "&.MuiInputLabel-shrink": {
+              "transform": "translate(14px, -9px) scale(0.75)",
+            },
             "transform": "translate(14px, 12px) scale(1)",
           },
           "& .MuiOutlinedInput-root": {
