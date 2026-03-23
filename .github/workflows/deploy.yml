@@ -309,6 +309,7 @@ jobs:
   deploy:
     name: Deploy to Linode
     runs-on: ubuntu-latest
+    if: ${{ always() && !failure() && !cancelled() }}
     permissions:
       contents: read
     needs: build-images
