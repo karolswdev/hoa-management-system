@@ -52,7 +52,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       // Remove confirmPassword before sending to API
-      const { captchaToken, ...registerData } = values;
+      const { confirmPassword: _, captchaToken, ...registerData } = values;
       const payload: any = { ...registerData };
       if (captchaToken) payload.captchaToken = captchaToken;
       await register(payload);
