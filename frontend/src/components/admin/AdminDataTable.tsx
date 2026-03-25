@@ -51,6 +51,8 @@ export interface AdminDataTableProps<T = Record<string, unknown>> {
   currentPage?: number;
   itemsPerPage?: number;
   onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
+  rowsPerPageOptions?: number[];
   onSort?: (column: string, direction: 'asc' | 'desc') => void;
   sortColumn?: string;
   sortDirection?: 'asc' | 'desc';
@@ -68,6 +70,8 @@ const AdminDataTable = <T extends Record<string, unknown>>({
   currentPage = 1,
   itemsPerPage = 10,
   onPageChange,
+  onItemsPerPageChange,
+  rowsPerPageOptions = [10, 25, 50, 0],
   onSort,
   sortColumn,
   sortDirection = 'asc',
@@ -96,7 +100,7 @@ const AdminDataTable = <T extends Record<string, unknown>>({
     onSort(columnId, newDirection);
   };
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = itemsPerPage === 0 ? 1 : Math.ceil(totalItems / itemsPerPage);
 
   const renderCellValue = (column: TableColumn<T>, row: T) => {
     const value = row[column.id];
@@ -265,26 +269,51 @@ const AdminDataTable = <T extends Record<string, unknown>>({
         ))}
       </Menu>
 
-      {/* Pagination */}
-      {totalPages > 1 && onPageChange && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, page) => onPageChange(page)}
-            color="primary"
-            showFirstButton
-            showLastButton
-          />
-        </Box>
-      )}
-
-      {/* Summary */}
+      {/* Pagination and Rows Per Page */}
       {totalItems > 0 && (
-        <Box mt={2}>
-          <Typography variant="body2" color="text.secondary" align="center">
-            Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{' '}
-            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+        <Box display="flex" justifyContent="space-between" alignItems="center" mt={3} flexWrap="wrap" gap={2}>
+          <Box display="flex" alignItems="center" gap={1}>
+            {onItemsPerPageChange && (
+              <>
+                <Typography variant="body2" color="text.secondary">
+                  Rows per page:
+                </Typography>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {rowsPerPageOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option === 0 ? 'All' : option}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+          </Box>
+
+          {totalPages > 1 && onPageChange && (
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(_, page) => onPageChange(page)}
+              color="primary"
+              showFirstButton
+              showLastButton
+            />
+          )}
+
+          <Typography variant="body2" color="text.secondary">
+            {itemsPerPage === 0
+              ? `Showing all ${totalItems} entries`
+              : `Showing ${Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries`
+            }
           </Typography>
         </Box>
       )}

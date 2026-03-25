@@ -144,7 +144,9 @@ const updateOwnPassword = async (userId, currentPassword, newPassword) => {
  */
 const listNonSystemUsers = async ({ limit = 10, offset = 0 }) => {
   try {
-    const { count, rows } = await User.findAndCountAll({
+    const parsedLimit = parseInt(limit, 10);
+    const parsedOffset = parseInt(offset, 10);
+    const queryOptions = {
       where: {
         is_system_user: false,
       },
@@ -152,10 +154,14 @@ const listNonSystemUsers = async ({ limit = 10, offset = 0 }) => {
         exclude: ['password'],
         include: ['id', 'name', 'email', 'role', 'status', 'email_verified', 'is_system_user', 'created_at', 'updated_at'],
       },
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10),
+      offset: parsedOffset,
       order: [['created_at', 'DESC']],
-    });
+    };
+    // limit=0 means fetch all records
+    if (parsedLimit > 0) {
+      queryOptions.limit = parsedLimit;
+    }
+    const { count, rows } = await User.findAndCountAll(queryOptions);
     return { rows: rows.map(selectUserProfileFields), count };
   } catch (error) {
     console.error('Error listing non-system users:', error);

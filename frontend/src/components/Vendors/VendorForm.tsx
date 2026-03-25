@@ -269,7 +269,6 @@ const VendorForm: React.FC<VendorFormProps> = ({
                 onChange={(e) => handleChange('service_category', e.target.value)}
                 label="Service Category"
                 sx={{ fontSize: fontSize }}
-                MenuProps={{ disablePortal: true }}
               >
                 {categories.length > 0 ? (
                   categories.map((category) => (
@@ -418,7 +417,6 @@ const VendorForm: React.FC<VendorFormProps> = ({
                 onChange={(e) => handleChange('visibility_scope', e.target.value)}
                 label="Visibility Scope"
                 sx={{ fontSize: fontSize }}
-                MenuProps={{ disablePortal: true }}
               >
                 <MenuItem value="public">Public (visible to guests)</MenuItem>
                 <MenuItem value="members">Members Only</MenuItem>

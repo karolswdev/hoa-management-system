@@ -46,7 +46,7 @@ const AdminUsersPage: React.FC = () => {
   
   // State for pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -65,7 +65,7 @@ const AdminUsersPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const offset = (currentPage - 1) * itemsPerPage;
+      const offset = itemsPerPage === 0 ? 0 : (currentPage - 1) * itemsPerPage;
       const response: UsersResponse = await apiService.getUsers({
         limit: itemsPerPage,
         offset,
@@ -347,6 +347,10 @@ const AdminUsersPage: React.FC = () => {
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
+        onItemsPerPageChange={(value) => {
+          setItemsPerPage(value);
+          setCurrentPage(1);
+        }}
         actions={actions}
         emptyMessage="No users found"
       />

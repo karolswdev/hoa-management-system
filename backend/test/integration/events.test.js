@@ -37,7 +37,7 @@ describe('Event API Integration Tests', () => {
         .send({
           title: 'Test Event',
           description: 'This is a test event',
-          event_date: '2025-12-31T18:00:00Z',
+          event_date: '2099-12-31T18:00:00Z',
           location: 'Test Location'
         });
       testEventId = res.body.id;
@@ -92,7 +92,7 @@ describe('Event API Integration Tests', () => {
           .send({
             title: 'New Event',
             description: 'Important event',
-            event_date: '2025-12-31T18:00:00Z',
+            event_date: '2099-12-31T18:00:00Z',
             location: 'Event Location'
           });
         
@@ -157,8 +157,8 @@ describe('Event API Integration Tests', () => {
           .put(`/api/events/${testEventId}`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send({
-            start_date: '2025-12-31T18:00:00Z',
-            end_date: '2025-12-30T18:00:00Z'
+            start_date: '2099-12-31T18:00:00Z',
+            end_date: '2099-12-30T18:00:00Z'
           });
         
         expect(res.statusCode).toEqual(400);
@@ -193,7 +193,7 @@ describe('Event API Integration Tests', () => {
           .send({
             title: 'To Delete',
             description: 'Will try to delete',
-            event_date: '2025-12-31T18:00:00Z',
+            event_date: '2099-12-31T18:00:00Z',
             location: 'Test'
           });
         
