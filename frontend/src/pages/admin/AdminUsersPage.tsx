@@ -93,7 +93,7 @@ const AdminUsersPage: React.FC = () => {
       }
       
       setUsers(filteredUsers);
-      setTotalUsers(filteredUsers.length);
+      setTotalUsers(response.count);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
