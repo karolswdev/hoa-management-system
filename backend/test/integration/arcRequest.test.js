@@ -1,15 +1,17 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const { setupTestDB, teardownTestDB, createAndApproveUser } = require('../utils/dbHelpers');
-const { User, Committee, CommitteeMember, Config } = require('../../models');
+const { User, Committee, CommitteeMember, Config, ArcCategory } = require('../../models');
 
 describe('ARC Request & Category Integration Tests', () => {
   let adminToken;
   let memberToken;
   let submitterToken;
+  let outsiderToken;
   let committeeId;
   let submitterUserId;
   let memberUserId;
+  let outsiderUserId;
   let categoryId;
   let arcRequestId;
 
@@ -37,6 +39,14 @@ describe('ARC Request & Category Integration Tests', () => {
     );
     const subUser = await User.findOne({ where: { email: 'arc-submitter@example.com' } });
     submitterUserId = subUser.id;
+
+    // Create outsider (not on any committee, not a submitter)
+    outsiderToken = await createAndApproveUser(
+      { name: 'ARC Outsider', email: 'arc-outsider@example.com', password: 'TestMember123!' },
+      adminToken
+    );
+    const outUser = await User.findOne({ where: { email: 'arc-outsider@example.com' } });
+    outsiderUserId = outUser.id;
 
     // Create ARC committee
     const committeeRes = await request(app)
@@ -301,6 +311,104 @@ describe('ARC Request & Category Integration Tests', () => {
       });
     });
 
+    describe('GET /api/arc-requests/:id - Access Control', () => {
+      it('should deny access to outsider (not submitter, not committee, not admin)', async () => {
+        const res = await request(app)
+          .get(`/api/arc-requests/${arcRequestId}`)
+          .set('Authorization', `Bearer ${outsiderToken}`);
+
+        // The outsider has no committee memberships, so isCommitteeMember=false in the controller.
+        // The service checks: not submitter, not committee member, not admin => Access denied
+        expect(res.statusCode).toEqual(403);
+      });
+    });
+
+    describe('PUT /api/arc-requests/:id - Update Draft', () => {
+      let draftArcId;
+      let draftWfId;
+
+      beforeAll(async () => {
+        // Create a request with submit_immediately=false to get draft status
+        const res = await request(app)
+          .post('/api/arc-requests')
+          .set('Authorization', `Bearer ${submitterToken}`)
+          .send({
+            property_address: '700 Draft Lane',
+            category_id: categoryId,
+            description: 'Draft test request',
+            submit_immediately: false
+          });
+
+        expect(res.statusCode).toEqual(201);
+        draftArcId = res.body.arcRequest.id;
+        draftWfId = res.body.workflow.id;
+      });
+
+      it('should allow submitter to update a draft ARC request', async () => {
+        const res = await request(app)
+          .put(`/api/arc-requests/${draftArcId}`)
+          .set('Authorization', `Bearer ${submitterToken}`)
+          .send({
+            property_address: '700 Draft Lane, Updated',
+            description: 'Updated draft description'
+          });
+
+        expect(res.statusCode).toEqual(200);
+        expect(res.body.arcRequest.property_address).toEqual('700 Draft Lane, Updated');
+        expect(res.body.arcRequest.description).toEqual('Updated draft description');
+      });
+
+      it('should allow updating category_id on draft', async () => {
+        const res = await request(app)
+          .put(`/api/arc-requests/${draftArcId}`)
+          .set('Authorization', `Bearer ${submitterToken}`)
+          .send({
+            category_id: categoryId
+          });
+
+        expect(res.statusCode).toEqual(200);
+      });
+
+      it('should reject update with invalid category_id', async () => {
+        const res = await request(app)
+          .put(`/api/arc-requests/${draftArcId}`)
+          .set('Authorization', `Bearer ${submitterToken}`)
+          .send({
+            category_id: 99999
+          });
+
+        expect(res.statusCode).toEqual(400);
+      });
+
+      it('should reject update from non-submitter', async () => {
+        const res = await request(app)
+          .put(`/api/arc-requests/${draftArcId}`)
+          .set('Authorization', `Bearer ${memberToken}`)
+          .send({ description: 'Trying to update someone else request' });
+
+        expect(res.statusCode).toEqual(403);
+      });
+
+      it('should reject update for non-existent ARC request', async () => {
+        const res = await request(app)
+          .put('/api/arc-requests/99999')
+          .set('Authorization', `Bearer ${submitterToken}`)
+          .send({ description: 'Non-existent request' });
+
+        expect(res.statusCode).toEqual(404);
+      });
+
+      it('should reject update on non-draft request (already submitted)', async () => {
+        // arcRequestId was created with submit_immediately=true, so its status is 'submitted'
+        const res = await request(app)
+          .put(`/api/arc-requests/${arcRequestId}`)
+          .set('Authorization', `Bearer ${submitterToken}`)
+          .send({ description: 'Cannot update submitted request' });
+
+        expect(res.statusCode).toEqual(403);
+      });
+    });
+
     // --- End-to-End Flow ---
 
     describe('Full ARC Request Lifecycle', () => {
@@ -370,6 +478,59 @@ describe('ARC Request & Category Integration Tests', () => {
         expect(detailRes.body.workflow.status).toEqual('approved');
         expect(detailRes.body.workflow.transitions.length).toBeGreaterThanOrEqual(3);
         expect(detailRes.body.workflow.comments.length).toBeGreaterThanOrEqual(2);
+      });
+    });
+  });
+
+  // --- Additional Category Edge Cases ---
+
+  describe('ARC Category Edge Cases', () => {
+    describe('PUT /api/arc-categories/:id - non-existent category', () => {
+      it('should return 404 for non-existent category', async () => {
+        const res = await request(app)
+          .put('/api/arc-categories/99999')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ name: 'Ghost Category' });
+
+        expect(res.statusCode).toEqual(404);
+      });
+    });
+
+    describe('DELETE /api/arc-categories/:id - non-existent category', () => {
+      it('should return 404 for non-existent category', async () => {
+        const res = await request(app)
+          .delete('/api/arc-categories/99999')
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.statusCode).toEqual(404);
+      });
+    });
+
+    describe('PUT /api/arc-categories/:id - update with inactive category for request', () => {
+      it('should reject update with inactive category', async () => {
+        // Create a category, deactivate it, then try to use it
+        const createRes = await request(app)
+          .post('/api/arc-categories')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ name: 'Soon Inactive Category' });
+        const inactiveCatId = createRes.body.category.id;
+
+        // Deactivate it
+        await request(app)
+          .delete(`/api/arc-categories/${inactiveCatId}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        // Try to create a request with the inactive category
+        const res = await request(app)
+          .post('/api/arc-requests')
+          .set('Authorization', `Bearer ${submitterToken}`)
+          .send({
+            property_address: '800 Inactive Cat St',
+            category_id: inactiveCatId,
+            description: 'Testing inactive category'
+          });
+
+        expect(res.statusCode).toEqual(400);
       });
     });
   });
