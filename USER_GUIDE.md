@@ -334,10 +334,13 @@ Your receipt includes:
 
 Want to make sure your vote was counted?
 
-1. Click the **"Verify Receipt"** link on your receipt page, OR
-2. Go to Polls → Verify Receipt
-3. Enter your receipt code
-4. Click **"Verify"**
+1. After voting, your receipt page shows a **verification link** — click it to verify your vote anytime
+2. You can also copy the verification URL and share it — receipt verification is **public** and does not require logging in
+3. The verification page will show:
+   - The poll you voted in
+   - The option you selected
+   - The timestamp of your vote
+   - A confirmation that your vote is recorded in the system
 
 The system will confirm your vote was recorded!
 

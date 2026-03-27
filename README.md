@@ -65,6 +65,9 @@ The goal of the HOA Community Hub is to replace fragmented communication channel
 | **Events**             | ✅ Create, Edit, Delete                                      | ✅ View                                              | ❌                          |
 | **Documents**          | ✅ Upload, Manage, Set Visibility                            | ✅ View & Download Approved Docs                     | ✅ View & Download Public Docs |
 | **Discussions**        | ✅ Delete Threads/Replies                                    | ✅ Create/View Threads, Post Replies                 | ❌                          |
+| **Vendor Directory**   | ✅ Approve/Deny Submissions, Edit, Delete, Set Visibility    | ✅ Browse, Search, Filter, Submit Vendors            | ✅ View Public Vendors      |
+| **Polls & Voting**     | ✅ Create Polls, Monitor Results, Verify Hash Chain Integrity | ✅ Vote, View Results, Verify Receipts              | ✅ Verify Vote Receipts     |
+| **Board Governance**   | ✅ Manage Board Titles and Members                           | ✅ View Board Roster and History                     | ✅ View Roster, Contact Form |
 | **Site Configuration** | ✅ Edit Site Name/Description                                | ❌                                                   | ❌                          |
 | **Audit Logs**         | ✅ View all administrative actions                           | ❌                                                   | ❌                          |
 | **Email**              | ✅ SendGrid provider, approval/rejection, announcements, password reset, email verification | — | — |
@@ -243,6 +246,16 @@ The project includes comprehensive test coverage for both backend and frontend c
     ```bash
     npm run test:ui
     ```
+
+*   **E2E tests (Playwright):**
+    ```bash
+    # Requires backend on :5000 and frontend on :3000
+    cd frontend
+    npx playwright test --project=chromium    # Chromium only (matches CI)
+    npm run test:e2e                          # Full browser matrix
+    npm run test:e2e:ui                       # Interactive mode
+    ```
+    E2E tests cover login, registration, announcements, events, documents, discussions, polls, vendors, board, profile, admin user management, and accessibility. The CI pipeline runs these automatically against Chromium.
 
 *   **E2E screenshot generation for user guides:**
     ```bash

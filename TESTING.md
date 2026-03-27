@@ -72,11 +72,18 @@ These tests **prove the features work**. No conditional checks - they fail defin
 ### 2. Feature E2E Tests
 
 Located in `frontend/e2e/*.spec.ts`:
-- `vendors.spec.ts` - Vendor directory and moderation flows
-- `polls.spec.ts` - Poll creation, voting, and receipt verification
-- `board.spec.ts` - Board governance features
-- `accessibility.spec.ts` - WCAG compliance checks
+- `login.spec.ts` - Login flow and navigation
+- `registration.spec.ts` - Registration form validation
 - `announcements.spec.ts` - Announcement management
+- `events.spec.ts` - Event viewing and admin CRUD
+- `documents.spec.ts` - Document listing, search, admin upload
+- `discussions.spec.ts` - Discussion forum and thread creation
+- `polls.spec.ts` - Poll creation, voting, and receipt verification
+- `vendors.spec.ts` - Vendor directory and moderation flows
+- `board.spec.ts` - Board governance features
+- `profile.spec.ts` - Profile management and password change
+- `admin-users.spec.ts` - Admin user management, rows-per-page selector
+- `accessibility.spec.ts` - WCAG compliance checks
 
 ### 3. Screenshot Tests
 
@@ -160,23 +167,23 @@ Screenshots are 1280x720 PNG files. Non-zero file size confirms they captured co
 
 ## Continuous Integration
 
-Tests run in GitHub Actions:
+Tests run in GitHub Actions (`.github/workflows/ci.yml`):
 
-```yaml
-# .github/workflows/ci.yml
-Frontend Tests:
-  ✓ Lint checks
-  ✓ Unit tests (Vitest)
-  ✓ E2E tests (Playwright)
-  ✓ Coverage thresholds
+| CI Job | What it runs |
+|--------|-------------|
+| Backend Lint | ESLint |
+| Backend Tests | Integration tests + coverage (80% threshold) |
+| Backend Hashchain | Vote hash chain integrity tests |
+| Frontend Lint | ESLint |
+| Frontend Tests | Unit tests + coverage (75% threshold) |
+| Frontend Accessibility | WCAG 2.1 AA axe-core tests |
+| **E2E Tests** | **Playwright specs against Chromium (full app stack)** |
+| Security Audits | `npm audit` for both packages |
+| Hygiene | No tracked `.env` files, no secrets in code |
 
-Backend Tests:
-  ✓ Integration tests (Jest)
-  ✓ Coverage thresholds
-  ✓ Security audit
-```
+The E2E job spins up the backend (port 5000) and frontend (port 3000) with test data, installs Playwright Chromium, and runs all E2E specs. The `EXTERNAL_SERVERS=true` env var tells Playwright to skip its built-in dev server.
 
-All E2E and integration tests must pass before merge.
+All jobs must pass before the aggregate check succeeds.
 
 ## Test Data
 
@@ -252,9 +259,9 @@ describe('Feature API', () => {
 
 ## Coverage Requirements
 
-- Frontend unit tests: 70%+ coverage
-- Backend integration tests: 60%+ coverage (exercised code only)
-- E2E tests: All critical user flows
+- Frontend unit tests: 75%+ coverage (enforced in CI)
+- Backend integration tests: 80% lines/statements/functions, 60% branches (enforced in CI)
+- E2E tests: All critical user flows (15 spec files, 177 tests)
 - Screenshot tests: All documented screens
 
 ## Best Practices
@@ -280,8 +287,10 @@ describe('Feature API', () => {
 
 ## Current Test Status
 
-✅ **All integration tests passing** (91 tests, 5 suites)
+✅ **Backend integration tests passing** (98 tests, 5 suites)
+✅ **Frontend unit tests passing** (287 tests, 17 suites)
+✅ **E2E tests passing** (177 tests, 15 spec files)
 ✅ **Screenshot generation working** (34 screenshots)
-✅ **E2E proof tests created** (vendor + poll features)
-✅ **No polling API errors found**
+✅ **E2E pipeline integrated into CI** (runs on every push and PR)
+✅ **Vote receipt verification working** (API response correctly mapped)
 ✅ **Vendor category selection verified functional**

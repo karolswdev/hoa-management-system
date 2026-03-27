@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const externalServer = process.env.GENERATE_SCREENSHOTS === 'true';
+const externalServer = process.env.GENERATE_SCREENSHOTS === 'true' || process.env.EXTERNAL_SERVERS === 'true';
 
 /**
  * See https://playwright.dev/docs/test-configuration

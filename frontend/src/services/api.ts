@@ -382,8 +382,16 @@ class ApiService {
   }
 
   async getReceipt(pollId: number, hash: string): Promise<VoteReceipt> {
-    const response: AxiosResponse<VoteReceipt> = await this.api.get(`/polls/${pollId}/receipts/${hash}`);
-    return response.data;
+    const response = await this.api.get(`/polls/${pollId}/receipts/${hash}`);
+    const { receipt } = response.data;
+    return {
+      vote_hash: receipt.vote_hash,
+      poll_id: receipt.poll.id,
+      poll_title: receipt.poll.title,
+      option_text: receipt.option.text,
+      timestamp: receipt.timestamp,
+      verified: true,
+    };
   }
 
   async createPoll(data: CreatePollRequest): Promise<Poll> {

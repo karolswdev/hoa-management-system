@@ -15,7 +15,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Look for accessibility toggle button
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await expect(toggleButton).toBeVisible();
     });
 
@@ -23,7 +23,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Find and click accessibility toggle
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
 
       // Wait for theme to apply
@@ -46,7 +46,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Toggle on
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 
@@ -61,7 +61,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Enable high-vis mode
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 
@@ -72,9 +72,7 @@ test.describe('Accessibility Features', () => {
       // High-vis mode should still be active
       // Check localStorage or theme state
       const themePreference = await page.evaluate(() => {
-        return localStorage.getItem('accessibilityMode') ||
-               localStorage.getItem('theme') ||
-               localStorage.getItem('highVisMode');
+        return localStorage.getItem('hoa_accessibility_mode');
       });
 
       expect(themePreference).toBeTruthy();
@@ -84,7 +82,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Enable high-vis mode
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 
@@ -94,9 +92,7 @@ test.describe('Accessibility Features', () => {
 
       // High-vis mode should persist
       const themePreference = await page.evaluate(() => {
-        return localStorage.getItem('accessibilityMode') ||
-               localStorage.getItem('theme') ||
-               localStorage.getItem('highVisMode');
+        return localStorage.getItem('hoa_accessibility_mode');
       });
 
       expect(themePreference).toBeTruthy();
@@ -113,7 +109,7 @@ test.describe('Accessibility Features', () => {
       });
 
       // Enable high-vis mode
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 
@@ -139,7 +135,7 @@ test.describe('Accessibility Features', () => {
       });
 
       // Enable high-vis mode
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 
@@ -158,7 +154,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Enable high-vis mode
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 
@@ -187,7 +183,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Find toggle button
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
 
       // Focus the button
       await toggleButton.focus();
@@ -198,19 +194,17 @@ test.describe('Accessibility Features', () => {
 
       // Mode should toggle
       const themePreference = await page.evaluate(() => {
-        return localStorage.getItem('accessibilityMode') ||
-               localStorage.getItem('theme') ||
-               localStorage.getItem('highVisMode');
+        return localStorage.getItem('hoa_accessibility_mode');
       });
 
-      expect(themePreference !== null).toBeTruthy();
+      expect(themePreference).toBeTruthy();
     });
 
     test('should activate accessibility toggle with Space key', async ({ page }) => {
       await loginAsMember(page);
 
       // Find toggle button
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
 
       // Focus the button
       await toggleButton.focus();
@@ -228,7 +222,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Find toggle button
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
 
       // Check for ARIA label
       const ariaLabel = await toggleButton.getAttribute('aria-label');
@@ -239,7 +233,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Find toggle button
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
 
       // Click toggle
       await toggleButton.click();
@@ -300,7 +294,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Enable high-vis mode
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 
@@ -335,7 +329,7 @@ test.describe('Accessibility Features', () => {
       await loginAsMember(page);
 
       // Enable high-vis mode
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 
@@ -351,17 +345,18 @@ test.describe('Accessibility Features', () => {
 
       // Tab to first focusable element
       await page.keyboard.press('Tab');
+      await page.waitForTimeout(300);
 
-      // Check that focused element has outline or focus indicator
-      const focusedElement = page.locator(':focus');
-      await expect(focusedElement).toBeVisible();
+      // Check that some element has focus
+      const hasFocus = await page.evaluate(() => document.activeElement?.tagName !== 'BODY');
+      expect(hasFocus).toBeTruthy();
     });
 
     test('focus indicators should be enhanced in high-vis mode', async ({ page }) => {
       await loginAsMember(page);
 
       // Enable high-vis mode
-      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i });
+      const toggleButton = page.getByRole('button', { name: /accessibility|high.*visibility|contrast/i }).first();
       await toggleButton.click();
       await page.waitForTimeout(500);
 

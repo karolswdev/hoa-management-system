@@ -1,6 +1,6 @@
 # Sanderson Creek HOA - Member User Guide
 
-**Version 1.0** | Last Updated: November 2025
+**Version 1.1** | Last Updated: March 2026
 
 Welcome to the Sanderson Creek HOA Management System! This guide will help you navigate the portal and make the most of its features.
 
@@ -15,10 +15,13 @@ Welcome to the Sanderson Creek HOA Management System! This guide will help you n
 5. [Community Events](#community-events)
 6. [Accessing Documents](#accessing-documents)
 7. [Community Discussions](#community-discussions)
-8. [Managing Your Profile](#managing-your-profile)
-9. [Security and Privacy](#security-and-privacy)
-10. [Troubleshooting](#troubleshooting)
-11. [Contact Information](#contact-information)
+8. [Vendor Directory](#vendor-directory)
+9. [Polls & Voting](#polls--voting)
+10. [Board of Directors](#board-of-directors)
+11. [Managing Your Profile](#managing-your-profile)
+12. [Security and Privacy](#security-and-privacy)
+13. [Troubleshooting](#troubleshooting)
+14. [Contact Information](#contact-information)
 
 ---
 
@@ -354,6 +357,111 @@ Each discussion thread shows:
 
 ---
 
+## Vendor Directory
+
+Browse trusted service providers recommended by the community.
+
+### Viewing Vendors
+
+1. Click **"Vendors"** in the navigation menu
+2. Browse vendors in grid or list view
+
+### Finding Vendors
+
+- **Search:** Type a vendor name or keyword in the search bar
+- **Filter by Category:** Select a service category (Plumbing, Electrical, Landscaping, HVAC, Roofing, Painting, General Contractor, Other)
+- **View Details:** Click a vendor card to see contact information, ratings, and notes
+
+### Submitting a Vendor
+
+Share a service provider you recommend:
+
+1. Click **"Submit Vendor"**
+2. Fill in the form:
+   - **Vendor Name** (required)
+   - **Service Category** (required) — select from the dropdown
+   - **Contact Information** — phone, email, website
+   - **Rating** — your experience (1-5 stars)
+   - **Notes** — additional details about the vendor
+3. Click **"Submit for Review"**
+4. An administrator will review and approve your submission
+
+### Vendor Visibility
+
+- **Public vendors** are visible to guests and members
+- **Member-only vendors** require login to view contact details
+- Your submissions appear after admin approval
+
+---
+
+## Polls & Voting
+
+Participate in community decisions through polls and voting.
+
+### Viewing Polls
+
+1. Click **"Polls"** in the navigation menu
+2. See active, upcoming, and closed polls
+
+### Casting Your Vote
+
+1. Click on an active poll to view details
+2. Read the poll description and options
+3. Select your preferred option
+4. Click **"Vote"** or **"Submit Vote"**
+
+### Vote Receipts
+
+After voting, you receive a **vote receipt** — a cryptographic code that proves your vote was recorded. Save this receipt!
+
+- The receipt code appears on screen after you vote
+- You can copy it to your clipboard
+- Use it to verify your vote was counted correctly
+
+### Verifying Your Vote
+
+To verify a vote receipt:
+
+1. Visit the receipt verification link (shown after voting)
+2. The page displays:
+   - The poll you voted in
+   - The option you selected
+   - The timestamp of your vote
+   - Verification status
+3. Receipt verification is **public** — no login required
+
+### Poll Types
+
+- **Binding:** Official HOA decisions (budget votes, rule changes)
+- **Informal:** Community surveys and preference polls
+
+### Important Notes
+
+- You can only vote once per poll
+- Votes cannot be changed after submission
+- Results are visible after the poll closes (or to admins during voting)
+
+---
+
+## Board of Directors
+
+View the current HOA board members and their roles.
+
+### Viewing the Board
+
+1. Click **"Board"** in the navigation menu
+2. See current board members with their titles (President, Vice President, Treasurer, Secretary, etc.)
+
+### Board History
+
+Scroll down to view historical board compositions for reference.
+
+### Contacting the Board
+
+Use the board contact form to send a message to the board. Available to both members and guests.
+
+---
+
 ## Managing Your Profile
 
 ![Member Profile Page](../frontend/screenshots/13-member-profile-page.png)
@@ -603,4 +711,4 @@ For the latest information and updates, always check the portal announcements pa
 
 ---
 
-*This guide was last updated on November 11, 2025. Features and procedures may change. Please refer to the online portal for the most current information.*
+*This guide was last updated on March 25, 2026. Features and procedures may change. Please refer to the online portal for the most current information.*

@@ -1,6 +1,6 @@
 # Sanderson Creek HOA - Administrator User Guide
 
-**Version 1.0** | Last Updated: November 2025
+**Version 1.1** | Last Updated: March 2026
 
 This comprehensive guide will help HOA administrators effectively manage the Sanderson Creek HOA Management System.
 
@@ -14,11 +14,14 @@ This comprehensive guide will help HOA administrators effectively manage the San
 4. [Managing Announcements](#managing-announcements)
 5. [Event Management](#event-management)
 6. [Document Management](#document-management)
-7. [System Configuration](#system-configuration)
-8. [Audit Logs](#audit-logs)
-9. [Best Practices](#best-practices)
-10. [Troubleshooting](#troubleshooting)
-11. [Security Guidelines](#security-guidelines)
+7. [Vendor Management](#vendor-management)
+8. [Polls & Voting Management](#polls--voting-management)
+9. [Board Governance](#board-governance)
+10. [System Configuration](#system-configuration)
+11. [Audit Logs](#audit-logs)
+12. [Best Practices](#best-practices)
+13. [Troubleshooting](#troubleshooting)
+14. [Security Guidelines](#security-guidelines)
 
 ---
 
@@ -153,8 +156,10 @@ Efficiently find users using:
 
 4. **Pagination**
    - 10 users per page by default
+   - **Rows per page selector:** Choose 10, 25, 50, or "All" to control how many users display at once
    - Navigate with page numbers
    - Jump to first/last page
+   - "Showing X to Y of Z entries" counter at the bottom
 
 ### Approving New Users
 
@@ -1070,6 +1075,124 @@ Expand log entries for more information:
 
 ---
 
+## Vendor Management
+
+Manage the community vendor directory, review submissions from members, and moderate listings.
+
+### Accessing Vendor Management
+
+1. Click **"Vendors"** in the admin menu
+2. View all vendor listings and pending submissions
+
+### Vendor Moderation Dashboard
+
+The vendor management page includes:
+
+- **Pending Vendors Tab:** Submissions awaiting your review
+- **Approved Vendors Tab:** Currently listed vendors
+- **Rejected Vendors Tab:** Previously denied submissions
+
+### Reviewing Vendor Submissions
+
+When a member submits a new vendor:
+
+1. **Check the Pending tab** for new submissions
+2. **Review vendor details:**
+   - Vendor name and service category
+   - Contact information
+   - Member rating and notes
+   - Submitting member's identity
+3. **Approve or Deny:**
+   - **Approve:** Vendor appears in the public directory
+   - **Deny:** Vendor is rejected with optional reason
+
+### Managing Existing Vendors
+
+- **Edit:** Update vendor name, category, contact info, or visibility
+- **Delete:** Remove a vendor from the directory
+- **Change Visibility:** Set to Public (guests can see), Members Only, or Admins Only
+
+### Vendor Categories
+
+The system includes these service categories:
+- Plumbing, Electrical, Landscaping, HVAC, Roofing, Painting, General Contractor, Other
+
+### Vendor Management Best Practices
+
+1. Review pending submissions promptly (within 1-2 business days)
+2. Verify vendor legitimacy before approving
+3. Encourage members to include contact information and honest ratings
+4. Remove vendors that are no longer in business or have received complaints
+
+---
+
+## Polls & Voting Management
+
+Create and manage community polls, monitor voting, and verify vote integrity.
+
+### Creating a Poll
+
+1. Navigate to **Admin > Polls**
+2. Click **"Create Poll"**
+3. Fill in poll details:
+   - **Title:** Clear question or topic
+   - **Description:** Context for voters
+   - **Type:** Binding (official vote) or Informal (survey)
+   - **Options:** Add two or more voting options
+   - **Start/End Dates:** When voting opens and closes
+   - **Anonymous Voting:** Toggle if voter identity should be hidden
+4. Optionally check **"Notify Members"** to send an email alert
+5. Click **"Create"**
+
+### Monitoring Poll Results
+
+- View real-time vote counts and percentages
+- See participation rates
+- Results available to admins during voting; members see results after poll closes
+
+### Vote Receipts
+
+When members vote, they receive a cryptographic receipt code. Members can verify their vote was recorded correctly by visiting the public receipt verification page at `/polls/{pollId}/receipts/{hash}`.
+
+### Hash Chain Integrity
+
+The system records votes in a cryptographic hash chain. Each vote's hash depends on the previous vote, making tampering detectable.
+
+To verify integrity:
+1. Navigate to a poll's detail page
+2. Click **"Verify Integrity"** or **"Hash Chain Check"**
+3. The system validates the entire chain and reports any discrepancies
+
+### Poll Management Best Practices
+
+1. Set clear, unambiguous poll questions
+2. Use binding polls for official HOA decisions; informal for surveys
+3. Allow adequate voting time (at least 7 days for important decisions)
+4. Announce polls via email notification so members don't miss them
+
+---
+
+## Board Governance
+
+Manage the HOA board roster, titles, and history.
+
+### Board Roster
+
+The board page displays current board members and their titles to all community members.
+
+### Managing Board Members
+
+1. Navigate to **Admin > Board**
+2. **Add Board Member:** Assign a title (President, Vice President, Treasurer, Secretary, etc.) to an existing user
+3. **Edit Title:** Change a board member's role
+4. **Remove:** Remove a member from the board roster
+
+### Board History
+
+Members can view historical board compositions for reference.
+
+---
+
 ## Best Practices
 
 ### Time Management
@@ -1437,10 +1560,10 @@ Thank you for serving as an administrator for the Sanderson Creek HOA Management
 
 ---
 
-*This guide was last updated on November 11, 2025. Features and procedures may change. Please refer to the system for the most current information.*
+*This guide was last updated on March 25, 2026. Features and procedures may change. Please refer to the system for the most current information.*
 
 **Document Control:**
-- Version: 1.0
-- Last Updated: November 11, 2025
-- Next Review: February 11, 2026
+- Version: 1.1
+- Last Updated: March 25, 2026
+- Next Review: June 25, 2026
 - Maintained by: HOA Management Team
