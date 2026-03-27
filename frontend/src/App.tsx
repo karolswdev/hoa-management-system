@@ -47,6 +47,10 @@ import PollsPage from './pages/Polls';
 import PollDetailPage from './pages/PollDetail';
 import PollReceiptPage from './pages/PollReceipt';
 import Vendors from './pages/Vendors';
+import ArcRequestsPage from './pages/member/ArcRequestsPage';
+import ArcSubmitPage from './pages/member/ArcSubmitPage';
+import ArcDetailPage from './pages/member/ArcDetailPage';
+import ArcCommitteeQueuePage from './pages/member/ArcCommitteeQueuePage';
 
 // Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -57,6 +61,8 @@ import AdminDocumentsPage from './pages/admin/AdminDocumentsPage';
 import AdminConfigPage from './pages/admin/AdminConfigPage';
 import AdminAuditPage from './pages/admin/AdminAuditPage';
 import VendorManagement from './pages/admin/VendorManagement';
+import CommitteeManagementPage from './pages/admin/CommitteeManagementPage';
+import ArcCategoryManagementPage from './pages/admin/ArcCategoryManagementPage';
 
 const App: React.FC = () => {
   return (
@@ -154,6 +160,10 @@ const App: React.FC = () => {
                 <Route path="polls" element={<PollsPage />} />
                 <Route path="polls/:id" element={<PollDetailPage />} />
                 <Route path="vendors" element={<Vendors />} />
+                <Route path="arc" element={<ArcRequestsPage />} />
+                <Route path="arc/submit" element={<ArcSubmitPage />} />
+                <Route path="arc/:id" element={<ArcDetailPage />} />
+                <Route path="arc/queue" element={<ArcCommitteeQueuePage />} />
                 <Route path="profile" element={<ProfilePage />} />
 
                 {/* Admin Routes */}
@@ -226,6 +236,22 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute requireAdmin>
                       <VendorManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/committees"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <CommitteeManagementPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/arc-categories"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <ArcCategoryManagementPage />
                     </ProtectedRoute>
                   }
                 />

@@ -382,6 +382,198 @@ export interface UpdateVendorRequest {
   moderation_state?: VendorModerationState;
 }
 
+// Committee Types
+export type CommitteeMemberRole = 'member' | 'chair';
+
+export interface Committee {
+  id: number;
+  name: string;
+  description: string | null;
+  status: 'active' | 'inactive';
+  approval_expiration_days: number;
+  created_at: string;
+  updated_at: string;
+  members?: CommitteeMembership[];
+}
+
+export interface CommitteeMembership {
+  id: number;
+  user_id: number;
+  committee_id: number;
+  role: CommitteeMemberRole;
+  created_at: string;
+  user?: { id: number; name: string; email: string };
+}
+
+export interface CreateCommitteeRequest {
+  name: string;
+  description?: string;
+  approval_expiration_days?: number;
+}
+
+export interface UpdateCommitteeRequest {
+  name?: string;
+  description?: string;
+  status?: 'active' | 'inactive';
+  approval_expiration_days?: number;
+}
+
+export interface AddCommitteeMemberRequest {
+  user_id: number;
+  role?: CommitteeMemberRole;
+}
+
+// Workflow Types
+export type WorkflowStatus =
+  | 'draft'
+  | 'submitted'
+  | 'under_review'
+  | 'approved'
+  | 'denied'
+  | 'withdrawn'
+  | 'appealed'
+  | 'appeal_under_review'
+  | 'appeal_approved'
+  | 'appeal_denied'
+  | 'expired';
+
+export interface WorkflowInstance {
+  id: number;
+  committee_id: number;
+  request_type: string;
+  request_id: number;
+  status: WorkflowStatus;
+  submitted_by: number;
+  expires_at: string | null;
+  appeal_count: number;
+  created_at: string;
+  updated_at: string;
+  committee?: Committee;
+  submitter?: { id: number; name: string; email: string };
+  transitions?: WorkflowTransition[];
+  comments?: WorkflowComment[];
+  attachments?: WorkflowAttachment[];
+}
+
+export interface WorkflowTransition {
+  id: number;
+  workflow_id: number;
+  from_status: WorkflowStatus;
+  to_status: WorkflowStatus;
+  performed_by: number;
+  performed_at: string;
+  performer?: { id: number; name: string };
+}
+
+export interface WorkflowComment {
+  id: number;
+  workflow_id: number;
+  created_by: number;
+  content: string;
+  is_internal: boolean;
+  created_at: string;
+  author?: { id: number; name: string };
+}
+
+export interface WorkflowAttachment {
+  id: number;
+  workflow_id: number;
+  uploaded_by: number;
+  original_file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  created_at: string;
+  uploader?: { id: number; name: string };
+}
+
+export interface WorkflowTransitionRequest {
+  to_status: WorkflowStatus;
+  comment?: string;
+  expiration_days?: number;
+}
+
+export interface WorkflowCommentRequest {
+  content: string;
+  is_internal?: boolean;
+}
+
+export interface WorkflowListResponse {
+  workflows: WorkflowInstance[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// ARC Request Types
+export interface ArcRequest {
+  id: number;
+  submitter_id: number;
+  property_address: string;
+  category_id: number;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  submitter?: { id: number; name: string; email: string };
+  category?: ArcCategory;
+  workflow?: WorkflowInstance;
+}
+
+export interface CreateArcRequestRequest {
+  property_address: string;
+  category_id: number;
+  description: string;
+  submit_immediately?: boolean;
+}
+
+export interface UpdateArcRequestRequest {
+  property_address?: string;
+  category_id?: number;
+  description?: string;
+}
+
+export interface ArcRequestListResponse {
+  arcRequests: ArcRequest[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+export interface ArcRequestCreateResponse {
+  arcRequest: ArcRequest;
+  workflow: WorkflowInstance;
+}
+
+// ARC Category Types
+export interface ArcCategory {
+  id: number;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateArcCategoryRequest {
+  name: string;
+  description?: string;
+  sort_order?: number;
+}
+
+export interface UpdateArcCategoryRequest {
+  name?: string;
+  description?: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
 // Error Response
 export interface ApiError {
   message: string;

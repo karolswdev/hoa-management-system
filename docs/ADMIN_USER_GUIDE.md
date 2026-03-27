@@ -1,6 +1,6 @@
 # Sanderson Creek HOA - Administrator User Guide
 
-**Version 1.1** | Last Updated: March 2026
+**Version 1.2** | Last Updated: March 2026
 
 This comprehensive guide will help HOA administrators effectively manage the Sanderson Creek HOA Management System.
 
@@ -17,11 +17,13 @@ This comprehensive guide will help HOA administrators effectively manage the San
 7. [Vendor Management](#vendor-management)
 8. [Polls & Voting Management](#polls--voting-management)
 9. [Board Governance](#board-governance)
-10. [System Configuration](#system-configuration)
-11. [Audit Logs](#audit-logs)
-12. [Best Practices](#best-practices)
-13. [Troubleshooting](#troubleshooting)
-14. [Security Guidelines](#security-guidelines)
+10. [Committee Management](#committee-management)
+11. [ARC Category Management](#arc-category-management)
+12. [System Configuration](#system-configuration)
+13. [Audit Logs](#audit-logs)
+14. [Best Practices](#best-practices)
+15. [Troubleshooting](#troubleshooting)
+16. [Security Guidelines](#security-guidelines)
 
 ---
 
@@ -33,6 +35,7 @@ As an administrator of the Sanderson Creek HOA Management System, you have full 
 
 - **User Management:** Approve, modify, and manage user accounts
 - **Content Management:** Create and manage announcements, events, and documents
+- **Committee & ARC Management:** Manage review committees, categories, and architectural review workflows
 - **System Configuration:** Configure HOA information and system settings
 - **Audit & Compliance:** Monitor system activity and user actions
 - **Member Support:** Assist members with portal issues
@@ -910,6 +913,104 @@ Members can view (but not edit) configuration on:
 - Email footers
 - About section
 - Help pages
+
+---
+
+## Committee Management
+
+![Admin Committee Management](../frontend/screenshots/49-admin-committee-management.png)
+
+Committees review member requests such as architectural changes. Administrators create and manage committees and assign members.
+
+### Accessing Committee Management
+
+1. Click **"Committees"** in the Administration section of the navigation menu
+2. You'll see a table of all committees (active and inactive)
+
+### Creating a Committee
+
+1. Click **"Create Committee"**
+2. Fill in the form:
+   - **Name** (required) -- e.g., "Architectural Review"
+   - **Description** (optional) -- purpose of the committee
+   - **Approval Expiration (days)** -- how long approvals remain valid (default: 365)
+3. Click **"Save"**
+
+### Editing a Committee
+
+1. Click the **edit icon** next to a committee
+2. Modify the name, description, status, or expiration period
+3. Click **"Save"**
+
+### Deactivating a Committee
+
+1. Click the **delete icon** next to an active committee
+2. The committee status changes to inactive
+3. Inactive committees cannot accept new requests
+
+### Managing Committee Members
+
+1. Click the **expand arrow** on a committee row to show its members
+2. To **add a member:**
+   - Click **"Add Member"**
+   - Enter the user's ID and select their role (Member or Chair)
+   - Click **"Add"**
+3. To **remove a member:**
+   - Click the remove icon next to their name
+
+### Committee Roles
+
+| Role | Permissions |
+|------|------------|
+| **Chair** | All member permissions plus administrative oversight |
+| **Member** | Review requests, approve/deny, add comments, perform transitions |
+
+### Important Notes
+
+- Committee membership determines who can review and act on requests -- admin status alone does not grant committee review access (by design)
+- Each committee has its own approval expiration period
+- At least one member (preferably a chair) should be assigned before the committee begins receiving requests
+
+---
+
+## ARC Category Management
+
+![Admin ARC Categories](../frontend/screenshots/50-admin-arc-categories.png)
+
+ARC categories define the types of architectural changes homeowners can request.
+
+### Accessing Category Management
+
+1. Click **"ARC Categories"** in the Administration section of the navigation menu
+2. You'll see all categories with their status and sort order
+
+### Creating a Category
+
+1. Click **"Create Category"**
+2. Fill in the form:
+   - **Name** (required) -- e.g., "Fence", "Solar Panels"
+   - **Description** (optional) -- explain what this category covers
+   - **Sort Order** -- controls display order in the dropdown (lower numbers first)
+3. Click **"Save"**
+
+### Editing a Category
+
+1. Click the **edit icon** next to a category
+2. Modify name, description, active status, or sort order
+3. Click **"Save"**
+
+### Deactivating a Category
+
+1. Click the **delete icon** next to an active category
+2. The category becomes inactive and won't appear in the member's submission form
+3. Existing requests in this category are not affected
+
+### Default Categories
+
+The system ships with 9 default categories:
+Fence, Paint/Exterior Color, Landscaping, Roofing, Deck/Patio, Shed/Outbuilding, Solar Panels, Signage, Other
+
+These can be edited or deactivated as needed.
 
 ---
 

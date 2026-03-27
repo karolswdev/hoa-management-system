@@ -44,6 +44,14 @@ async function seed() {
   try {
     await run('PRAGMA foreign_keys = OFF;');
     const tables = [
+      'workflow_attachments',
+      'workflow_comments',
+      'workflow_transitions',
+      'workflow_instances',
+      'arc_requests',
+      'arc_categories',
+      'committee_members',
+      'committees',
       'votes',
       'poll_options',
       'polls',
@@ -438,6 +446,61 @@ async function seed() {
     await run(
       `INSERT INTO audit_logs (id, admin_id, action, details, created_at)
        VALUES (3, 1, 'event_created', '{"title":"Annual HOA Meeting"}', ?)`,
+      [nowIso()]
+    );
+
+    console.log('Inserting committees...');
+    await run(
+      `INSERT INTO committees (id, name, description, status, approval_expiration_days, created_at, updated_at)
+       VALUES (1, 'Architectural Review', 'Reviews architectural change requests from homeowners', 'active', 365, ?, ?)`,
+      [nowIso(), nowIso()]
+    );
+
+    console.log('Inserting committee members...');
+    // Admin (user 1) is committee chair
+    await run(
+      `INSERT INTO committee_members (id, user_id, committee_id, role, created_at, updated_at)
+       VALUES (1, 1, 1, 'chair', ?, ?)`,
+      [nowIso(), nowIso()]
+    );
+
+    console.log('Inserting ARC categories...');
+    const arcCategories = [
+      { id: 1, name: 'Fence', description: 'New fence installation or modification', sort_order: 1 },
+      { id: 2, name: 'Paint/Exterior Color', description: 'Exterior paint or color changes', sort_order: 2 },
+      { id: 3, name: 'Landscaping', description: 'Significant landscaping changes', sort_order: 3 },
+      { id: 4, name: 'Roofing', description: 'Roof replacement or repair', sort_order: 4 },
+      { id: 5, name: 'Deck/Patio', description: 'Deck or patio construction', sort_order: 5 },
+      { id: 6, name: 'Shed/Outbuilding', description: 'Storage shed or outbuilding', sort_order: 6 },
+      { id: 7, name: 'Solar Panels', description: 'Solar panel installation', sort_order: 7 },
+      { id: 8, name: 'Signage', description: 'Sign installation or modification', sort_order: 8 },
+      { id: 9, name: 'Other', description: 'Other architectural changes', sort_order: 9 },
+    ];
+    for (const c of arcCategories) {
+      await run(
+        `INSERT INTO arc_categories (id, name, description, is_active, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?, ?)`,
+        [c.id, c.name, c.description, c.sort_order, nowIso(), nowIso()]
+      );
+    }
+
+    console.log('Inserting sample ARC request with workflow...');
+    // Member (user 2) submits a fence request
+    await run(
+      `INSERT INTO arc_requests (id, submitter_id, property_address, category_id, description, created_at, updated_at)
+       VALUES (1, 2, '456 Maple Drive', 1, 'Requesting approval to install a 6-foot cedar privacy fence along the back property line. The fence will be natural cedar color with a dog-ear design.', ?, ?)`,
+      [nowIso(), nowIso()]
+    );
+
+    await run(
+      `INSERT INTO workflow_instances (id, committee_id, request_type, request_id, status, submitted_by, expires_at, appeal_count, created_at, updated_at)
+       VALUES (1, 1, 'arc_request', 1, 'submitted', 2, NULL, 0, ?, ?)`,
+      [nowIso(), nowIso()]
+    );
+
+    await run(
+      `INSERT INTO workflow_transitions (id, workflow_id, from_status, to_status, performed_by, comment, created_at)
+       VALUES (1, 1, 'draft', 'submitted', 2, 'Initial submission', ?)`,
       [nowIso()]
     );
 
