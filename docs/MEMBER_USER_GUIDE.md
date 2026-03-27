@@ -1,6 +1,6 @@
 # Sanderson Creek HOA - Member User Guide
 
-**Version 1.1** | Last Updated: March 2026
+**Version 1.2** | Last Updated: March 2026
 
 Welcome to the Sanderson Creek HOA Management System! This guide will help you navigate the portal and make the most of its features.
 
@@ -16,12 +16,13 @@ Welcome to the Sanderson Creek HOA Management System! This guide will help you n
 6. [Accessing Documents](#accessing-documents)
 7. [Community Discussions](#community-discussions)
 8. [Vendor Directory](#vendor-directory)
-9. [Polls & Voting](#polls--voting)
-10. [Board of Directors](#board-of-directors)
-11. [Managing Your Profile](#managing-your-profile)
-12. [Security and Privacy](#security-and-privacy)
-13. [Troubleshooting](#troubleshooting)
-14. [Contact Information](#contact-information)
+9. [Architectural Review Requests](#architectural-review-requests)
+10. [Polls & Voting](#polls--voting)
+11. [Board of Directors](#board-of-directors)
+12. [Managing Your Profile](#managing-your-profile)
+13. [Security and Privacy](#security-and-privacy)
+14. [Troubleshooting](#troubleshooting)
+15. [Contact Information](#contact-information)
 
 ---
 
@@ -391,6 +392,107 @@ Share a service provider you recommend:
 - **Public vendors** are visible to guests and members
 - **Member-only vendors** require login to view contact details
 - Your submissions appear after admin approval
+
+---
+
+## Architectural Review Requests
+
+The Architectural Review Committee (ARC) reviews proposed changes to your property's exterior. Any modification visible from the street or common areas requires ARC approval before work begins.
+
+### Viewing Your Requests
+
+![ARC Requests List](../frontend/screenshots/44-member-arc-requests-list.png)
+
+### Submitting a Request
+
+![ARC Submit Request Form](../frontend/screenshots/45-arc-submit-request-form.png)
+
+1. Click **"ARC Requests"** in the navigation menu
+2. Click **"Submit New Request"**
+3. Fill in the form:
+   - **Property Address** (required) -- the address where the change will occur
+   - **Category** (required) -- select the type of change: Fence, Paint/Exterior Color, Landscaping, Roofing, Deck/Patio, Shed/Outbuilding, Solar Panels, Signage, or Other
+   - **Description** (required, minimum 20 characters) -- describe the proposed change in detail, including materials, dimensions, colors, and timeline
+4. Click **"Submit Request"**
+5. You'll be taken to the detail page for your new request
+
+### Viewing Your Requests
+
+1. Click **"ARC Requests"** in the navigation menu
+2. See all your submitted requests in a table with:
+   - **ID** -- unique request number
+   - **Category** -- type of architectural change
+   - **Property Address** -- where the work will occur
+   - **Status** -- current workflow status (color-coded)
+   - **Date** -- when you submitted the request
+3. Click any row to view the full request detail
+
+### Understanding Request Status
+
+Your request moves through a workflow managed by the committee:
+
+| Status | Meaning |
+|--------|---------|
+| **Draft** | Saved but not yet submitted |
+| **Submitted** | Sent to the committee for review |
+| **Under Review** | Committee is actively reviewing your request |
+| **Approved** | Your request has been approved -- you may begin work |
+| **Denied** | Your request was not approved (you may appeal) |
+| **Appealed** | You have appealed a denial |
+| **Appeal Under Review** | Committee is reviewing your appeal |
+| **Appeal Approved** | Your appeal was approved |
+| **Appeal Denied** | Your appeal was denied (final) |
+| **Withdrawn** | You withdrew your request |
+| **Expired** | Approval has expired |
+
+### Request Detail Page
+
+![ARC Request Detail](../frontend/screenshots/47-arc-request-detail.png)
+
+The detail page shows:
+
+- **Request Details:** Category, property address, description, submitter, and dates
+- **Current Status:** Large color-coded status badge
+- **Actions:** Available actions based on current status (e.g., Withdraw, Appeal)
+- **Comments:** Communication thread between you and the committee. Add comments to provide additional information or ask questions.
+- **Attachments:** Upload supporting documents, photos, or plans. Download files uploaded by the committee.
+- **Timeline:** Chronological history of all status changes
+
+### Adding Comments and Attachments
+
+- **Comments:** Use the text field at the bottom of the Comments section and click the send button
+- **Attachments:** Click **"Upload Files"** to attach photos, plans, or other documents (up to 5 files at a time)
+
+### Appealing a Denial
+
+If your request is denied:
+
+1. Open the request detail page
+2. Click **"Appeal"**
+3. Add a comment explaining why you believe the decision should be reconsidered
+4. The committee will review your appeal
+
+### Withdrawing a Request
+
+You can withdraw a request that is in Submitted or Under Review status:
+
+1. Open the request detail page
+2. Click **"Withdraw"**
+3. Confirm the withdrawal
+4. The request will be permanently withdrawn
+
+### Committee Review Queue
+
+![Committee Review Queue](../frontend/screenshots/48-committee-review-queue.png)
+
+If you serve on a review committee, you can access the **"Review Queue"** from the navigation menu. This page shows all requests assigned to your committee with status filters for efficient processing.
+
+### Important Notes
+
+- Submit your request **before** starting any work
+- Approvals expire after a set period (typically 365 days) -- complete your project before expiration
+- Include detailed descriptions and photos to help the committee make a quick decision
+- Check your request status regularly and respond promptly to committee questions
 
 ---
 

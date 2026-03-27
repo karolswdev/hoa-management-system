@@ -52,6 +52,10 @@ const publicDocumentRoutes = require('./routes/public.document.routes'); // For 
 const boardRoutes = require('./routes/board.routes'); // Routes for board governance
 const pollRoutes = require('./routes/poll.routes'); // Routes for democracy/polls
 const vendorRoutes = require('./routes/vendor.routes'); // Routes for vendor directory
+const committeeRoutes = require('./routes/committee.routes'); // Routes for committee management
+const workflowRoutes = require('./routes/workflow.routes'); // Routes for approval workflows
+const arcRequestRoutes = require('./routes/arcRequest.routes'); // Routes for ARC requests
+const arcCategoryRoutes = require('./routes/arcCategory.routes'); // Routes for ARC categories
 const healthController = require('./controllers/health.controller'); // Health diagnostics
 
 const app = express();
@@ -116,6 +120,10 @@ app.use('/api/documents', publicDocumentRoutes); // For public listing/downloadi
 app.use('/api/board', boardRoutes); // Mount board governance routes
 app.use('/api/polls', pollRoutes); // Mount democracy/poll routes
 app.use('/api/vendors', vendorRoutes); // Mount vendor directory routes
+app.use('/api/committees', committeeRoutes); // Mount committee management routes
+app.use('/api/workflows', workflowRoutes); // Mount approval workflow routes
+app.use('/api/arc-requests', arcRequestRoutes); // Mount ARC request routes
+app.use('/api/arc-categories', arcCategoryRoutes); // Mount ARC category routes
 
 // Sentry error handler (must be before other error handlers)
 app.use(sentryErrorHandler());

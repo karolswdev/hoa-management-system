@@ -592,4 +592,71 @@ test.describe('Generate User Guide Screenshots', () => {
       }
     });
   });
+
+  test.describe('ARC (Architectural Review) Screens', () => {
+    test('44 - Member ARC Requests List', async ({ page }) => {
+      await loginAsMember(page);
+      await page.goto('/arc');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '44-member-arc-requests-list', true);
+    });
+
+    test('45 - ARC Submit Request Form', async ({ page }) => {
+      await loginAsMember(page);
+      await page.goto('/arc/submit');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '45-arc-submit-request-form', true);
+    });
+
+    test('46 - ARC Submit Form Filled', async ({ page }) => {
+      await loginAsMember(page);
+      await page.goto('/arc/submit');
+      await page.waitForLoadState('networkidle');
+      await page.getByLabel(/property address/i).fill('789 Elm Street');
+      const categorySelect = page.getByLabel(/category/i);
+      await categorySelect.click();
+      const option = page.getByRole('option', { name: 'Landscaping' });
+      if (await option.isVisible()) {
+        await option.click();
+      }
+      await page.getByLabel(/description/i).fill(
+        'Requesting approval to install a Japanese rock garden with decorative stone pathway and small water feature in the front yard.'
+      );
+      await takeScreenshot(page, '46-arc-submit-form-filled', true);
+    });
+
+    test('47 - ARC Request Detail Page', async ({ page }) => {
+      await loginAsMember(page);
+      await page.goto('/arc');
+      await page.waitForLoadState('networkidle');
+      // Click on the seeded request
+      const row = page.getByText('456 Maple Drive');
+      if (await row.isVisible()) {
+        await row.click();
+        await page.waitForLoadState('networkidle');
+        await takeScreenshot(page, '47-arc-request-detail', true);
+      }
+    });
+
+    test('48 - Committee Review Queue', async ({ page }) => {
+      await loginAsAdmin(page);
+      await page.goto('/arc/queue');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '48-committee-review-queue', true);
+    });
+
+    test('49 - Admin Committee Management', async ({ page }) => {
+      await loginAsAdmin(page);
+      await page.goto('/admin/committees');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '49-admin-committee-management', true);
+    });
+
+    test('50 - Admin ARC Categories', async ({ page }) => {
+      await loginAsAdmin(page);
+      await page.goto('/admin/arc-categories');
+      await page.waitForLoadState('networkidle');
+      await takeScreenshot(page, '50-admin-arc-categories', true);
+    });
+  });
 });

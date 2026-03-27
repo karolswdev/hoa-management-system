@@ -42,6 +42,26 @@ import type {
   CreateVendorRequest,
   UpdateVendorRequest,
   CodeOfConductAcceptance,
+  Committee,
+  CommitteeMembership,
+  CreateCommitteeRequest,
+  UpdateCommitteeRequest,
+  AddCommitteeMemberRequest,
+  WorkflowInstance,
+  WorkflowListResponse,
+  WorkflowTransitionRequest,
+  WorkflowTransition,
+  WorkflowComment,
+  WorkflowCommentRequest,
+  WorkflowAttachment,
+  ArcRequest,
+  ArcRequestListResponse,
+  ArcRequestCreateResponse,
+  CreateArcRequestRequest,
+  UpdateArcRequestRequest,
+  ArcCategory,
+  CreateArcCategoryRequest,
+  UpdateArcCategoryRequest,
 } from '../types/api';
 
 class ApiService {
@@ -451,6 +471,126 @@ class ApiService {
 
   async acceptCodeOfConduct(version: string): Promise<{ message: string; acceptance: CodeOfConductAcceptance }> {
     const response = await this.api.post('/discussions/code-of-conduct/accept', { version });
+    return response.data;
+  }
+
+  // Committees
+  async getCommittees(params?: { includeInactive?: boolean }): Promise<{ committees: Committee[] }> {
+    const response = await this.api.get('/committees', {
+      params: params?.includeInactive ? { includeInactive: 'true' } : undefined,
+    });
+    return response.data;
+  }
+
+  async getCommittee(id: number): Promise<Committee> {
+    const response: AxiosResponse<Committee> = await this.api.get(`/committees/${id}`);
+    return response.data;
+  }
+
+  async createCommittee(data: CreateCommitteeRequest): Promise<Committee> {
+    const response: AxiosResponse<Committee> = await this.api.post('/committees', data);
+    return response.data;
+  }
+
+  async updateCommittee(id: number, data: UpdateCommitteeRequest): Promise<Committee> {
+    const response: AxiosResponse<Committee> = await this.api.put(`/committees/${id}`, data);
+    return response.data;
+  }
+
+  async deactivateCommittee(id: number): Promise<{ message: string }> {
+    const response = await this.api.delete(`/committees/${id}`);
+    return response.data;
+  }
+
+  async addCommitteeMember(committeeId: number, data: AddCommitteeMemberRequest): Promise<{ membership: CommitteeMembership }> {
+    const response = await this.api.post(`/committees/${committeeId}/members`, data);
+    return response.data;
+  }
+
+  async removeCommitteeMember(committeeId: number, userId: number): Promise<{ message: string }> {
+    const response = await this.api.delete(`/committees/${committeeId}/members/${userId}`);
+    return response.data;
+  }
+
+  // Workflows
+  async getWorkflows(params?: { status?: string; page?: number; limit?: number }): Promise<WorkflowListResponse> {
+    const response: AxiosResponse<WorkflowListResponse> = await this.api.get('/workflows', { params });
+    return response.data;
+  }
+
+  async getWorkflow(id: number): Promise<WorkflowInstance> {
+    const response: AxiosResponse<WorkflowInstance> = await this.api.get(`/workflows/${id}`);
+    return response.data;
+  }
+
+  async performTransition(workflowId: number, data: WorkflowTransitionRequest): Promise<{ workflow: WorkflowInstance; transition: WorkflowTransition }> {
+    const response = await this.api.post(`/workflows/${workflowId}/transitions`, data);
+    return response.data;
+  }
+
+  async addWorkflowComment(workflowId: number, data: WorkflowCommentRequest): Promise<{ comment: WorkflowComment }> {
+    const response = await this.api.post(`/workflows/${workflowId}/comments`, data);
+    return response.data;
+  }
+
+  async uploadWorkflowAttachments(workflowId: number, files: File[]): Promise<{ attachments: WorkflowAttachment[] }> {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    const response = await this.api.post(`/workflows/${workflowId}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  async downloadWorkflowAttachment(workflowId: number, attachmentId: number): Promise<Blob> {
+    const response: AxiosResponse<Blob> = await this.api.get(
+      `/workflows/${workflowId}/attachments/${attachmentId}/download`,
+      { responseType: 'blob' }
+    );
+    return response.data;
+  }
+
+  // ARC Requests
+  async getArcRequests(params?: { status?: string; page?: number; limit?: number }): Promise<ArcRequestListResponse> {
+    const response: AxiosResponse<ArcRequestListResponse> = await this.api.get('/arc-requests', { params });
+    return response.data;
+  }
+
+  async getArcRequest(id: number): Promise<{ arcRequest: ArcRequest }> {
+    const response = await this.api.get(`/arc-requests/${id}`);
+    return response.data;
+  }
+
+  async createArcRequest(data: CreateArcRequestRequest): Promise<ArcRequestCreateResponse> {
+    const response: AxiosResponse<ArcRequestCreateResponse> = await this.api.post('/arc-requests', data);
+    return response.data;
+  }
+
+  async updateArcRequest(id: number, data: UpdateArcRequestRequest): Promise<{ arcRequest: ArcRequest }> {
+    const response = await this.api.put(`/arc-requests/${id}`, data);
+    return response.data;
+  }
+
+  // ARC Categories
+  async getArcCategories(params?: { includeInactive?: boolean }): Promise<{ categories: ArcCategory[] }> {
+    const response = await this.api.get('/arc-categories', {
+      params: params?.includeInactive ? { includeInactive: 'true' } : undefined,
+    });
+    return response.data;
+  }
+
+  async createArcCategory(data: CreateArcCategoryRequest): Promise<ArcCategory> {
+    const response: AxiosResponse<ArcCategory> = await this.api.post('/arc-categories', data);
+    return response.data;
+  }
+
+  async updateArcCategory(id: number, data: UpdateArcCategoryRequest): Promise<ArcCategory> {
+    const response: AxiosResponse<ArcCategory> = await this.api.put(`/arc-categories/${id}`, data);
+    return response.data;
+  }
+
+  async deactivateArcCategory(id: number): Promise<{ message: string }> {
+    const response = await this.api.delete(`/arc-categories/${id}`);
     return response.data;
   }
 }
