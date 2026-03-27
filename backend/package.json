@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:integration": "jest --runInBand --bail --testPathPattern=integration/",
+    "test:integration": "jest --runInBand --bail --testPathPattern='test/(integration|unit)/'",
     "test:debugging": "jest --runInBand --bail --testPathPattern=good/",
     "test:watch": "jest --watch",
     "start": "node src/app.js",
