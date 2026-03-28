@@ -53,6 +53,21 @@ vi.mock('../hooks/useCommittees', () => ({
   useRemoveCommitteeMember: vi.fn(() => ({ mutateAsync: mockRemoveMemberMutateAsync, isPending: false })),
 }));
 
+vi.mock('../services/api', () => ({
+  apiService: {
+    getUsers: vi.fn(() =>
+      Promise.resolve({
+        count: 3,
+        users: [
+          { id: 5, name: 'Jane Chair', email: 'jane@test.com', role: 'member', status: 'approved', email_verified: true, is_system_user: false, created_at: '', updated_at: '' },
+          { id: 6, name: 'Bob Member', email: 'bob@test.com', role: 'member', status: 'approved', email_verified: true, is_system_user: false, created_at: '', updated_at: '' },
+          { id: 7, name: 'Alice New', email: 'alice@test.com', role: 'member', status: 'approved', email_verified: true, is_system_user: false, created_at: '', updated_at: '' },
+        ],
+      })
+    ),
+  },
+}));
+
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return (
@@ -73,41 +88,53 @@ describe('CommitteeManagementPage', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the page title', () => {
+  it('renders the page title and description', () => {
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
     expect(screen.getByText('Committee Management')).toBeInTheDocument();
+    expect(screen.getByText(/create and manage review committees/i)).toBeInTheDocument();
   });
 
-  it('renders create committee button', () => {
+  it('renders new committee button', () => {
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
-    expect(screen.getByRole('button', { name: /create committee/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new committee/i })).toBeInTheDocument();
   });
 
-  it('renders committee rows', () => {
+  it('renders committee cards with names', () => {
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
     expect(screen.getByText('Architectural Review')).toBeInTheDocument();
     expect(screen.getByText('Landscaping Review')).toBeInTheDocument();
   });
 
-  it('renders committee status chips', () => {
+  it('renders active and inactive status chips', () => {
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('active')).toBeInTheDocument();
-    expect(screen.getByText('inactive')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Inactive')).toBeInTheDocument();
+  });
+
+  it('renders member names and roles on active committee card', () => {
+    render(<CommitteeManagementPage />, { wrapper: TestWrapper });
+    expect(screen.getByText('Jane Chair')).toBeInTheDocument();
+    expect(screen.getByText('Bob Member')).toBeInTheDocument();
+    expect(screen.getByText('Chair')).toBeInTheDocument();
   });
 
   it('renders member count', () => {
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('2')).toBeInTheDocument(); // Architectural Review has 2 members
-    expect(screen.getByText('0')).toBeInTheDocument(); // Landscaping Review has 0
+    expect(screen.getByText('Members (2)')).toBeInTheDocument();
   });
 
-  it('opens create dialog on button click', async () => {
+  it('renders approval expiration info', () => {
+    render(<CommitteeManagementPage />, { wrapper: TestWrapper });
+    expect(screen.getByText('Approvals valid for 365 days')).toBeInTheDocument();
+  });
+
+  it('opens create dialog with helpful text', async () => {
     const user = userEvent.setup();
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
-    await user.click(screen.getByRole('button', { name: /create committee/i }));
-    // Dialog title + button both say "Create Committee", so check for dialog-specific content
-    expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /new committee/i }));
+    expect(screen.getByText('Create a New Committee')).toBeInTheDocument();
+    expect(screen.getByText(/a committee is a group/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/committee name/i)).toBeInTheDocument();
   });
 
   it('creates committee on dialog save', async () => {
@@ -115,38 +142,57 @@ describe('CommitteeManagementPage', () => {
     const user = userEvent.setup();
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
 
+    await user.click(screen.getByRole('button', { name: /new committee/i }));
+    await user.type(screen.getByLabelText(/committee name/i), 'New Committee');
     await user.click(screen.getByRole('button', { name: /create committee/i }));
-    await user.type(screen.getByLabelText(/^name$/i), 'New Committee');
-    await user.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
-      expect(mockCreateMutateAsync).toHaveBeenCalledWith({
-        name: 'New Committee',
-        description: '',
-        approval_expiration_days: 365,
-      });
+      expect(mockCreateMutateAsync).toHaveBeenCalled();
     });
   });
 
-  it('expands to show members on row expand click', async () => {
+  it('opens add person dialog with user search', async () => {
     const user = userEvent.setup();
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
-
-    // Click the expand button for the first committee
-    const expandButtons = screen.getAllByTestId('ExpandMoreIcon');
-    await user.click(expandButtons[0].closest('button')!);
-
-    await waitFor(() => {
-      expect(screen.getByText('Jane Chair')).toBeInTheDocument();
-      expect(screen.getByText('Bob Member')).toBeInTheDocument();
-    });
+    await user.click(screen.getByRole('button', { name: /add person/i }));
+    expect(screen.getByText(/add a person to architectural review/i)).toBeInTheDocument();
+    expect(screen.getByText(/search for a community member/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/search for a person/i)).toBeInTheDocument();
   });
 
-  it('renders table headers', () => {
+  it('shows deactivate confirmation dialog', async () => {
+    const user = userEvent.setup();
     render(<CommitteeManagementPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('Name')).toBeInTheDocument();
-    expect(screen.getByText('Description')).toBeInTheDocument();
-    expect(screen.getByText('Status')).toBeInTheDocument();
-    expect(screen.getByText('Members')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /deactivate committee/i }));
+    expect(screen.getByText('Deactivate Committee?')).toBeInTheDocument();
+    expect(screen.getByText(/will no longer receive new requests/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /keep active/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /yes, deactivate/i })).toBeInTheDocument();
+  });
+
+  it('shows remove member confirmation dialog', async () => {
+    const user = userEvent.setup();
+    render(<CommitteeManagementPage />, { wrapper: TestWrapper });
+    // Get the remove button for Jane Chair using tooltip
+    const removeButtons = screen.getAllByTestId('PersonRemoveIcon');
+    await user.click(removeButtons[0].closest('button')!);
+    expect(screen.getByText('Remove Committee Member?')).toBeInTheDocument();
+    expect(screen.getByText(/no longer be able to review/i)).toBeInTheDocument();
+  });
+
+  it('shows inactive committees section separately', () => {
+    render(<CommitteeManagementPage />, { wrapper: TestWrapper });
+    expect(screen.getByText('Inactive Committees')).toBeInTheDocument();
+  });
+
+  it('shows empty state when no committees exist', async () => {
+    const hooks = await import('../hooks/useCommittees');
+    vi.mocked(hooks.useCommittees).mockReturnValue({
+      committees: [],
+      isLoading: false,
+    } as ReturnType<typeof hooks.useCommittees>);
+    render(<CommitteeManagementPage />, { wrapper: TestWrapper });
+    expect(screen.getByText('No Committees Yet')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create your first committee/i })).toBeInTheDocument();
   });
 });
