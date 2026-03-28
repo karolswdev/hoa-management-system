@@ -204,7 +204,7 @@ export function useCreatePoll() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: apiService.createPoll,
+    mutationFn: (data) => apiService.createPoll(data),
     onSuccess: () => {
       // Invalidate all poll lists
       queryClient.invalidateQueries({ queryKey: pollKeys.lists() });

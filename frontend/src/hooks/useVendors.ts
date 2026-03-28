@@ -122,7 +122,7 @@ export function useCreateVendor() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: apiService.createVendor,
+    mutationFn: (data) => apiService.createVendor(data),
     onSuccess: () => {
       // Invalidate all vendor lists
       queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });

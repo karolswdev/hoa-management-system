@@ -134,13 +134,12 @@ test.describe('PROOF: Complete Vendor Submission Flow Works', () => {
     await expect(submitFormButton).toBeVisible();
     await submitFormButton.click();
 
-    // Verify submission succeeded — wait for dialog to close or success message
-    await page.waitForTimeout(3000);
-
-    const dialogVisible = await page.getByRole('dialog').isVisible().catch(() => false);
-    const successMessage = await page.locator('.notistack-SnackbarContainer').isVisible().catch(() => false);
-
-    expect(!dialogVisible || successMessage).toBeTruthy();
+    // Wait for dialog to close (success) or snackbar to appear
+    await expect(async () => {
+      const dialogGone = !(await page.getByRole('dialog').isVisible().catch(() => false));
+      const snackbar = await page.locator('.notistack-SnackbarContainer').isVisible().catch(() => false);
+      expect(dialogGone || snackbar).toBeTruthy();
+    }).toPass({ timeout: 10000 });
 
     console.log('✓ PROOF: Complete vendor submission flow works end-to-end');
   });
@@ -165,11 +164,12 @@ test.describe('PROOF: Complete Vendor Submission Flow Works', () => {
     await page.getByRole('option').first().click();
 
     await page.getByRole('dialog').getByRole('button', { name: /submit for review|submit|save/i }).click();
-    await page.waitForTimeout(3000);
 
-    // Should show success for admin — dialog closes or snackbar appears
-    const dialogVisible = await page.getByRole('dialog').isVisible().catch(() => false);
-    expect(!dialogVisible).toBeTruthy();
+    // Wait for dialog to close
+    await expect(async () => {
+      const dialogGone = !(await page.getByRole('dialog').isVisible().catch(() => false));
+      expect(dialogGone).toBeTruthy();
+    }).toPass({ timeout: 10000 });
 
     console.log('✓ PROOF: Admin vendor submission creates immediately approved vendor');
   });

@@ -121,7 +121,7 @@ const ArcRequestsPage: React.FC = () => {
                           '-'
                         )}
                       </TableCell>
-                      <TableCell>{format(new Date(req.created_at), 'MMM d, yyyy')}</TableCell>
+                      <TableCell>{req.created_at ? format(new Date(req.created_at), 'MMM d, yyyy') : '-'}</TableCell>
                       <TableCell>
                         <ChevronRight
                           className="row-arrow"

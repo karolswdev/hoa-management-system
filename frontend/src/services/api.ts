@@ -514,8 +514,12 @@ class ApiService {
 
   // Workflows
   async getWorkflows(params?: { status?: string; page?: number; limit?: number }): Promise<WorkflowListResponse> {
-    const response: AxiosResponse<WorkflowListResponse> = await this.api.get('/workflows', { params });
-    return response.data;
+    const response = await this.api.get('/workflows', { params });
+    const raw = response.data;
+    return {
+      workflows: raw.workflows ?? raw.data ?? [],
+      pagination: raw.pagination,
+    };
   }
 
   async getWorkflow(id: number): Promise<WorkflowInstance> {
@@ -552,8 +556,19 @@ class ApiService {
 
   // ARC Requests
   async getArcRequests(params?: { status?: string; page?: number; limit?: number }): Promise<ArcRequestListResponse> {
-    const response: AxiosResponse<ArcRequestListResponse> = await this.api.get('/arc-requests', { params });
-    return response.data;
+    const response = await this.api.get('/arc-requests', { params });
+    const raw = response.data;
+    const items = raw.arcRequests ?? raw.data ?? [];
+    // Enrich items with created_at from workflow if missing at top level
+    const enriched = items.map((item: ArcRequest & { workflow?: { created_at?: string } }) => ({
+      ...item,
+      created_at: item.created_at ?? item.workflow?.created_at ?? new Date().toISOString(),
+      updated_at: item.updated_at ?? item.created_at ?? new Date().toISOString(),
+    }));
+    return {
+      arcRequests: enriched,
+      pagination: raw.pagination,
+    };
   }
 
   async getArcRequest(id: number): Promise<{ arcRequest: ArcRequest }> {
