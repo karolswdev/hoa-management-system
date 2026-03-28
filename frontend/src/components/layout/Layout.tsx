@@ -127,12 +127,7 @@ const Layout: React.FC = () => {
       }}>
         <Typography variant="h6" noWrap component="div" sx={{
           fontWeight: 'bold',
-          background: (theme) => theme.palette.mode === 'light'
-            ? 'linear-gradient(135deg, #003366 0%, #4F6B5A 100%)'
-            : 'inherit',
-          WebkitBackgroundClip: (theme) => theme.palette.mode === 'light' ? 'text' : 'inherit',
-          WebkitTextFillColor: (theme) => theme.palette.mode === 'light' ? 'transparent' : 'inherit',
-          backgroundClip: (theme) => theme.palette.mode === 'light' ? 'text' : 'inherit',
+          color: 'text.primary',
         }}>
           {config.hoa_name || 'HOA Community Hub'}
         </Typography>
@@ -140,9 +135,7 @@ const Layout: React.FC = () => {
           {config.hoa_description || 'Your neighborhood, connected'}
         </Typography>
       </Toolbar>
-      <Divider sx={{
-        borderColor: (theme) => theme.palette.mode === 'light' ? 'rgba(0, 51, 102, 0.12)' : 'divider'
-      }} />
+      <Divider />
       
       {/* Member Navigation */}
       <List>
@@ -240,7 +233,6 @@ const Layout: React.FC = () => {
       >
         <Toolbar>
           <IconButton
-            color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
@@ -263,7 +255,7 @@ const Layout: React.FC = () => {
 
           {/* User Profile Menu */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+            <Typography variant="body2" color="text.primary" sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 500 }}>
               {user?.name}
             </Typography>
             <IconButton
@@ -272,9 +264,8 @@ const Layout: React.FC = () => {
               aria-controls="profile-menu"
               aria-haspopup="true"
               onClick={handleProfileMenuOpen}
-              color="inherit"
             >
-              <Avatar sx={{ width: 32, height: 32 }}>
+              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
                 {user?.name?.charAt(0).toUpperCase()}
               </Avatar>
             </IconButton>
