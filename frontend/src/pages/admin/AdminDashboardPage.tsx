@@ -14,7 +14,6 @@ import {
   Announcement,
   Event,
   Description,
-  HowToVote,
   Store,
   Groups,
   Architecture,

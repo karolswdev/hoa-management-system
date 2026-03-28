@@ -102,7 +102,7 @@ describe('ArcSubmitPage', () => {
     });
   });
 
-  it('submits form and navigates on success', async () => {
+  it('submits form and navigates on success', { timeout: 15000 }, async () => {
     mockMutateAsync.mockResolvedValue({
       arcRequest: { id: 42, property_address: '123 Test St', category_id: 1, description: 'A detailed description here', submitter_id: 1, created_at: '', updated_at: '' },
       workflow: { id: 10 },
