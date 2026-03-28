@@ -159,7 +159,7 @@ const EventsPage: React.FC = () => {
               No upcoming events found
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              There are currently no upcoming events scheduled.
+              No upcoming events right now. Check back soon or look at past events.
             </Typography>
           </Box>
         ) : (
@@ -201,7 +201,7 @@ const EventsPage: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Person fontSize="small" color="action" />
                         <Typography variant="body2" color="text.secondary">
-                          Organized by {event.creator?.name || 'Unknown'}
+                          Posted by {event.creator?.name || 'Unknown'}
                         </Typography>
                       </Box>
                     </Box>
@@ -248,7 +248,7 @@ const EventsPage: React.FC = () => {
               No past events found
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              There are no past events to display.
+              No past events to show yet. Events will appear here after they've ended.
             </Typography>
           </Box>
         ) : (
@@ -259,7 +259,7 @@ const EventsPage: React.FC = () => {
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {events.map((event) => (
-                <Card key={event.id} elevation={2} sx={{ opacity: 0.8 }}>
+                <Card key={event.id} elevation={2} sx={{ opacity: 0.85 }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Typography variant="h5" component="h2" gutterBottom>
@@ -290,7 +290,7 @@ const EventsPage: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Person fontSize="small" color="action" />
                         <Typography variant="body2" color="text.secondary">
-                          Organized by {event.creator?.name || 'Unknown'}
+                          Posted by {event.creator?.name || 'Unknown'}
                         </Typography>
                       </Box>
                     </Box>

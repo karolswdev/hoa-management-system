@@ -249,7 +249,7 @@ const Vendors: React.FC = () => {
             fontSize: fontSize,
           }}
         >
-          You are viewing limited information. <Button onClick={handleLoginPrompt}>Log in</Button> to see contact details and ratings.
+          Sign in to see full contact details, ratings, and notes. <Button onClick={handleLoginPrompt}>Sign In</Button>
         </Alert>
       )}
 
@@ -489,11 +489,11 @@ const Vendors: React.FC = () => {
                     gutterBottom
                     sx={{ fontSize: fontSize * 1.1, fontWeight: 600 }}
                   >
-                    Moderation Status
+                    Review Status
                   </Typography>
                   <Typography
                     variant="body1"
-                    sx={{ mb: spacing, fontSize: fontSize }}
+                    sx={{ mb: spacing, fontSize: fontSize, textTransform: 'capitalize' }}
                   >
                     {selectedVendor.moderation_state}
                   </Typography>

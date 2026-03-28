@@ -203,7 +203,7 @@ const PollsPage: React.FC = () => {
                 </Typography>
                 <Box display="flex" gap={1}>
                   <Chip
-                    label={isBinding ? 'Binding' : 'Informal'}
+                    label={isBinding ? 'Official Vote' : 'Survey'}
                     size={isHighVisibility ? 'medium' : 'small'}
                     color={isBinding ? 'warning' : 'info'}
                     icon={isBinding ? <Lock /> : <HowToVote />}
@@ -335,11 +335,11 @@ const PollsPage: React.FC = () => {
               <ToggleButton value="all" aria-label="all types">
                 All
               </ToggleButton>
-              <ToggleButton value="informal" aria-label="informal polls">
-                Informal
+              <ToggleButton value="informal" aria-label="surveys">
+                Surveys
               </ToggleButton>
-              <ToggleButton value="binding" aria-label="binding polls">
-                Binding
+              <ToggleButton value="binding" aria-label="official votes">
+                Official Votes
               </ToggleButton>
             </ToggleButtonGroup>
           </Box>
@@ -442,8 +442,8 @@ const PollsPage: React.FC = () => {
                   onChange={(e) => handleCreateFieldChange('type', e.target.value as PollType)}
                   fullWidth
                 >
-                  <MenuItem value="informal">Informal (advisory)</MenuItem>
-                  <MenuItem value="binding">Binding (decisive)</MenuItem>
+                  <MenuItem value="informal">Survey — advisory, non-binding</MenuItem>
+                  <MenuItem value="binding">Official Vote — binding decision</MenuItem>
                 </TextField>
                 <Stack direction="row" spacing={2}>
                   <TextField

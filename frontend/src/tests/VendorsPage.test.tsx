@@ -137,8 +137,8 @@ describe('VendorsPage', () => {
     it('displays login prompt for guests', () => {
       render(<Vendors />, { wrapper: TestWrapper });
 
-      expect(screen.getByText(/you are viewing limited information/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
+      expect(screen.getByText(/sign in to see full contact/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
     });
 
     it('shows "Login to Submit" button instead of "Submit Vendor"', () => {
