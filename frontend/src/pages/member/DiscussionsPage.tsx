@@ -386,7 +386,7 @@ const DiscussionsPage: React.FC = () => {
               inputProps={{ maxLength: 5000 }}
             />
             <Alert severity="info">
-              You can use basic HTML formatting in your content (e.g., &lt;b&gt;bold&lt;/b&gt;, &lt;i&gt;italic&lt;/i&gt;, &lt;br&gt; for line breaks).
+              You can use basic formatting: **bold**, *italic*, or press Enter for line breaks.
             </Alert>
           </Box>
         </DialogContent>

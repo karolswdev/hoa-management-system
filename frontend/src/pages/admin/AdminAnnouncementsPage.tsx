@@ -23,6 +23,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useSnackbar } from 'notistack';
 import AdminDataTable, { type TableColumn, type TableAction } from '../../components/admin/AdminDataTable';
 import { apiService } from '../../services/api';
+import { formatDate, formatDateTime } from '../../utils/dates';
 import type { Announcement, CreateAnnouncementRequest, PaginatedResponse } from '../../types/api';
 
 const AdminAnnouncementsPage: React.FC = () => {
@@ -236,14 +237,14 @@ const AdminAnnouncementsPage: React.FC = () => {
       sortable: true,
       render: (value: string | null) => {
         if (!value) {
-          return <Chip label="Never" color="default" size="small" />;
+          return <Chip label="No Expiration" color="default" size="small" />;
         }
         
         const expiryDate = new Date(value);
         const isExpired = expiryDate < new Date();
         
         return (
-          <Tooltip title={expiryDate.toLocaleString()}>
+          <Tooltip title={formatDateTime(value)}>
             <Chip
               label={isExpired ? 'Expired' : 'Active'}
               color={isExpired ? 'error' : 'success'}
@@ -258,7 +259,7 @@ const AdminAnnouncementsPage: React.FC = () => {
       label: 'Created',
       align: 'center',
       sortable: true,
-      render: (value: string) => new Date(value).toLocaleDateString(),
+      render: (value: string) => formatDate(value),
     },
   ];
 
@@ -385,7 +386,7 @@ const AdminAnnouncementsPage: React.FC = () => {
                     checked={formData.notify}
                     onChange={(e) => setFormData({ ...formData, notify: e.target.checked })}
                   />
-                  <Typography variant="body2">Email this announcement to all approved members</Typography>
+                  <Typography variant="body2">Send an email notification to all community members</Typography>
                 </label>
               </Box>
             </Box>

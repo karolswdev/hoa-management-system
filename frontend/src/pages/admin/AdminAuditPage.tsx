@@ -24,6 +24,7 @@ import {
 import { useSnackbar } from 'notistack';
 import AdminDataTable, { type TableColumn } from '../../components/admin/AdminDataTable';
 import { apiService } from '../../services/api';
+import { formatDate } from '../../utils/dates';
 import type { AuditLog, PaginatedResponse } from '../../types/api';
 
 const AdminAuditPage: React.FC = () => {
@@ -132,19 +133,14 @@ const AdminAuditPage: React.FC = () => {
       label: 'Timestamp',
       sortable: true,
       width: 180,
-      render: (value: string) => {
-        const date = new Date(value);
-        return (
+      render: (value: string) => (
           <Box>
-            <Typography variant="body2">
-              {date.toLocaleDateString()}
-            </Typography>
+            <Typography variant="body2">{formatDate(value)}</Typography>
             <Typography variant="caption" color="text.secondary">
-              {date.toLocaleTimeString()}
+              {new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Typography>
           </Box>
-        );
-      },
+        ),
     },
     {
       id: 'admin_name',
@@ -165,7 +161,7 @@ const AdminAuditPage: React.FC = () => {
       width: 200,
       render: (value: string) => (
         <Chip
-          label={value.replace(/_/g, ' ').toUpperCase()}
+          label={value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
           color={getActionColor(value)}
           size="small"
           variant="outlined"
@@ -300,33 +296,13 @@ const AdminAuditPage: React.FC = () => {
         emptyMessage="No audit logs found"
       />
 
-      {/* Summary Information */}
+      {/* Summary */}
       {auditLogs.length > 0 && (
-        <Box mt={3}>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Summary
-              </Typography>
-              <Box display="flex" gap={2} flexWrap="wrap">
-                <Chip
-                  label={`Total Logs: ${totalItems}`}
-                  color="primary"
-                  variant="outlined"
-                />
-                <Chip
-                  label={`Filtered Results: ${auditLogs.length}`}
-                  color="secondary"
-                  variant="outlined"
-                />
-                <Chip
-                  label={`Current Page: ${currentPage}`}
-                  color="default"
-                  variant="outlined"
-                />
-              </Box>
-            </CardContent>
-          </Card>
+        <Box mt={2}>
+          <Typography variant="body2" color="text.secondary">
+            Showing {auditLogs.length} of {totalItems} log entries
+            {(searchTerm || actionFilter !== 'all') && ' (filtered)'}
+          </Typography>
         </Box>
       )}
     </Box>

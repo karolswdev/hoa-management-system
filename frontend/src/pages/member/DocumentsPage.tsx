@@ -167,7 +167,7 @@ const DocumentsPage: React.FC = () => {
       <Box sx={{ mb: 3 }}>
         <TextField
           fullWidth
-          placeholder="Search documents by title, description, or uploader..."
+          placeholder="Search documents..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -208,7 +208,7 @@ const DocumentsPage: React.FC = () => {
                 <TableRow>
                   <TableCell>Document</TableCell>
                   <TableCell>Description</TableCell>
-                  <TableCell>Uploader</TableCell>
+                  <TableCell>Uploaded By</TableCell>
                   <TableCell>Upload Date</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="center">Actions</TableCell>
