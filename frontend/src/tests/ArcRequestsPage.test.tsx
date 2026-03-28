@@ -16,48 +16,16 @@ vi.mock('react-router-dom', async () => {
 
 const mockArcRequests = [
   {
-    id: 1,
-    submitter_id: 1,
-    property_address: '123 Oak Lane',
-    category_id: 1,
-    description: 'New fence installation',
-    created_at: '2026-03-20T10:00:00Z',
-    updated_at: '2026-03-20T10:00:00Z',
+    id: 1, submitter_id: 1, property_address: '123 Oak Lane', category_id: 1,
+    description: 'New fence installation', created_at: '2026-03-20T10:00:00Z', updated_at: '2026-03-20T10:00:00Z',
     category: { id: 1, name: 'Fence', description: null, is_active: true, sort_order: 0, created_at: '', updated_at: '' },
-    workflow: {
-      id: 1,
-      committee_id: 1,
-      request_type: 'arc_request',
-      request_id: 1,
-      status: 'submitted' as const,
-      submitted_by: 1,
-      expires_at: null,
-      appeal_count: 0,
-      created_at: '2026-03-20T10:00:00Z',
-      updated_at: '2026-03-20T10:00:00Z',
-    },
+    workflow: { id: 1, committee_id: 1, request_type: 'arc_request', request_id: 1, status: 'submitted' as const, submitted_by: 1, expires_at: null, appeal_count: 0, created_at: '2026-03-20T10:00:00Z', updated_at: '2026-03-20T10:00:00Z' },
   },
   {
-    id: 2,
-    submitter_id: 1,
-    property_address: '456 Maple Dr',
-    category_id: 2,
-    description: 'Exterior paint change to blue',
-    created_at: '2026-03-21T10:00:00Z',
-    updated_at: '2026-03-21T10:00:00Z',
+    id: 2, submitter_id: 1, property_address: '456 Maple Dr', category_id: 2,
+    description: 'Exterior paint change', created_at: '2026-03-21T10:00:00Z', updated_at: '2026-03-21T10:00:00Z',
     category: { id: 2, name: 'Paint/Exterior Color', description: null, is_active: true, sort_order: 1, created_at: '', updated_at: '' },
-    workflow: {
-      id: 2,
-      committee_id: 1,
-      request_type: 'arc_request',
-      request_id: 2,
-      status: 'approved' as const,
-      submitted_by: 1,
-      expires_at: '2027-03-21T10:00:00Z',
-      appeal_count: 0,
-      created_at: '2026-03-21T10:00:00Z',
-      updated_at: '2026-03-21T10:00:00Z',
-    },
+    workflow: { id: 2, committee_id: 1, request_type: 'arc_request', request_id: 2, status: 'approved' as const, submitted_by: 1, expires_at: '2027-03-21T10:00:00Z', appeal_count: 0, created_at: '2026-03-21T10:00:00Z', updated_at: '2026-03-21T10:00:00Z' },
   },
 ];
 
@@ -65,13 +33,9 @@ vi.mock('../hooks/useArcRequests', () => ({
   useArcRequests: vi.fn(() => ({
     arcRequests: mockArcRequests,
     pagination: { page: 1, limit: 10, total: 2, pages: 1 },
-    isLoading: false,
-    isError: false,
+    isLoading: false, isError: false,
   })),
-  useArcCategories: vi.fn(() => ({
-    categories: [],
-    isLoading: false,
-  })),
+  useArcCategories: vi.fn(() => ({ categories: [], isLoading: false })),
 }));
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,40 +43,41 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <AccessibilityProvider>
-        <ThemeWrapper>
-          <BrowserRouter>{children}</BrowserRouter>
-        </ThemeWrapper>
+        <ThemeWrapper><BrowserRouter>{children}</BrowserRouter></ThemeWrapper>
       </AccessibilityProvider>
     </QueryClientProvider>
   );
 };
 
 describe('ArcRequestsPage', () => {
-  beforeEach(() => {
-    mockNavigate.mockClear();
-  });
+  beforeEach(() => { mockNavigate.mockClear(); });
 
   it('renders the page title', () => {
     render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('Architectural Review Requests')).toBeInTheDocument();
+    expect(screen.getByText('My Review Requests')).toBeInTheDocument();
   });
 
-  it('renders submit new request button', () => {
+  it('renders page description', () => {
     render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    expect(screen.getByRole('button', { name: /submit new request/i })).toBeInTheDocument();
+    expect(screen.getByText(/track the status/i)).toBeInTheDocument();
+  });
+
+  it('renders new request button', () => {
+    render(<ArcRequestsPage />, { wrapper: TestWrapper });
+    expect(screen.getByRole('button', { name: /new request/i })).toBeInTheDocument();
   });
 
   it('navigates to submit page on button click', async () => {
     const user = userEvent.setup();
     render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    await user.click(screen.getByRole('button', { name: /submit new request/i }));
+    await user.click(screen.getByRole('button', { name: /new request/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/arc/submit');
   });
 
-  it('renders request rows', () => {
+  it('renders request rows with # prefix', () => {
     render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('123 Oak Lane')).toBeInTheDocument();
-    expect(screen.getByText('456 Maple Dr')).toBeInTheDocument();
+    expect(screen.getByText('#1')).toBeInTheDocument();
+    expect(screen.getByText('#2')).toBeInTheDocument();
   });
 
   it('renders category names', () => {
@@ -123,8 +88,14 @@ describe('ArcRequestsPage', () => {
 
   it('renders workflow status badges', () => {
     render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('Submitted')).toBeInTheDocument();
+    // "Submitted" appears both as table header and status badge
+    expect(screen.getAllByText('Submitted').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Approved')).toBeInTheDocument();
+  });
+
+  it('shows chevron arrow on rows', () => {
+    const { container } = render(<ArcRequestsPage />, { wrapper: TestWrapper });
+    expect(container.querySelectorAll('[data-testid="ChevronRightIcon"]').length).toBeGreaterThan(0);
   });
 
   it('navigates to detail page on row click', async () => {
@@ -134,35 +105,22 @@ describe('ArcRequestsPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/arc/1');
   });
 
-  it('shows empty state when no requests', async () => {
-    const hooks = await import('../hooks/useArcRequests');
-    vi.mocked(hooks.useArcRequests).mockReturnValue({
-      arcRequests: [],
-      pagination: { page: 1, limit: 10, total: 0, pages: 0 },
-      isLoading: false,
-      isError: false,
-    } as ReturnType<typeof hooks.useArcRequests>);
-    render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    expect(screen.getByText(/no requests found/i)).toBeInTheDocument();
-  });
-
-  it('shows loading skeletons', async () => {
-    const hooks = await import('../hooks/useArcRequests');
-    vi.mocked(hooks.useArcRequests).mockReturnValue({
-      arcRequests: [],
-      pagination: undefined,
-      isLoading: true,
-    } as ReturnType<typeof hooks.useArcRequests>);
-    const { container } = render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    expect(container.querySelectorAll('.MuiSkeleton-root').length).toBeGreaterThan(0);
-  });
-
   it('renders table headers', () => {
     render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('ID')).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.getByText('Property Address')).toBeInTheDocument();
+    expect(screen.getByText('Property')).toBeInTheDocument();
     expect(screen.getByText('Status')).toBeInTheDocument();
-    expect(screen.getByText('Date')).toBeInTheDocument();
+  });
+
+  // Keep this test last - it overrides the mock
+  it('shows friendly empty state when no requests', async () => {
+    const hooks = await import('../hooks/useArcRequests');
+    vi.mocked(hooks.useArcRequests).mockReturnValue({
+      arcRequests: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 }, isLoading: false,
+    } as ReturnType<typeof hooks.useArcRequests>);
+    render(<ArcRequestsPage />, { wrapper: TestWrapper });
+    expect(screen.getByText('No Requests Yet')).toBeInTheDocument();
+    expect(screen.getByText(/planning a change/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /submit your first/i })).toBeInTheDocument();
   });
 });

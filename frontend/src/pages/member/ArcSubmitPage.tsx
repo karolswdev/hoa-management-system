@@ -10,6 +10,8 @@ import {
   Breadcrumbs,
   Link,
   CircularProgress,
+  Alert,
+  ListItemText,
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -17,11 +19,11 @@ import { useSnackbar } from 'notistack';
 import { useArcCategories, useCreateArcRequest } from '../../hooks/useArcRequests';
 
 const validationSchema = Yup.object({
-  property_address: Yup.string().required('Property address is required'),
-  category_id: Yup.number().required('Category is required').min(1, 'Please select a category'),
+  property_address: Yup.string().required('Please enter the property address where the work will happen.'),
+  category_id: Yup.number().required('Please select a category.').min(1, 'Please select a category.'),
   description: Yup.string()
-    .required('Description is required')
-    .min(20, 'Description must be at least 20 characters'),
+    .required('Please describe the proposed change.')
+    .min(20, 'Please provide more detail — at least a couple of sentences so the committee can understand your plan.'),
 });
 
 const ArcSubmitPage: React.FC = () => {
@@ -45,10 +47,10 @@ const ArcSubmitPage: React.FC = () => {
           description: values.description,
           submit_immediately: true,
         });
-        enqueueSnackbar('Request submitted successfully', { variant: 'success' });
+        enqueueSnackbar('Your request has been submitted! The committee will review it shortly.', { variant: 'success' });
         navigate(`/arc/${result.arcRequest.id}`);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to submit request';
+        const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
         enqueueSnackbar(message, { variant: 'error' });
       }
     },
@@ -57,21 +59,21 @@ const ArcSubmitPage: React.FC = () => {
   return (
     <Box>
       <Breadcrumbs sx={{ mb: 2 }}>
-        <Link
-          component="button"
-          variant="body2"
-          underline="hover"
-          onClick={() => navigate('/arc')}
-        >
-          ARC Requests
+        <Link component="button" variant="body2" underline="hover" onClick={() => navigate('/arc')}>
+          My Requests
         </Link>
         <Typography variant="body2" color="text.primary">
-          Submit Request
+          New Request
         </Typography>
       </Breadcrumbs>
 
-      <Typography variant="h5" sx={{ mb: 3 }}>
-        Submit Architectural Review Request
+      <Typography variant="h5" gutterBottom>
+        Submit a Review Request
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 600 }}>
+        Tell us about the change you'd like to make. The review committee will look at your
+        request and respond, usually within a few business days. You can add photos and
+        documents after submitting.
       </Typography>
 
       <Paper sx={{ p: 3, maxWidth: 600 }}>
@@ -80,33 +82,44 @@ const ArcSubmitPage: React.FC = () => {
             fullWidth
             label="Property Address"
             name="property_address"
+            placeholder="e.g. 123 Oak Lane"
             value={formik.values.property_address}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={formik.touched.property_address && Boolean(formik.errors.property_address)}
-            helperText={formik.touched.property_address && formik.errors.property_address}
-            sx={{ mb: 2 }}
+            helperText={
+              (formik.touched.property_address && formik.errors.property_address) ||
+              'The address where the change will take place.'
+            }
+            sx={{ mb: 2.5 }}
           />
 
           <TextField
             fullWidth
             select
-            label="Category"
+            label="What type of change?"
             name="category_id"
             value={formik.values.category_id || ''}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={formik.touched.category_id && Boolean(formik.errors.category_id)}
-            helperText={formik.touched.category_id && formik.errors.category_id}
+            helperText={
+              (formik.touched.category_id && formik.errors.category_id) ||
+              'Pick the option that best describes your project.'
+            }
             disabled={categoriesLoading}
-            sx={{ mb: 2 }}
+            sx={{ mb: 2.5 }}
           >
             <MenuItem value="" disabled>
-              Select a category
+              Select a category...
             </MenuItem>
             {categories.map((cat) => (
               <MenuItem key={cat.id} value={cat.id}>
-                {cat.name}
+                <ListItemText
+                  primary={cat.name}
+                  secondary={cat.description}
+                  secondaryTypographyProps={{ variant: 'caption' }}
+                />
               </MenuItem>
             ))}
           </TextField>
@@ -114,17 +127,27 @@ const ArcSubmitPage: React.FC = () => {
           <TextField
             fullWidth
             multiline
-            minRows={4}
-            label="Description"
+            minRows={5}
+            label="Describe your project"
             name="description"
-            placeholder="Describe the proposed change in detail..."
+            placeholder="What are you planning to do? Include details like materials, colors, dimensions, and timeline so the committee has everything they need."
             value={formik.values.description}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             error={formik.touched.description && Boolean(formik.errors.description)}
-            helperText={formik.touched.description && formik.errors.description}
+            helperText={
+              (formik.touched.description && formik.errors.description) ||
+              'The more detail you provide, the faster the committee can review your request.'
+            }
             sx={{ mb: 3 }}
           />
+
+          <Alert severity="info" variant="outlined" sx={{ mb: 3 }}>
+            <Typography variant="body2">
+              After submitting, you'll be able to upload photos, plans, or other supporting
+              documents from the request detail page.
+            </Typography>
+          </Alert>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button variant="outlined" onClick={() => navigate('/arc')}>
@@ -136,7 +159,7 @@ const ArcSubmitPage: React.FC = () => {
               disabled={isPending}
               startIcon={isPending ? <CircularProgress size={16} /> : undefined}
             >
-              Submit Request
+              {isPending ? 'Submitting...' : 'Submit Request'}
             </Button>
           </Box>
         </form>

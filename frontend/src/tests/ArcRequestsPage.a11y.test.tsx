@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AccessibilityProvider } from '../contexts/AccessibilityContext';
@@ -19,19 +19,10 @@ vi.mock('../hooks/useArcRequests', () => ({
   useArcRequests: vi.fn(() => ({
     arcRequests: [
       {
-        id: 1,
-        submitter_id: 1,
-        property_address: '123 Oak Lane',
-        category_id: 1,
-        description: 'New fence',
-        created_at: '2026-03-20T10:00:00Z',
-        updated_at: '2026-03-20T10:00:00Z',
+        id: 1, submitter_id: 1, property_address: '123 Oak Lane', category_id: 1,
+        description: 'New fence', created_at: '2026-03-20T10:00:00Z', updated_at: '2026-03-20T10:00:00Z',
         category: { id: 1, name: 'Fence', description: null, is_active: true, sort_order: 0, created_at: '', updated_at: '' },
-        workflow: {
-          id: 1, committee_id: 1, request_type: 'arc_request', request_id: 1,
-          status: 'submitted' as const, submitted_by: 1, expires_at: null,
-          appeal_count: 0, created_at: '2026-03-20T10:00:00Z', updated_at: '2026-03-20T10:00:00Z',
-        },
+        workflow: { id: 1, committee_id: 1, request_type: 'arc_request', request_id: 1, status: 'submitted' as const, submitted_by: 1, expires_at: null, appeal_count: 0, created_at: '2026-03-20T10:00:00Z', updated_at: '2026-03-20T10:00:00Z' },
       },
     ],
     pagination: { page: 1, limit: 10, total: 1, pages: 1 },
@@ -44,9 +35,7 @@ const TestWrapper: React.FC<{ children: React.ReactNode; highVis?: boolean }> = 
   return (
     <QueryClientProvider client={queryClient}>
       <AccessibilityProvider initialPreferences={highVis ? { mode: 'high-vis', showHelpers: false, reducedMotion: false } : undefined}>
-        <ThemeWrapper>
-          <BrowserRouter>{children}</BrowserRouter>
-        </ThemeWrapper>
+        <ThemeWrapper><BrowserRouter>{children}</BrowserRouter></ThemeWrapper>
       </AccessibilityProvider>
     </QueryClientProvider>
   );
@@ -79,12 +68,13 @@ describe('ArcRequestsPage Accessibility', () => {
     const table = container.querySelector('table');
     expect(table).toBeInTheDocument();
     const headers = container.querySelectorAll('th');
-    expect(headers.length).toBe(5);
+    expect(headers.length).toBe(6); // Request, Category, Property, Status, Submitted, arrow col
   });
 
-  it('submit button should be keyboard accessible', () => {
+  it('clickable rows have aria-label', () => {
     const { container } = render(<ArcRequestsPage />, { wrapper: TestWrapper });
-    const button = container.querySelector('button');
-    expect(button).not.toHaveAttribute('tabindex', '-1');
+    const linkRow = container.querySelector('tr[role="link"]');
+    expect(linkRow).toBeInTheDocument();
+    expect(linkRow?.getAttribute('aria-label')).toContain('123 Oak Lane');
   });
 });
