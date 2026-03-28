@@ -25,7 +25,7 @@ async function loginAsAdmin(page: Page) {
   await page.goto('/login');
   await ensureStandardMode(page);
   await page.getByLabel(/email/i).fill('admin@example.com');
-  await page.getByLabel(/password/i).fill('Admin123!@#');
+  await page.locator('input[name="password"]').fill('Admin123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   // Wait for page to fully load
@@ -36,7 +36,7 @@ async function loginAsMember(page: Page) {
   await page.goto('/login');
   await ensureStandardMode(page);
   await page.getByLabel(/email/i).fill('member@example.com');
-  await page.getByLabel(/password/i).fill('Member123!@#');
+  await page.locator('input[name="password"]').fill('Member123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   // Wait for page to fully load
@@ -68,7 +68,7 @@ test.describe('Generate User Guide Screenshots', () => {
       await ensureStandardMode(page);
       await page.waitForLoadState('networkidle');
       const emailField = page.getByLabel(/email/i);
-      const passwordField = page.getByLabel(/password/i);
+      const passwordField = page.locator('input[name="password"]');
       await emailField.focus();
       await passwordField.focus();
       await emailField.blur();

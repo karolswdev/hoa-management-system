@@ -15,7 +15,7 @@ import { test, expect, type Page } from '@playwright/test';
 async function loginAsMember(page: Page) {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill('member@example.com');
-  await page.getByLabel(/password/i).fill('Member123!@#');
+  await page.locator('input[name="password"]').fill('Member123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
@@ -25,7 +25,7 @@ async function loginAsMember(page: Page) {
 async function loginAsAdmin(page: Page) {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill('admin@example.com');
-  await page.getByLabel(/password/i).fill('Admin123!@#');
+  await page.locator('input[name="password"]').fill('Admin123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   await page.waitForLoadState('networkidle');

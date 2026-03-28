@@ -16,7 +16,7 @@ import { test, expect, type Page } from '@playwright/test';
 async function loginAsMember(page: Page) {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill('member@example.com');
-  await page.getByLabel(/password/i).fill('Member123!@#');
+  await page.locator('input[name="password"]').fill('Member123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
@@ -26,7 +26,7 @@ async function loginAsMember(page: Page) {
 async function loginAsAdmin(page: Page) {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill('admin@example.com');
-  await page.getByLabel(/password/i).fill('Admin123!@#');
+  await page.locator('input[name="password"]').fill('Admin123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
@@ -350,7 +350,7 @@ test.describe('PROOF: Poll Results Display', () => {
       await page.waitForLoadState('networkidle');
 
       // Should display results
-      const hasResults = await page.locator('text=/results|final.*results|votes/i').isVisible({ timeout: 5000 });
+      const hasResults = await page.locator('text=/results|final.*results|total votes/i').isVisible({ timeout: 5000 });
       expect(hasResults).toBeTruthy();
 
       console.log('✓ PROOF: Closed polls display results to members');

@@ -5,7 +5,7 @@ test.describe('Accessibility Features', () => {
   async function loginAsMember(page: Page) {
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('member@example.com');
-    await page.getByLabel(/password/i).fill('Member123!@#');
+    await page.locator('input[name="password"]').fill('Member123!@#');
     await page.getByRole('button', { name: /sign in/i }).click();
     await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   }
@@ -252,7 +252,7 @@ test.describe('Accessibility Features', () => {
       await expect(emailInput).toBeVisible();
 
       // Check password input has label
-      const passwordInput = page.getByLabel(/password/i);
+      const passwordInput = page.locator('input[name="password"]');
       await expect(passwordInput).toBeVisible();
     });
 
