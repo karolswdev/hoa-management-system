@@ -95,15 +95,9 @@ test.describe('Democracy Module - Polls and Voting', () => {
         await startDateField.fill(new Date().toISOString().split('T')[0]);
       }
 
-      // Add poll options (single multiline field)
-      const optionsField = page.getByLabel(/options.*per line/i);
-      if (await optionsField.count() > 0) {
-        await optionsField.fill('Option A\nOption B');
-      } else {
-        // Fallback: individual option fields
-        await page.getByLabel(/option.*1|first.*option/i).fill('Option A');
-        await page.getByLabel(/option.*2|second.*option/i).fill('Option B');
-      }
+      // Fill individual poll option fields
+      await page.getByLabel(/option 1/i).fill('Option A');
+      await page.getByLabel(/option 2/i).fill('Option B');
 
       // Submit - click the "Create Poll" button inside the dialog
       await page.locator('[role="dialog"]').getByRole('button', { name: /create poll/i }).click();

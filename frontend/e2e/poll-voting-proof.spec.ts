@@ -95,20 +95,16 @@ test.describe('PROOF: Poll Creation Works', () => {
       await endField.fill(nextWeek.toISOString().split('T')[0]);
     }
 
-    // Add poll options (single multiline field)
-    const optionsField = page.getByLabel(/options.*per line/i);
-    if (await optionsField.isVisible()) {
-      await optionsField.fill('Option A - Yes\nOption B - No\nOption C - Abstain');
-    } else {
-      // Fallback: individual option fields
-      await page.getByLabel(/option.*1|first.*option/i).fill('Option A - Yes');
-      await page.getByLabel(/option.*2|second.*option/i).fill('Option B - No');
-      const addOptionButton = page.getByRole('button', { name: /add.*option|new.*option/i });
-      if (await addOptionButton.isVisible()) {
-        await addOptionButton.click();
-        await page.waitForTimeout(300);
-        await page.getByLabel(/option.*3|third.*option/i).fill('Option C - Abstain');
-      }
+    // Fill individual poll option fields
+    await page.getByLabel(/option 1/i).fill('Option A - Yes');
+    await page.getByLabel(/option 2/i).fill('Option B - No');
+
+    // Add a third option
+    const addOptionButton = page.getByRole('button', { name: /add another option/i });
+    if (await addOptionButton.isVisible()) {
+      await addOptionButton.click();
+      await page.waitForTimeout(300);
+      await page.getByLabel('Option 3', { exact: true }).fill('Option C - Abstain');
     }
 
     // Submit poll
