@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Announcement, Event } from '../../types/api';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatDate } from '../../utils/dates';
 
 const DashboardPage: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -211,7 +212,6 @@ const DashboardPage: React.FC = () => {
                         '&:hover': {
                           borderColor: 'primary.main',
                           backgroundColor: 'rgba(0, 51, 102, 0.02)',
-                          transform: 'translateX(4px)',
                         }
                       }}
                       onClick={() => navigate('/announcements')}
@@ -220,10 +220,10 @@ const DashboardPage: React.FC = () => {
                         {announcement.title}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        {announcement.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                        {announcement.content.replace(/<[^>]*>/g, '').substring(0, 120)}{announcement.content.length > 120 ? '...' : ''}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {new Date(announcement.created_at).toLocaleDateString()}
+                        {formatDate(announcement.created_at)}
                       </Typography>
                     </Box>
                   ))}
@@ -294,7 +294,7 @@ const DashboardPage: React.FC = () => {
                           📍 {event.location}
                         </Typography>
                         <Chip
-                          label={new Date(event.start_date).toLocaleDateString()}
+                          label={formatDate(event.start_date)}
                           size="small"
                           color="primary"
                           variant="outlined"

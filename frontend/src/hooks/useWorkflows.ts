@@ -34,7 +34,7 @@ export function useWorkflow(id: number, enabled = true) {
 
   return {
     ...query,
-    workflow: query.data,
+    workflow: query.data?.workflow ?? query.data,
   };
 }
 

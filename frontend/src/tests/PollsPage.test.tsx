@@ -155,12 +155,12 @@ describe('PollsPage', () => {
         </TestWrapper>
       );
 
-      const informalBadges = screen.getAllByText('Informal');
-      const bindingBadges = screen.getAllByText('Binding');
+      const surveyBadges = screen.getAllByText('Survey');
+      const officialBadges = screen.getAllByText('Official Vote');
 
-      // Should have at least 2 informal and 1 binding badge
-      expect(informalBadges.length).toBeGreaterThanOrEqual(2);
-      expect(bindingBadges.length).toBeGreaterThanOrEqual(1);
+      // Should have at least 2 survey and 1 official vote badge
+      expect(surveyBadges.length).toBeGreaterThanOrEqual(2);
+      expect(officialBadges.length).toBeGreaterThanOrEqual(1);
     });
 
     it('shows "Voted" badge for polls user has voted in', () => {
@@ -184,8 +184,8 @@ describe('PollsPage', () => {
       );
 
       expect(screen.getByRole('button', { name: /all types/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /informal polls/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /binding polls/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /surveys/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /official votes/i })).toBeInTheDocument();
     });
 
     it('renders status filter buttons', () => {
@@ -209,7 +209,7 @@ describe('PollsPage', () => {
         </TestWrapper>
       );
 
-      const informalButton = screen.getByRole('button', { name: /informal polls/i });
+      const informalButton = screen.getByRole('button', { name: /surveys/i });
       await user.click(informalButton);
 
       await waitFor(() => {

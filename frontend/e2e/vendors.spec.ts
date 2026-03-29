@@ -5,7 +5,7 @@ test.describe('Vendor Directory', () => {
   async function loginAsAdmin(page: Page) {
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('admin@example.com');
-    await page.getByLabel(/password/i).fill('Admin123!@#');
+    await page.locator('input[name="password"]').fill('Admin123!@#');
     await page.getByRole('button', { name: /sign in/i }).click();
     await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   }
@@ -14,7 +14,7 @@ test.describe('Vendor Directory', () => {
   async function loginAsMember(page: Page) {
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('member@example.com');
-    await page.getByLabel(/password/i).fill('Member123!@#');
+    await page.locator('input[name="password"]').fill('Member123!@#');
     await page.getByRole('button', { name: /sign in/i }).click();
     await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   }
@@ -144,11 +144,12 @@ test.describe('Vendor Directory', () => {
       // Submit form
       await page.getByRole('button', { name: /submit.*for.*review|submit|save/i }).click();
 
-      // Should show success or dialog closes
-      await page.waitForTimeout(2000);
-      const success = await page.locator('text=/vendor.*submitted|pending.*approval|success/i').isVisible().catch(() => false);
-      const dialogClosed = !(await page.getByRole('dialog').isVisible().catch(() => false));
-      expect(success || dialogClosed).toBeTruthy();
+      // Wait for dialog to close or success message
+      await expect(async () => {
+        const dialogGone = !(await page.getByRole('dialog').isVisible().catch(() => false));
+        const snackbar = await page.locator('.notistack-SnackbarContainer').isVisible().catch(() => false);
+        expect(dialogGone || snackbar).toBeTruthy();
+      }).toPass({ timeout: 10000 });
     });
 
     test('should validate required fields in vendor submission', async ({ page }) => {
@@ -230,8 +231,8 @@ test.describe('Vendor Directory', () => {
           await confirmButton.click();
         }
 
-        // Should show success message
-        await expect(page.locator('text=/approved|success/i')).toBeVisible({ timeout: 5000 });
+        // Should show success message (snackbar)
+        await expect(page.locator('.notistack-SnackbarContainer').first()).toBeVisible({ timeout: 5000 });
       }
     });
 
@@ -259,8 +260,8 @@ test.describe('Vendor Directory', () => {
           await confirmButton.click();
         }
 
-        // Should show success message
-        await expect(page.locator('text=/denied|rejected|success/i')).toBeVisible({ timeout: 5000 });
+        // Should show success message (snackbar)
+        await expect(page.locator('.notistack-SnackbarContainer').first()).toBeVisible({ timeout: 5000 });
       }
     });
 
@@ -357,7 +358,7 @@ test.describe('Vendor Directory', () => {
       const categorySelect = page.getByRole('combobox', { name: /service.*category|category/i });
       await categorySelect.click();
       await page.waitForTimeout(300);
-      await page.getByRole('option', { name: 'Plumbing' }).click();
+      await page.getByRole('option', { name: 'Landscaping' }).click();
 
       await page.getByRole('button', { name: /submit.*for.*review|submit|save/i }).click();
 

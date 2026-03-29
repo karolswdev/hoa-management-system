@@ -16,7 +16,7 @@ import { test, expect, type Page } from '@playwright/test';
 async function loginAsMember(page: Page) {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill('member@example.com');
-  await page.getByLabel(/password/i).fill('Member123!@#');
+  await page.locator('input[name="password"]').fill('Member123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
@@ -26,7 +26,7 @@ async function loginAsMember(page: Page) {
 async function loginAsAdmin(page: Page) {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill('admin@example.com');
-  await page.getByLabel(/password/i).fill('Admin123!@#');
+  await page.locator('input[name="password"]').fill('Admin123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
@@ -95,16 +95,16 @@ test.describe('PROOF: Poll Creation Works', () => {
       await endField.fill(nextWeek.toISOString().split('T')[0]);
     }
 
-    // Add poll options
-    await page.getByLabel(/option.*1|first.*option/i).fill('Option A - Yes');
-    await page.getByLabel(/option.*2|second.*option/i).fill('Option B - No');
+    // Fill individual poll option fields
+    await page.getByLabel(/option 1/i).fill('Option A - Yes');
+    await page.getByLabel(/option 2/i).fill('Option B - No');
 
-    // Try to add more options if button exists
-    const addOptionButton = page.getByRole('button', { name: /add.*option|new.*option/i });
+    // Add a third option
+    const addOptionButton = page.getByRole('button', { name: /add another option/i });
     if (await addOptionButton.isVisible()) {
       await addOptionButton.click();
       await page.waitForTimeout(300);
-      await page.getByLabel(/option.*3|third.*option/i).fill('Option C - Abstain');
+      await page.getByLabel('Option 3', { exact: true }).fill('Option C - Abstain');
     }
 
     // Submit poll
@@ -350,7 +350,7 @@ test.describe('PROOF: Poll Results Display', () => {
       await page.waitForLoadState('networkidle');
 
       // Should display results
-      const hasResults = await page.locator('text=/results|final.*results|votes/i').isVisible({ timeout: 5000 });
+      const hasResults = await page.locator('text=/results|final.*results|total votes/i').isVisible({ timeout: 5000 });
       expect(hasResults).toBeTruthy();
 
       console.log('✓ PROOF: Closed polls display results to members');

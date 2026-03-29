@@ -291,7 +291,7 @@ const DiscussionThreadPage: React.FC = () => {
             />
             
             <Alert severity="info" sx={{ mb: 2 }}>
-              You can use basic HTML formatting in your reply (e.g., &lt;b&gt;bold&lt;/b&gt;, &lt;i&gt;italic&lt;/i&gt;, &lt;br&gt; for line breaks).
+              You can use basic formatting: **bold**, *italic*, or press Enter for line breaks.
             </Alert>
             
             <Box display="flex" justifyContent="flex-end">

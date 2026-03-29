@@ -42,6 +42,7 @@ export function useArcRequest(id: number, enabled = true) {
   return {
     ...query,
     arcRequest: query.data?.arcRequest,
+    detailWorkflow: query.data?.workflow,
   };
 }
 

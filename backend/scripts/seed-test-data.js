@@ -449,6 +449,9 @@ async function seed() {
       [nowIso()]
     );
 
+    // Set ARC default committee config
+    await run(`INSERT OR REPLACE INTO config (key, value) VALUES ('arc_default_committee_id', '1')`);
+
     console.log('Inserting committees...');
     await run(
       `INSERT INTO committees (id, name, description, status, approval_expiration_days, created_at, updated_at)

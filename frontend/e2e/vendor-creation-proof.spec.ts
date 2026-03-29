@@ -15,7 +15,7 @@ import { test, expect, type Page } from '@playwright/test';
 async function loginAsMember(page: Page) {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill('member@example.com');
-  await page.getByLabel(/password/i).fill('Member123!@#');
+  await page.locator('input[name="password"]').fill('Member123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
@@ -23,9 +23,12 @@ async function loginAsMember(page: Page) {
 
 // Helper function to login as admin
 async function loginAsAdmin(page: Page) {
+  // Navigate first (needed for localStorage access), then clear session
   await page.goto('/login');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
   await page.getByLabel(/email/i).fill('admin@example.com');
-  await page.getByLabel(/password/i).fill('Admin123!@#');
+  await page.locator('input[name="password"]').fill('Admin123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   await page.waitForLoadState('networkidle');
@@ -134,13 +137,12 @@ test.describe('PROOF: Complete Vendor Submission Flow Works', () => {
     await expect(submitFormButton).toBeVisible();
     await submitFormButton.click();
 
-    // Verify submission succeeded — wait for dialog to close or success message
-    await page.waitForTimeout(3000);
-
-    const dialogVisible = await page.getByRole('dialog').isVisible().catch(() => false);
-    const successMessage = await page.locator('.notistack-SnackbarContainer').isVisible().catch(() => false);
-
-    expect(!dialogVisible || successMessage).toBeTruthy();
+    // Wait for dialog to close (success) or snackbar to appear
+    await expect(async () => {
+      const dialogGone = !(await page.getByRole('dialog').isVisible().catch(() => false));
+      const snackbar = await page.locator('.notistack-SnackbarContainer').isVisible().catch(() => false);
+      expect(dialogGone || snackbar).toBeTruthy();
+    }).toPass({ timeout: 10000 });
 
     console.log('✓ PROOF: Complete vendor submission flow works end-to-end');
   });
@@ -165,11 +167,12 @@ test.describe('PROOF: Complete Vendor Submission Flow Works', () => {
     await page.getByRole('option').first().click();
 
     await page.getByRole('dialog').getByRole('button', { name: /submit for review|submit|save/i }).click();
-    await page.waitForTimeout(3000);
 
-    // Should show success for admin — dialog closes or snackbar appears
-    const dialogVisible = await page.getByRole('dialog').isVisible().catch(() => false);
-    expect(!dialogVisible).toBeTruthy();
+    // Wait for dialog to close
+    await expect(async () => {
+      const dialogGone = !(await page.getByRole('dialog').isVisible().catch(() => false));
+      expect(dialogGone).toBeTruthy();
+    }).toPass({ timeout: 10000 });
 
     console.log('✓ PROOF: Admin vendor submission creates immediately approved vendor');
   });
@@ -286,15 +289,28 @@ test.describe('PROOF: Vendor Directory Displays Submissions', () => {
     await page.getByRole('option').first().click();
 
     await page.getByRole('button', { name: /submit.*for.*review|submit/i }).click();
-    await page.waitForTimeout(2000);
+
+    // Wait for submission to complete (dialog closes or snackbar appears)
+    await expect(async () => {
+      const dialogGone = !(await page.getByRole('dialog').isVisible().catch(() => false));
+      const snackbar = await page.locator('.notistack-SnackbarContainer').isVisible().catch(() => false);
+      expect(dialogGone || snackbar).toBeTruthy();
+    }).toPass({ timeout: 10000 });
 
     // Now login as admin and check moderation queue
     await loginAsAdmin(page);
     await page.goto('/admin/vendors');
     await page.waitForLoadState('networkidle');
 
+    // Select Pending tab if available
+    const pendingTab = page.getByRole('tab', { name: /pending/i });
+    if (await pendingTab.count() > 0) {
+      await pendingTab.click();
+      await page.waitForTimeout(500);
+    }
+
     // Should see the submitted vendor in pending queue
-    const hasPendingVendor = await page.getByText(uniqueName).isVisible({ timeout: 5000 }).catch(() => false);
+    const hasPendingVendor = await page.getByText(uniqueName).isVisible({ timeout: 10000 }).catch(() => false);
 
     expect(hasPendingVendor).toBeTruthy();
 

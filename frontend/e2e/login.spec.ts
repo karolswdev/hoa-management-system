@@ -20,7 +20,7 @@ test.describe('Login Flow', () => {
 
   test('should show error for invalid credentials', async ({ page }) => {
     await page.getByLabel(/email/i).fill('invalid@example.com');
-    await page.getByLabel(/password/i).fill('wrongpassword');
+    await page.locator('input[name="password"]').fill('wrongpassword');
     await page.getByRole('button', { name: /sign in/i }).click();
 
     // Wait for error message
@@ -31,7 +31,7 @@ test.describe('Login Flow', () => {
     // This test assumes you have a test user in your database
     // Adjust credentials as needed for your test environment
     await page.getByLabel(/email/i).fill('admin@example.com');
-    await page.getByLabel(/password/i).fill('Admin123!@#');
+    await page.locator('input[name="password"]').fill('Admin123!@#');
     await page.getByRole('button', { name: /sign in/i }).click();
 
     // Should redirect to dashboard after successful login

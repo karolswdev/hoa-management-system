@@ -24,6 +24,8 @@ import {
   Switch,
   Stack,
   MenuItem,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
 import {
   HowToVote,
@@ -32,6 +34,7 @@ import {
   Schedule,
   FilterList,
   AddCircle,
+  Close,
 } from '@mui/icons-material';
 import { useAccessibility } from '../contexts/AccessibilityContext';
 import { usePolls, pollKeys, useCreatePoll } from '../hooks/usePolls';
@@ -82,7 +85,7 @@ const PollsPage: React.FC = () => {
       { text: 'No', order_index: 2 },
     ],
   });
-  const [optionsInput, setOptionsInput] = useState('Yes\nNo');
+  const [optionFields, setOptionFields] = useState(['Yes', 'No']);
   const [formError, setFormError] = useState<string>('');
 
   // Build filters object
@@ -114,14 +117,23 @@ const PollsPage: React.FC = () => {
     setNewPoll((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleOptionChange = (index: number, value: string) => {
+    setOptionFields((prev) => prev.map((opt, i) => (i === index ? value : opt)));
+  };
+
+  const handleAddOption = () => {
+    setOptionFields((prev) => [...prev, '']);
+  };
+
+  const handleRemoveOption = (index: number) => {
+    setOptionFields((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleCreateSubmit = async () => {
     setFormError('');
-    const optionLines = optionsInput
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean);
-    if (optionLines.length < 2) {
-      setFormError('Please provide at least two poll options (one per line).');
+    const filledOptions = optionFields.map((o) => o.trim()).filter(Boolean);
+    if (filledOptions.length < 2) {
+      setFormError('Please add at least two options.');
       return;
     }
 
@@ -140,7 +152,7 @@ const PollsPage: React.FC = () => {
       ...newPoll,
       start_at: startDate.toISOString(),
       end_at: endDate.toISOString(),
-      options: optionLines.map((text, idx) => ({
+      options: filledOptions.map((text, idx) => ({
         text,
         order_index: idx + 1,
       })),
@@ -155,6 +167,7 @@ const PollsPage: React.FC = () => {
         description: '',
         options: payload.options,
       }));
+      setOptionFields(['Yes', 'No']);
     } catch (err: any) {
       const apiError = err?.response?.data?.message || err?.message || 'Failed to create poll';
       setFormError(apiError);
@@ -203,7 +216,7 @@ const PollsPage: React.FC = () => {
                 </Typography>
                 <Box display="flex" gap={1}>
                   <Chip
-                    label={isBinding ? 'Binding' : 'Informal'}
+                    label={isBinding ? 'Official Vote' : 'Survey'}
                     size={isHighVisibility ? 'medium' : 'small'}
                     color={isBinding ? 'warning' : 'info'}
                     icon={isBinding ? <Lock /> : <HowToVote />}
@@ -335,11 +348,11 @@ const PollsPage: React.FC = () => {
               <ToggleButton value="all" aria-label="all types">
                 All
               </ToggleButton>
-              <ToggleButton value="informal" aria-label="informal polls">
-                Informal
+              <ToggleButton value="informal" aria-label="surveys">
+                Surveys
               </ToggleButton>
-              <ToggleButton value="binding" aria-label="binding polls">
-                Binding
+              <ToggleButton value="binding" aria-label="official votes">
+                Official Votes
               </ToggleButton>
             </ToggleButtonGroup>
           </Box>
@@ -442,8 +455,8 @@ const PollsPage: React.FC = () => {
                   onChange={(e) => handleCreateFieldChange('type', e.target.value as PollType)}
                   fullWidth
                 >
-                  <MenuItem value="informal">Informal (advisory)</MenuItem>
-                  <MenuItem value="binding">Binding (decisive)</MenuItem>
+                  <MenuItem value="informal">Survey — advisory, non-binding</MenuItem>
+                  <MenuItem value="binding">Official Vote — binding decision</MenuItem>
                 </TextField>
                 <Stack direction="row" spacing={2}>
                   <TextField
@@ -481,14 +494,42 @@ const PollsPage: React.FC = () => {
                   }
                   label="Notify members (email)"
                 />
-                <TextField
-                  label="Options (one per line, at least two)"
-                  value={optionsInput}
-                  onChange={(e) => setOptionsInput(e.target.value)}
-                  multiline
-                  minRows={3}
-                  fullWidth
-                />
+                <Typography variant="subtitle2" sx={{ mt: 1 }}>
+                  Options
+                </Typography>
+                {optionFields.map((opt, i) => (
+                  <TextField
+                    key={i}
+                    label={`Option ${i + 1}`}
+                    value={opt}
+                    onChange={(e) => handleOptionChange(i, e.target.value)}
+                    fullWidth
+                    size="small"
+                    slotProps={{
+                      input: {
+                        endAdornment: optionFields.length > 2 ? (
+                          <InputAdornment position="end">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleRemoveOption(i)}
+                              aria-label={`Remove option ${i + 1}`}
+                            >
+                              <Close fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ) : undefined,
+                      },
+                    }}
+                  />
+                ))}
+                <Button
+                  size="small"
+                  startIcon={<AddCircle />}
+                  onClick={handleAddOption}
+                  sx={{ alignSelf: 'flex-start' }}
+                >
+                  Add another option
+                </Button>
                 {formError && (
                   <Alert severity="error">{formError}</Alert>
                 )}

@@ -28,6 +28,7 @@ import {
 import { useSnackbar } from 'notistack';
 import AdminDataTable, { type TableColumn, type TableAction } from '../../components/admin/AdminDataTable';
 import { apiService } from '../../services/api';
+import { formatDate } from '../../utils/dates';
 import type { User, UpdateUserStatusRequest, UpdateUserRoleRequest } from '../../types/api';
 
 interface UsersResponse {
@@ -233,7 +234,7 @@ const AdminUsersPage: React.FC = () => {
       id: 'created_at',
       label: 'Joined Date',
       align: 'center',
-      render: (value: string) => new Date(value).toLocaleDateString(),
+      render: (value: string) => formatDate(value),
     },
   ];
 

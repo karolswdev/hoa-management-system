@@ -54,6 +54,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       // Remove confirmPassword before sending to API
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmPassword: _confirmPassword, captchaToken, ...registerData } = values;
       const payload: any = { ...registerData };
       if (captchaToken) payload.captchaToken = captchaToken;

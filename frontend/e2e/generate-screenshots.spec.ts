@@ -25,7 +25,7 @@ async function loginAsAdmin(page: Page) {
   await page.goto('/login');
   await ensureStandardMode(page);
   await page.getByLabel(/email/i).fill('admin@example.com');
-  await page.getByLabel(/password/i).fill('Admin123!@#');
+  await page.locator('input[name="password"]').fill('Admin123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   // Wait for page to fully load
@@ -36,7 +36,7 @@ async function loginAsMember(page: Page) {
   await page.goto('/login');
   await ensureStandardMode(page);
   await page.getByLabel(/email/i).fill('member@example.com');
-  await page.getByLabel(/password/i).fill('Member123!@#');
+  await page.locator('input[name="password"]').fill('Member123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/(dashboard|home)/i, { timeout: 10000 });
   // Wait for page to fully load
@@ -68,7 +68,7 @@ test.describe('Generate User Guide Screenshots', () => {
       await ensureStandardMode(page);
       await page.waitForLoadState('networkidle');
       const emailField = page.getByLabel(/email/i);
-      const passwordField = page.getByLabel(/password/i);
+      const passwordField = page.locator('input[name="password"]');
       await emailField.focus();
       await passwordField.focus();
       await emailField.blur();
@@ -550,10 +550,15 @@ test.describe('Generate User Guide Screenshots', () => {
         if (await descField.isVisible()) {
           await descField.fill('Vote to approve extended pool hours from 6am-10pm during summer months');
         }
-        // Fill options (one per line in a single textarea)
-        const optionsField = page.getByLabel(/options/i);
-        if (await optionsField.isVisible()) {
-          await optionsField.fill('Yes - Approve new hours\nNo - Keep current hours\nAbstain');
+        // Fill individual option fields
+        await page.getByLabel(/option 1/i).fill('Yes - Approve new hours');
+        await page.getByLabel(/option 2/i).fill('No - Keep current hours');
+        // Add a third option
+        const addOptionBtn = page.getByRole('button', { name: /add another option/i });
+        if (await addOptionBtn.isVisible()) {
+          await addOptionBtn.click();
+          await page.waitForTimeout(300);
+          await page.getByLabel('Option 3', { exact: true }).fill('Abstain');
         }
         await page.waitForTimeout(500);
         await takeScreenshot(page, '40-admin-create-poll-filled');
@@ -613,13 +618,13 @@ test.describe('Generate User Guide Screenshots', () => {
       await page.goto('/arc/submit');
       await page.waitForLoadState('networkidle');
       await page.getByLabel(/property address/i).fill('789 Elm Street');
-      const categorySelect = page.getByLabel(/category/i);
+      const categorySelect = page.getByLabel(/what type of change|category/i);
       await categorySelect.click();
       const option = page.getByRole('option', { name: 'Landscaping' });
       if (await option.isVisible()) {
         await option.click();
       }
-      await page.getByLabel(/description/i).fill(
+      await page.getByLabel(/describe your project|description/i).fill(
         'Requesting approval to install a Japanese rock garden with decorative stone pathway and small water feature in the front yard.'
       );
       await takeScreenshot(page, '46-arc-submit-form-filled', true);
@@ -634,6 +639,8 @@ test.describe('Generate User Guide Screenshots', () => {
       if (await row.isVisible()) {
         await row.click();
         await page.waitForLoadState('networkidle');
+        // Wait for Status History sidebar to load
+        await page.getByText('Status History').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
         await takeScreenshot(page, '47-arc-request-detail', true);
       }
     });

@@ -440,6 +440,101 @@ If your HOA administrators update the Code of Conduct:
 
 ---
 
+## Submitting an Architectural Review Request
+
+Planning to make changes to your home's exterior? Things like new fences, paint colors, landscaping, solar panels, or sheds need to be reviewed and approved by the Architectural Review Committee (ARC) **before you begin any work**.
+
+This process protects everyone's property values and keeps the neighborhood looking great.
+
+### What Needs Approval?
+
+Most changes visible from the street or common areas require approval:
+- Fences and walls
+- Exterior paint or color changes
+- Landscaping and tree removal
+- Decks, patios, and pergolas
+- Sheds and outbuildings
+- Solar panels
+- Roofing changes
+- Signs
+
+> **Tip:** When in doubt, submit a request! It's better to ask than to have to undo completed work.
+
+### How to Submit a Request
+
+![ARC Requests List](44-member-arc-requests-list.png)
+
+1. Click **"ARC Requests"** in the left menu
+2. Click **"Submit New Request"**
+
+![ARC Submit Request Form](45-arc-submit-request-form.png)
+
+3. Fill in the form:
+   - **Property Address** -- the address where the change will happen
+   - **What type of change?** -- pick the category that best fits (Fence, Landscaping, Paint, etc.)
+   - **Describe your project** -- explain what you're planning in enough detail that the committee can understand. Include things like materials, colors, dimensions, and when you'd like to start
+
+![ARC Submit Form Filled](46-arc-submit-form-filled.png)
+
+4. Click **"Submit Request"**
+5. You'll be taken to your request's detail page
+
+> **Tip:** The more detail you provide up front, the faster the committee can review your request. Mention specific materials (e.g., "6-foot cedar dog-ear fence") and colors (e.g., "Sherwin-Williams Agreeable Gray SW 7029").
+
+### After You Submit
+
+Once submitted, you can upload supporting documents from the detail page -- photos of the area, contractor plans, material samples, paint swatches, or anything else that helps the committee understand your project.
+
+### Tracking Your Request
+
+Click **"ARC Requests"** to see all your requests in a table. Each row shows the category, address, current status, and date. Click any row to see full details.
+
+### Understanding the Status of Your Request
+
+Your request moves through these stages:
+
+| Status | What It Means |
+|--------|---------------|
+| **Submitted** | Your request has been sent to the committee |
+| **Under Review** | The committee is actively looking at your request |
+| **Approved** | You're good to go -- you may begin work! |
+| **Denied** | The committee did not approve the change (but you can appeal) |
+| **Appealed** | You've submitted an appeal |
+| **Appeal Approved** | Great news -- your appeal was approved |
+| **Appeal Denied** | The appeal was not approved (this is final) |
+| **Withdrawn** | You chose to cancel your request |
+| **Expired** | The approval period has passed |
+
+### The Request Detail Page
+
+On the detail page you'll find:
+
+- **Request Information** -- your property address, category, description, and submission date
+- **Status Badge** -- a color-coded indicator of where your request stands
+- **Discussion** -- a comment thread where you can ask questions or provide additional information to the committee
+- **Supporting Documents** -- upload or download photos, plans, and other files
+- **Status History** (right side) -- a timeline showing every status change with dates
+
+### Uploading Photos and Documents
+
+1. Open your request's detail page
+2. Scroll to **"Supporting Documents"**
+3. Click **"Upload Files"** to attach photos, plans, or other documents
+4. You can upload multiple files at once
+
+> **Good attachments make approvals faster!** Include photos of the area, a sketch or plan, and examples of materials or colors you'd like to use.
+
+### If Your Request Is Denied
+
+Don't panic! You can appeal:
+
+1. Open the denied request
+2. Click **"Appeal"**
+3. Add a comment explaining why you think the request should be reconsidered -- address any concerns the committee raised
+4. The committee will review your appeal and respond
+
+---
+
 ## Managing Your Profile
 
 ### Changing Your Display Name
@@ -725,8 +820,8 @@ Polls let you gather community input on important decisions.
 **Voting Options:**
 - **Option 1**: First choice (e.g., "Yes")
 - **Option 2**: Second choice (e.g., "No")
-- Click **"+ Add Option"** for more choices
-- You can have up to 10 options
+- Click **"Add another option"** for more choices
+- Remove an option with the **X** button (minimum 2 required)
 
 **Settings:**
 - **Start Date**: When voting begins
@@ -1222,6 +1317,8 @@ Screenshots help admins see exactly what you're seeing!
 
 **Pending**: Waiting for administrator approval
 
+**ARC (Architectural Review Committee)**: The committee that reviews and approves proposed changes to your home's exterior
+
 **Poll**: A question with multiple choice answers for voting
 
 **Receipt Code**: A unique code proving you voted
@@ -1243,6 +1340,7 @@ Screenshots help admins see exactly what you're seeing!
 | Vote on something | Polls | Poll name → Cast Vote |
 | Download a document | Documents | Download icon (↓) |
 | Ask a question | Discussions | New Discussion |
+| Request approval for exterior work | ARC Requests | Submit New Request |
 | Change my password | Profile | Change Password |
 
 ### For Administrators

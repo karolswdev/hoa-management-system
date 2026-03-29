@@ -23,6 +23,7 @@ import {
 import { useSnackbar } from 'notistack';
 import AdminDataTable, { type TableColumn, type TableAction } from '../../components/admin/AdminDataTable';
 import { apiService } from '../../services/api';
+import { formatDate } from '../../utils/dates';
 import type { Document, DocumentsResponse } from '../../types/api';
 
 const AdminDocumentsPage: React.FC = () => {
@@ -303,7 +304,7 @@ const AdminDocumentsPage: React.FC = () => {
       label: 'Uploaded',
       align: 'center',
       sortable: true,
-      render: (value: string) => new Date(value).toLocaleDateString(),
+      render: (value: string) => formatDate(value),
     },
   ];
 

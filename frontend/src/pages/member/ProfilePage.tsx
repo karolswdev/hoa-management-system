@@ -19,6 +19,7 @@ import * as Yup from 'yup';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { apiService } from '../../services/api';
+import { formatDateLong } from '../../utils/dates';
 import type { UpdateProfileRequest, ChangePasswordRequest } from '../../types/api';
 
 // Validation schemas
@@ -189,11 +190,7 @@ const ProfilePage: React.FC = () => {
                       Member Since
                     </Typography>
                     <Typography variant="body1">
-                      {new Date(user.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                      {formatDateLong(user.created_at)}
                     </Typography>
                   </Box>
                 )}
@@ -311,7 +308,7 @@ const ProfilePage: React.FC = () => {
                   error={touched.currentPassword && !!errors.currentPassword}
                   helperText={touched.currentPassword && errors.currentPassword}
                 />
-                
+
                 <Field
                   as={TextField}
                   name="newPassword"
@@ -320,9 +317,12 @@ const ProfilePage: React.FC = () => {
                   fullWidth
                   margin="normal"
                   error={touched.newPassword && !!errors.newPassword}
-                  helperText={touched.newPassword && errors.newPassword}
+                  helperText={
+                    (touched.newPassword && errors.newPassword) ||
+                    'At least 8 characters with uppercase, lowercase, number, and special character.'
+                  }
                 />
-                
+
                 <Field
                   as={TextField}
                   name="confirmPassword"

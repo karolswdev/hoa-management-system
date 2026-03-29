@@ -22,6 +22,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useSnackbar } from 'notistack';
 import AdminDataTable, { type TableColumn, type TableAction } from '../../components/admin/AdminDataTable';
 import { apiService } from '../../services/api';
+import { formatDate } from '../../utils/dates';
 import type { Event, CreateEventRequest, UpdateEventRequest, PaginatedResponse } from '../../types/api';
 
 const AdminEventsPage: React.FC = () => {
@@ -256,38 +257,28 @@ const AdminEventsPage: React.FC = () => {
       label: 'Start Date',
       align: 'center',
       sortable: true,
-      render: (value: string) => {
-        const date = new Date(value);
-        return (
+      render: (value: string) => (
           <Box>
-            <Typography variant="body2">
-              {date.toLocaleDateString()}
-            </Typography>
+            <Typography variant="body2">{formatDate(value)}</Typography>
             <Typography variant="caption" color="text.secondary">
-              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Typography>
           </Box>
-        );
-      },
+        ),
     },
     {
       id: 'end_date',
       label: 'End Date',
       align: 'center',
       sortable: true,
-      render: (value: string) => {
-        const date = new Date(value);
-        return (
+      render: (value: string) => (
           <Box>
-            <Typography variant="body2">
-              {date.toLocaleDateString()}
-            </Typography>
+            <Typography variant="body2">{formatDate(value)}</Typography>
             <Typography variant="caption" color="text.secondary">
-              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Typography>
           </Box>
-        );
-      },
+        ),
     },
     {
       id: 'status',
@@ -323,7 +314,7 @@ const AdminEventsPage: React.FC = () => {
       label: 'Created',
       align: 'center',
       sortable: true,
-      render: (value: string) => new Date(value).toLocaleDateString(),
+      render: (value: string) => formatDate(value),
     },
   ];
 
