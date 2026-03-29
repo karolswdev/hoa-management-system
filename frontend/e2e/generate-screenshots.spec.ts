@@ -550,10 +550,15 @@ test.describe('Generate User Guide Screenshots', () => {
         if (await descField.isVisible()) {
           await descField.fill('Vote to approve extended pool hours from 6am-10pm during summer months');
         }
-        // Fill options (one per line in a single textarea)
-        const optionsField = page.getByLabel(/options/i);
-        if (await optionsField.isVisible()) {
-          await optionsField.fill('Yes - Approve new hours\nNo - Keep current hours\nAbstain');
+        // Fill individual option fields
+        await page.getByLabel(/option 1/i).fill('Yes - Approve new hours');
+        await page.getByLabel(/option 2/i).fill('No - Keep current hours');
+        // Add a third option
+        const addOptionBtn = page.getByRole('button', { name: /add another option/i });
+        if (await addOptionBtn.isVisible()) {
+          await addOptionBtn.click();
+          await page.waitForTimeout(300);
+          await page.getByLabel('Option 3', { exact: true }).fill('Abstain');
         }
         await page.waitForTimeout(500);
         await takeScreenshot(page, '40-admin-create-poll-filled');
@@ -634,6 +639,8 @@ test.describe('Generate User Guide Screenshots', () => {
       if (await row.isVisible()) {
         await row.click();
         await page.waitForLoadState('networkidle');
+        // Wait for Status History sidebar to load
+        await page.getByText('Status History').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
         await takeScreenshot(page, '47-arc-request-detail', true);
       }
     });

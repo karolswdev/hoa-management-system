@@ -725,8 +725,8 @@ Polls let you gather community input on important decisions.
 **Voting Options:**
 - **Option 1**: First choice (e.g., "Yes")
 - **Option 2**: Second choice (e.g., "No")
-- Click **"+ Add Option"** for more choices
-- You can have up to 10 options
+- Click **"Add another option"** for more choices
+- Remove an option with the **X** button (minimum 2 required)
 
 **Settings:**
 - **Start Date**: When voting begins

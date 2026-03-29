@@ -1239,7 +1239,7 @@ Create and manage community polls, monitor voting, and verify vote integrity.
    - **Title:** Clear question or topic
    - **Description:** Context for voters
    - **Type:** Binding (official vote) or Informal (survey)
-   - **Options:** Add two or more voting options
+   - **Options:** Fill in Option 1 and Option 2, then click "Add another option" for more
    - **Start/End Dates:** When voting opens and closes
    - **Anonymous Voting:** Toggle if voter identity should be hidden
 4. Optionally check **"Notify Members"** to send an email alert
