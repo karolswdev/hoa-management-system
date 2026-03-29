@@ -358,7 +358,7 @@ test.describe('Vendor Directory', () => {
       const categorySelect = page.getByRole('combobox', { name: /service.*category|category/i });
       await categorySelect.click();
       await page.waitForTimeout(300);
-      await page.getByRole('option', { name: 'Plumbing' }).click();
+      await page.getByRole('option', { name: 'Landscaping' }).click();
 
       await page.getByRole('button', { name: /submit.*for.*review|submit|save/i }).click();
 

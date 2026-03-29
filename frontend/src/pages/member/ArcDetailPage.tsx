@@ -45,8 +45,8 @@ const ArcDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const arcRequestId = Number(id);
-  const { arcRequest, isLoading: isLoadingRequest } = useArcRequest(arcRequestId);
-  const workflowId = arcRequest?.workflow?.id ?? 0;
+  const { arcRequest, detailWorkflow, isLoading: isLoadingRequest } = useArcRequest(arcRequestId);
+  const workflowId = detailWorkflow?.id ?? arcRequest?.workflow?.id ?? 0;
   const { workflow, isLoading: isLoadingWorkflow } = useWorkflow(workflowId, workflowId > 0);
 
   const isLoading = isLoadingRequest || (workflowId > 0 && isLoadingWorkflow);
@@ -131,7 +131,7 @@ const ArcDetailPage: React.FC = () => {
               <DetailField icon={<Home fontSize="small" />} label="Property Address" value={arcRequest.property_address} />
               <DetailField icon={<Category fontSize="small" />} label="Category" value={arcRequest.category?.name ?? '-'} />
               <DetailField icon={<Person fontSize="small" />} label="Submitted By" value={arcRequest.submitter?.name ?? '-'} />
-              <DetailField icon={<CalendarToday fontSize="small" />} label="Submitted" value={format(new Date(arcRequest.created_at), 'MMMM d, yyyy')} />
+              <DetailField icon={<CalendarToday fontSize="small" />} label="Submitted" value={arcRequest.created_at ? format(new Date(arcRequest.created_at), 'MMMM d, yyyy') : '-'} />
               {workflow?.expires_at && (
                 <DetailField icon={<Schedule fontSize="small" />} label="Approval Expires" value={format(new Date(workflow.expires_at), 'MMMM d, yyyy')} />
               )}

@@ -18,8 +18,9 @@ const WorkflowTimeline: React.FC<WorkflowTimelineProps> = ({ transitions }) => {
     );
   }
 
+  const getDate = (t: WorkflowTransition) => (t as any).performed_at ?? (t as any).created_at;
   const sorted = [...transitions].sort(
-    (a, b) => new Date(a.performed_at).getTime() - new Date(b.performed_at).getTime()
+    (a, b) => new Date(getDate(a) ?? 0).getTime() - new Date(getDate(b) ?? 0).getTime()
   );
 
   return (
@@ -37,7 +38,7 @@ const WorkflowTimeline: React.FC<WorkflowTimelineProps> = ({ transitions }) => {
               {t.performer?.name ?? `User #${t.performed_by}`}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {format(new Date(t.performed_at), 'MMM d, yyyy h:mm a')}
+              {getDate(t) ? format(new Date(getDate(t)), 'MMM d, yyyy h:mm a') : '-'}
             </Typography>
           </Box>
         </Box>

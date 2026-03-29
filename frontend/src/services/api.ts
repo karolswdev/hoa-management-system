@@ -415,7 +415,7 @@ class ApiService {
   }
 
   async createPoll(data: CreatePollRequest): Promise<Poll> {
-    const response: AxiosResponse<Poll> = await this.api.post('/admin/polls', data);
+    const response: AxiosResponse<Poll> = await this.api.post('/polls', data);
     return response.data;
   }
 

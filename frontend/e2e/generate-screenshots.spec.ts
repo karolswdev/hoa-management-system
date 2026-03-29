@@ -613,13 +613,13 @@ test.describe('Generate User Guide Screenshots', () => {
       await page.goto('/arc/submit');
       await page.waitForLoadState('networkidle');
       await page.getByLabel(/property address/i).fill('789 Elm Street');
-      const categorySelect = page.getByLabel(/category/i);
+      const categorySelect = page.getByLabel(/what type of change|category/i);
       await categorySelect.click();
       const option = page.getByRole('option', { name: 'Landscaping' });
       if (await option.isVisible()) {
         await option.click();
       }
-      await page.getByLabel(/description/i).fill(
+      await page.getByLabel(/describe your project|description/i).fill(
         'Requesting approval to install a Japanese rock garden with decorative stone pathway and small water feature in the front yard.'
       );
       await takeScreenshot(page, '46-arc-submit-form-filled', true);

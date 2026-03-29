@@ -74,14 +74,18 @@ test.describe('Democracy Module - Polls and Voting', () => {
       await page.getByLabel(/title/i).fill('Test Poll - Automated');
       await page.getByLabel(/description/i).fill('This is an automated test poll');
 
-      // Select poll type (informal) — MUI Select, use combobox pattern
+      // Select poll type — MUI Select, use combobox pattern
       const pollTypeSelect = page.getByRole('combobox', { name: /type|poll.*type/i }).first();
       if (await pollTypeSelect.count() > 0) {
         await pollTypeSelect.click();
         await page.waitForTimeout(300);
-        const informalOption = page.getByRole('option', { name: /informal/i }).first();
-        if (await informalOption.count() > 0) {
-          await informalOption.click();
+        // Try to select survey/informal type (labels may vary)
+        const surveyOption = page.getByRole('option', { name: /survey|informal|advisory/i }).first();
+        if (await surveyOption.count() > 0) {
+          await surveyOption.click();
+        } else {
+          // Close dropdown by pressing Escape if no matching option
+          await page.keyboard.press('Escape');
         }
       }
 
@@ -91,15 +95,24 @@ test.describe('Democracy Module - Polls and Voting', () => {
         await startDateField.fill(new Date().toISOString().split('T')[0]);
       }
 
-      // Add poll options
-      await page.getByLabel(/option.*1|first.*option/i).fill('Option A');
-      await page.getByLabel(/option.*2|second.*option/i).fill('Option B');
+      // Add poll options (single multiline field)
+      const optionsField = page.getByLabel(/options.*per line/i);
+      if (await optionsField.count() > 0) {
+        await optionsField.fill('Option A\nOption B');
+      } else {
+        // Fallback: individual option fields
+        await page.getByLabel(/option.*1|first.*option/i).fill('Option A');
+        await page.getByLabel(/option.*2|second.*option/i).fill('Option B');
+      }
 
-      // Submit
-      await page.getByRole('button', { name: /create|submit|save/i }).click();
+      // Submit - click the "Create Poll" button inside the dialog
+      await page.locator('[role="dialog"]').getByRole('button', { name: /create poll/i }).click();
 
-      // Verify success
-      await expect(page.locator('text=/poll.*created|success/i')).toBeVisible({ timeout: 5000 });
+      // Verify success - dialog closes
+      await expect(async () => {
+        const dialogVisible = await page.locator('[role="dialog"]').isVisible().catch(() => false);
+        expect(dialogVisible).toBeFalsy();
+      }).toPass({ timeout: 10000 });
     });
 
     test('admin should see poll creation controls', async ({ page }) => {

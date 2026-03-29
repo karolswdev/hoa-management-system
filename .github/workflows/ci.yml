@@ -426,8 +426,8 @@ jobs:
         run: |
           NODE_ENV=test npm start &
           echo $! > /tmp/backend.pid
-          timeout 60 bash -c 'until curl -f http://localhost:5000/api/health 2>/dev/null; do sleep 2; done' || true
-          sleep 5
+          timeout 60 bash -c 'until curl -f http://localhost:3001/api/health 2>/dev/null; do sleep 2; done'
+          sleep 2
 
       - name: Start frontend server
         working-directory: frontend

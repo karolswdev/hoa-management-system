@@ -23,7 +23,10 @@ async function loginAsMember(page: Page) {
 
 // Helper function to login as admin
 async function loginAsAdmin(page: Page) {
+  // Navigate first (needed for localStorage access), then clear session
   await page.goto('/login');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
   await page.getByLabel(/email/i).fill('admin@example.com');
   await page.locator('input[name="password"]').fill('Admin123!@#');
   await page.getByRole('button', { name: /sign in/i }).click();
@@ -286,15 +289,28 @@ test.describe('PROOF: Vendor Directory Displays Submissions', () => {
     await page.getByRole('option').first().click();
 
     await page.getByRole('button', { name: /submit.*for.*review|submit/i }).click();
-    await page.waitForTimeout(2000);
+
+    // Wait for submission to complete (dialog closes or snackbar appears)
+    await expect(async () => {
+      const dialogGone = !(await page.getByRole('dialog').isVisible().catch(() => false));
+      const snackbar = await page.locator('.notistack-SnackbarContainer').isVisible().catch(() => false);
+      expect(dialogGone || snackbar).toBeTruthy();
+    }).toPass({ timeout: 10000 });
 
     // Now login as admin and check moderation queue
     await loginAsAdmin(page);
     await page.goto('/admin/vendors');
     await page.waitForLoadState('networkidle');
 
+    // Select Pending tab if available
+    const pendingTab = page.getByRole('tab', { name: /pending/i });
+    if (await pendingTab.count() > 0) {
+      await pendingTab.click();
+      await page.waitForTimeout(500);
+    }
+
     // Should see the submitted vendor in pending queue
-    const hasPendingVendor = await page.getByText(uniqueName).isVisible({ timeout: 5000 }).catch(() => false);
+    const hasPendingVendor = await page.getByText(uniqueName).isVisible({ timeout: 10000 }).catch(() => false);
 
     expect(hasPendingVendor).toBeTruthy();
 
