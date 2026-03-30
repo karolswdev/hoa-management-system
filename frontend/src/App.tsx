@@ -51,6 +51,7 @@ import ArcRequestsPage from './pages/member/ArcRequestsPage';
 import ArcSubmitPage from './pages/member/ArcSubmitPage';
 import ArcDetailPage from './pages/member/ArcDetailPage';
 import ArcCommitteeQueuePage from './pages/member/ArcCommitteeQueuePage';
+import CalendarPage from './pages/member/CalendarPage';
 
 // Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -63,6 +64,7 @@ import AdminAuditPage from './pages/admin/AdminAuditPage';
 import VendorManagement from './pages/admin/VendorManagement';
 import CommitteeManagementPage from './pages/admin/CommitteeManagementPage';
 import ArcCategoryManagementPage from './pages/admin/ArcCategoryManagementPage';
+import AdminCalendarPage from './pages/admin/AdminCalendarPage';
 
 const App: React.FC = () => {
   return (
@@ -153,6 +155,7 @@ const App: React.FC = () => {
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="events" element={<EventsPage />} />
+                <Route path="calendar" element={<CalendarPage />} />
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="discussions" element={<DiscussionsPage />} />
                 <Route path="discussions/:id" element={<DiscussionThreadPage />} />
@@ -252,6 +255,14 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute requireAdmin>
                       <ArcCategoryManagementPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/calendar"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminCalendarPage />
                     </ProtectedRoute>
                   }
                 />

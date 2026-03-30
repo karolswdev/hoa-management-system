@@ -39,6 +39,7 @@ import {
   Assignment,
   Groups,
   Category,
+  CalendarMonth,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCommunityConfig } from '../../contexts/CommunityConfigContext';
@@ -59,6 +60,7 @@ const navigationItems: NavigationItem[] = [
   { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
   { text: 'Announcements', icon: <Announcement />, path: '/announcements' },
   { text: 'Events', icon: <Event />, path: '/events' },
+  { text: 'Calendar', icon: <CalendarMonth />, path: '/calendar' },
   { text: 'Documents', icon: <Description />, path: '/documents' },
   { text: 'Discussions', icon: <Forum />, path: '/discussions' },
   { text: 'Polls', icon: <HowToVote />, path: '/polls' },
@@ -77,6 +79,7 @@ const adminNavigationItems: NavigationItem[] = [
   { text: 'Manage Vendors', icon: <Store />, path: '/admin/vendors', adminOnly: true },
   { text: 'Committees', icon: <Groups />, path: '/admin/committees', adminOnly: true },
   { text: 'ARC Categories', icon: <Category />, path: '/admin/arc-categories', adminOnly: true },
+  { text: 'Calendar Entries', icon: <CalendarMonth />, path: '/admin/calendar', adminOnly: true },
   { text: 'Site Configuration', icon: <Settings />, path: '/admin/config', adminOnly: true },
   { text: 'Audit Logs', icon: <History />, path: '/admin/audit', adminOnly: true },
 ];

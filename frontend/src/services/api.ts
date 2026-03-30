@@ -62,6 +62,13 @@ import type {
   ArcCategory,
   CreateArcCategoryRequest,
   UpdateArcCategoryRequest,
+  CalendarItem,
+  CalendarItemsResponse,
+  CalendarEntry,
+  CalendarEntryException,
+  CreateCalendarEntryRequest,
+  UpdateCalendarEntryRequest,
+  CreateCalendarExceptionRequest,
 } from '../types/api';
 
 class ApiService {
@@ -607,6 +614,63 @@ class ApiService {
   async deactivateArcCategory(id: number): Promise<{ message: string }> {
     const response = await this.api.delete(`/arc-categories/${id}`);
     return response.data;
+  }
+
+  // Calendar Aggregate
+  async getCalendarItems(start: string, end: string, categories?: string[]): Promise<CalendarItemsResponse> {
+    const params: Record<string, string> = { start, end };
+    if (categories && categories.length > 0) {
+      params.categories = categories.join(',');
+    }
+    const response = await this.api.get('/calendar', { params });
+    return response.data;
+  }
+
+  // Calendar Entry CRUD
+  async getCalendarEntries(params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<PaginatedResponse<CalendarEntry>> {
+    const response = await this.api.get('/calendar-entries', { params });
+    return response.data;
+  }
+
+  async getCalendarEntry(id: number): Promise<CalendarEntry> {
+    const response = await this.api.get(`/calendar-entries/${id}`);
+    return response.data;
+  }
+
+  async createCalendarEntry(data: CreateCalendarEntryRequest): Promise<CalendarEntry> {
+    const response = await this.api.post('/calendar-entries', data);
+    return response.data;
+  }
+
+  async updateCalendarEntry(id: number, data: UpdateCalendarEntryRequest): Promise<CalendarEntry> {
+    const response = await this.api.put(`/calendar-entries/${id}`, data);
+    return response.data;
+  }
+
+  async deleteCalendarEntry(id: number): Promise<void> {
+    await this.api.delete(`/calendar-entries/${id}`);
+  }
+
+  async getCalendarEntryOccurrences(id: number, count?: number): Promise<{ occurrences: string[] }> {
+    const response = await this.api.get(`/calendar-entries/${id}/occurrences`, {
+      params: count ? { count } : undefined,
+    });
+    return response.data;
+  }
+
+  async addCalendarException(entryId: number, data: CreateCalendarExceptionRequest): Promise<CalendarEntryException> {
+    const response = await this.api.post(`/calendar-entries/${entryId}/exceptions`, data);
+    return response.data;
+  }
+
+  async removeCalendarException(exceptionId: number): Promise<void> {
+    await this.api.delete(`/calendar-entries/exceptions/${exceptionId}`);
   }
 }
 

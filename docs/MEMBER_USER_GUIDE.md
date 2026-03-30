@@ -13,16 +13,17 @@ Welcome to the Sanderson Creek HOA Management System! This guide will help you n
 3. [Dashboard Overview](#dashboard-overview)
 4. [Viewing Announcements](#viewing-announcements)
 5. [Community Events](#community-events)
-6. [Accessing Documents](#accessing-documents)
-7. [Community Discussions](#community-discussions)
-8. [Vendor Directory](#vendor-directory)
-9. [Architectural Review Requests](#architectural-review-requests)
-10. [Polls & Voting](#polls--voting)
-11. [Board of Directors](#board-of-directors)
-12. [Managing Your Profile](#managing-your-profile)
-13. [Security and Privacy](#security-and-privacy)
-14. [Troubleshooting](#troubleshooting)
-15. [Contact Information](#contact-information)
+6. [Community Calendar](#community-calendar)
+7. [Accessing Documents](#accessing-documents)
+8. [Community Discussions](#community-discussions)
+9. [Vendor Directory](#vendor-directory)
+10. [Architectural Review Requests](#architectural-review-requests)
+11. [Polls & Voting](#polls--voting)
+12. [Board of Directors](#board-of-directors)
+13. [Managing Your Profile](#managing-your-profile)
+14. [Security and Privacy](#security-and-privacy)
+15. [Troubleshooting](#troubleshooting)
+16. [Contact Information](#contact-information)
 
 ---
 
@@ -147,10 +148,18 @@ Your dashboard is the central hub of the HOA portal. Here's what you'll see:
 - Event date, time, and location
 - Click to view event details
 
+### Community Calendar Widget
+- Shows the current week and the following week at a glance
+- Color-coded dots indicate scheduled items (trash pickup, meetings, events, polls, etc.)
+- Hover over a day to see a tooltip listing all items for that date
+- Today's date is highlighted
+- **Click anywhere on the widget** to navigate to the full Community Calendar
+
 ### Navigation Menu
 - **Dashboard:** Return to the home screen
 - **Announcements:** View all announcements
 - **Events:** Browse all events
+- **Calendar:** Community calendar with all dates and schedules
 - **Documents:** Access document library
 - **Discussions:** Community forum
 - **Profile:** Manage your account
@@ -240,6 +249,77 @@ Click on any event to view:
 - Most recent events appear first
 - Use the date filter to find specific events
 - Export events to your personal calendar (if available)
+
+---
+
+## Community Calendar
+
+The Community Calendar is a unified view of everything happening in your neighborhood — events, polls, announcements, trash pickup, recycling, board meetings, dues deadlines, and more — all in one place.
+
+### Accessing the Calendar
+
+There are two ways to reach the Community Calendar:
+
+1. **From the Dashboard:** Click the **Community Calendar widget** that shows the current and next week
+2. **From the Navigation Menu:** Click **"Calendar"** in the sidebar
+
+### Calendar Views
+
+The calendar offers three different views:
+
+- **Month View (default):** Shows the entire month with colored markers on each day
+- **Week View:** A more detailed view showing individual time slots for the week
+- **Agenda View:** A simple chronological list of all upcoming items
+
+Switch between views using the **Month**, **Week**, and **Agenda** buttons at the top right of the calendar.
+
+### Navigation
+
+- **Today Button:** Jump back to the current date
+- **Arrow Buttons (< >):** Navigate to the previous or next month/week
+- The current month and year are displayed in the center header
+
+### Category Filters
+
+At the top of the calendar, you'll see color-coded **category filter chips**:
+
+| Category | Color | What It Shows |
+|----------|-------|---------------|
+| **Trash** | Green | Trash pickup days |
+| **Recycling** | Blue | Recycling pickup days |
+| **Yard Waste** | Light Green | Yard waste collection days |
+| **Meeting** | Purple | Board meetings, annual meetings |
+| **Dues** | Red | HOA dues deadlines |
+| **Community** | Orange | Garage sales, block parties |
+| **Holiday** | Pink | Holiday-related deadlines |
+| **Events** | Blue | Community events |
+| **Polls** | Orange | Poll open/close dates |
+| **Announcements** | Grey | Announcement deadlines |
+
+- **Click a chip** to toggle that category on or off
+- Active (filled) chips are shown; inactive (outlined) chips are hidden from the calendar
+- This lets you focus on just the items you care about
+
+### Viewing Item Details
+
+**Click on any calendar item** to see a detail popover showing:
+- **Title** of the item
+- **Category** badge
+- **Date and time** information
+- **Location** (for events)
+- **Recurring indicator** (for recurring entries like trash pickup)
+- **Description** (if available)
+- **Notes** (e.g., "No pickup — Christmas Day. Pickup moves to Thursday.")
+
+### Dashboard Calendar Widget
+
+Your dashboard includes a compact two-week calendar widget:
+- Shows **this week** and **next week** in a mini grid
+- Each day displays small **colored dots** indicating scheduled items
+- **Hover over a day** to see a tooltip listing all items
+- **Today is highlighted** with the primary color
+- Past days are slightly dimmed
+- **Click the widget** to open the full Community Calendar
 
 ---
 

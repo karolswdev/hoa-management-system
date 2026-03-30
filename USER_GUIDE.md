@@ -163,6 +163,61 @@ Never miss another community gathering!
 
 ---
 
+## Community Calendar
+
+See everything happening in the neighborhood at a glance — events, trash pickup, recycling, meetings, poll deadlines, and more — all on one calendar.
+
+### How to View the Calendar
+
+There are two easy ways:
+
+1. **From the Dashboard**: Click the **calendar widget** that shows this week and next week
+2. **From the Menu**: Click **"Calendar"** in the left menu
+
+### What You'll See
+
+- A **month view** calendar showing all community dates
+- **Colored dots and bars** for each type of item:
+  - 🟢 Green = Trash pickup
+  - 🔵 Blue = Recycling pickup / Events
+  - 🟣 Purple = Board meetings
+  - 🔴 Red = Dues deadlines
+  - 🟠 Orange = Community events / Polls
+  - 🩷 Pink = Holiday dates
+
+### Switching Views
+
+Use the buttons at the top right:
+- **Month**: See the whole month (default)
+- **Week**: See one week in detail with time slots
+- **Agenda**: A simple list of upcoming items
+
+### Filtering
+
+The **colored chips** at the top of the calendar let you show or hide specific types:
+- Click a chip to **turn it off** (it becomes an outline)
+- Click again to **turn it back on** (it fills in with color)
+- This helps you focus on just what you need — for example, show only trash and recycling
+
+### Viewing Details
+
+**Click on any item** on the calendar to see more information:
+- What it is and when
+- Location (for events)
+- Whether it's a recurring item
+- Any special notes (like "No pickup — moved to Thursday due to holiday")
+
+### Dashboard Widget
+
+Your dashboard shows a **mini calendar** for the current and next week:
+- Small colored dots show what's happening each day
+- **Hover** over a day to see a list of items
+- **Click the widget** to go to the full calendar
+
+> **💡 TIP:** Check the calendar widget on your dashboard regularly — it's the quickest way to see what's coming up this week!
+
+---
+
 ## Accessing Community Documents
 
 Important HOA documents are available to download.
@@ -698,6 +753,64 @@ Keep your community informed!
 3. Confirm you want to delete it
 
 > **⚠️ WARNING:** Deleted events cannot be recovered!
+
+---
+
+## Managing Calendar Entries (Admins)
+
+Calendar entries are for recurring community schedules that appear on the Community Calendar — things like trash pickup, recycling, board meetings, and dues deadlines.
+
+### Creating a Calendar Entry
+
+1. Go to **Admin → Calendar Entries**
+2. Click **"Create Entry"**
+3. Fill in the details:
+   - **Title**: What it is (e.g., "Trash Pickup")
+   - **Category**: Choose from Trash, Recycling, Yard Waste, Meeting, Dues, Community, Holiday, or Other
+   - **Start Date**: When it first occurs
+4. To make it recurring, toggle **"Recurring"** and set:
+   - **Frequency**: Weekly, Every 2 Weeks, Monthly, Quarterly, or Yearly
+   - **Day of Week**: Which day (e.g., Tuesday for trash)
+   - **Seasonal Bounds** (optional): Active months (e.g., March–November for yard waste)
+5. Click **"Create"**
+
+### Common Setups
+
+| What | How to Set It Up |
+|------|-----------------|
+| Trash every Tuesday | Weekly, Tuesday |
+| Recycling every other Wednesday | Every 2 Weeks, Wednesday |
+| Board meeting, 1st Thursday | Monthly, Thursday, First week |
+| Dues deadline (quarterly) | Quarterly, Day 1 |
+| Yard waste, March–November | Monthly, Monday, First week, Season: March–November |
+
+### Handling Holidays and Skip Days
+
+When a recurring item needs to be skipped or moved (like trash on Christmas):
+
+**To skip a date entirely:**
+1. Find the entry in the table
+2. Click the **Exceptions** button
+3. Pick the date to skip
+4. Add a note (e.g., "No pickup — Christmas Day")
+5. Click **"Skip Date"**
+
+**To move to a different day:**
+1. Click the **Exceptions** button
+2. Pick the original date
+3. Turn on **"Move to a different date"**
+4. Pick the new date (e.g., Wednesday instead of Tuesday)
+5. Add a note (e.g., "Moved due to Christmas holiday")
+6. Click **"Move Occurrence"**
+
+Members will see the change on the calendar — the original date disappears and the item shows up on the new date with your note.
+
+### Editing and Deleting
+
+- **Edit**: Click the edit button, change any fields, and click "Update"
+- **Delete**: Click delete and confirm — this removes the entry and all its exceptions
+
+> **💡 TIP:** Set up trash, recycling, and meeting schedules first — these are the entries members will find most valuable!
 
 ---
 

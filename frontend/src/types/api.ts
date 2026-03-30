@@ -574,6 +574,126 @@ export interface UpdateArcCategoryRequest {
   sort_order?: number;
 }
 
+// Calendar Types
+export type CalendarEntryCategory =
+  | 'trash' | 'recycling' | 'yard_waste' | 'meeting' | 'dues'
+  | 'community' | 'holiday' | 'other';
+
+export type CalendarFrequency =
+  | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface CalendarEntry {
+  id: number;
+  title: string;
+  description: string | null;
+  category: CalendarEntryCategory;
+  color: string | null;
+  all_day: boolean;
+  start_date: string;
+  end_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  is_recurring: boolean;
+  frequency: CalendarFrequency | null;
+  day_of_week: number | null;
+  week_of_month: number | null;
+  month_of_year: number | null;
+  day_of_month: number | null;
+  recurrence_end: string | null;
+  seasonal_start: number | null;
+  seasonal_end: number | null;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
+  creator?: { id: number; name: string };
+  exceptions?: CalendarEntryException[];
+}
+
+export interface CalendarEntryException {
+  id: number;
+  calendar_entry_id: number;
+  exception_date: string;
+  is_cancelled: boolean;
+  override_date: string | null;
+  override_title: string | null;
+  override_time: string | null;
+  note: string | null;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalendarItem {
+  id: string;
+  source: 'event' | 'poll' | 'announcement' | 'calendar_entry';
+  sourceId: number;
+  title: string;
+  description?: string;
+  start: string;
+  end?: string;
+  allDay: boolean;
+  category: string;
+  color: string;
+  location?: string;
+  isRecurring?: boolean;
+  note?: string;
+}
+
+export interface CalendarItemsResponse {
+  items: CalendarItem[];
+}
+
+export interface CreateCalendarEntryRequest {
+  title: string;
+  description?: string;
+  category: CalendarEntryCategory;
+  color?: string;
+  all_day?: boolean;
+  start_date: string;
+  end_date?: string;
+  start_time?: string;
+  end_time?: string;
+  is_recurring?: boolean;
+  frequency?: CalendarFrequency;
+  day_of_week?: number;
+  week_of_month?: number;
+  month_of_year?: number;
+  day_of_month?: number;
+  recurrence_end?: string;
+  seasonal_start?: number;
+  seasonal_end?: number;
+}
+
+export interface UpdateCalendarEntryRequest {
+  title?: string;
+  description?: string | null;
+  category?: CalendarEntryCategory;
+  color?: string | null;
+  all_day?: boolean;
+  start_date?: string;
+  end_date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  is_recurring?: boolean;
+  frequency?: CalendarFrequency | null;
+  day_of_week?: number | null;
+  week_of_month?: number | null;
+  month_of_year?: number | null;
+  day_of_month?: number | null;
+  recurrence_end?: string | null;
+  seasonal_start?: number | null;
+  seasonal_end?: number | null;
+}
+
+export interface CreateCalendarExceptionRequest {
+  exception_date: string;
+  is_cancelled?: boolean;
+  override_date?: string;
+  override_title?: string;
+  override_time?: string;
+  note?: string;
+}
+
 // Error Response
 export interface ApiError {
   message: string;
