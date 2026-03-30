@@ -21,6 +21,7 @@ import type { Announcement, Event } from '../../types/api';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatDate } from '../../utils/dates';
+import CalendarWidget from '../../components/dashboard/CalendarWidget';
 
 const DashboardPage: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -165,6 +166,11 @@ const DashboardPage: React.FC = () => {
               </Box>
             </CardContent>
           </Card>
+        </Grid>
+
+        {/* Community Calendar Widget */}
+        <Grid size={12}>
+          <CalendarWidget />
         </Grid>
 
         {/* Recent Announcements */}

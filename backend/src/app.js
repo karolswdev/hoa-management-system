@@ -56,6 +56,8 @@ const committeeRoutes = require('./routes/committee.routes'); // Routes for comm
 const workflowRoutes = require('./routes/workflow.routes'); // Routes for approval workflows
 const arcRequestRoutes = require('./routes/arcRequest.routes'); // Routes for ARC requests
 const arcCategoryRoutes = require('./routes/arcCategory.routes'); // Routes for ARC categories
+const calendarRoutes = require('./routes/calendar.routes'); // Routes for calendar aggregate view
+const calendarEntryRoutes = require('./routes/calendarEntry.routes'); // Routes for calendar entry CRUD
 const healthController = require('./controllers/health.controller'); // Health diagnostics
 
 const app = express();
@@ -124,6 +126,8 @@ app.use('/api/committees', committeeRoutes); // Mount committee management route
 app.use('/api/workflows', workflowRoutes); // Mount approval workflow routes
 app.use('/api/arc-requests', arcRequestRoutes); // Mount ARC request routes
 app.use('/api/arc-categories', arcCategoryRoutes); // Mount ARC category routes
+app.use('/api/calendar', calendarRoutes); // Mount calendar aggregate routes
+app.use('/api/calendar-entries', calendarEntryRoutes); // Mount calendar entry CRUD routes
 
 // Sentry error handler (must be before other error handlers)
 app.use(sentryErrorHandler());

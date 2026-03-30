@@ -13,17 +13,18 @@ This comprehensive guide will help HOA administrators effectively manage the San
 3. [User Management](#user-management)
 4. [Managing Announcements](#managing-announcements)
 5. [Event Management](#event-management)
-6. [Document Management](#document-management)
-7. [Vendor Management](#vendor-management)
-8. [Polls & Voting Management](#polls--voting-management)
-9. [Board Governance](#board-governance)
-10. [Committee Management](#committee-management)
-11. [ARC Category Management](#arc-category-management)
-12. [System Configuration](#system-configuration)
-13. [Audit Logs](#audit-logs)
-14. [Best Practices](#best-practices)
-15. [Troubleshooting](#troubleshooting)
-16. [Security Guidelines](#security-guidelines)
+6. [Calendar Entry Management](#calendar-entry-management)
+7. [Document Management](#document-management)
+8. [Vendor Management](#vendor-management)
+9. [Polls & Voting Management](#polls--voting-management)
+10. [Board Governance](#board-governance)
+11. [Committee Management](#committee-management)
+12. [ARC Category Management](#arc-category-management)
+13. [System Configuration](#system-configuration)
+14. [Audit Logs](#audit-logs)
+15. [Best Practices](#best-practices)
+16. [Troubleshooting](#troubleshooting)
+17. [Security Guidelines](#security-guidelines)
 
 ---
 
@@ -104,6 +105,7 @@ The admin navigation menu provides access to:
 - **Users:** User management
 - **Announcements:** Content management
 - **Events:** Event calendar management
+- **Calendar Entries:** Recurring community calendar management
 - **Documents:** Document library management
 - **Configuration:** System settings
 - **Audit Logs:** Activity monitoring
@@ -569,6 +571,207 @@ Events automatically show status:
 - "Landscaping Workshop"
 - "Home Security Seminar"
 - "New Resident Welcome Meeting"
+
+---
+
+## Calendar Entry Management
+
+Calendar entries are recurring community items that appear on the Community Calendar alongside events, polls, and announcements. Use this feature to set up schedules like trash pickup, recycling, board meetings, and dues deadlines.
+
+### How Calendar Entries Differ from Events
+
+- **Events** are one-time occurrences with a specific date, time, and location
+- **Calendar entries** are primarily for recurring schedules (weekly trash, monthly meetings, quarterly dues) and community-wide dates
+- Both appear together on the member Community Calendar
+
+### Accessing Calendar Entry Management
+
+1. Click **"Calendar Entries"** in the admin navigation menu
+2. See a table of all calendar entries
+
+### Calendar Entry Table
+
+Displays:
+- **Title:** Entry name with color indicator
+- **Category:** Color-coded category badge
+- **Frequency:** One-time, Weekly, Biweekly, Monthly, Quarterly, or Yearly
+- **Start Date:** When the entry begins
+- **Season:** Seasonal bounds if applicable (e.g., March - November)
+- **Actions:** Edit, Exceptions, Delete buttons
+
+### Creating a Calendar Entry
+
+1. **Click "Create Entry"**
+
+2. **Fill in the Entry Form:**
+
+   - **Title (Required)**
+     - Clear, descriptive name
+     - Example: "Trash Pickup", "Board Meeting", "HOA Dues Deadline"
+
+   - **Description (Optional)**
+     - Additional details about this entry
+     - Example: "Place bins at curb by 7:00 AM"
+
+   - **Category (Required)**
+     - Select from predefined categories:
+
+     | Category | Color | Use For |
+     |----------|-------|---------|
+     | Trash | Green | Trash collection days |
+     | Recycling | Blue | Recycling pickup days |
+     | Yard Waste | Light Green | Yard waste / leaf collection |
+     | Meeting | Purple | Board, committee, annual meetings |
+     | Dues | Red | Payment deadlines |
+     | Community | Orange | Garage sales, block parties |
+     | Holiday | Pink | Holiday-related dates |
+     | Other | Grey | Anything that doesn't fit above |
+
+   - **Color**
+     - Auto-set based on category, but can be customized
+     - Use the color picker to choose a custom hex color
+
+   - **All-Day Toggle**
+     - Enabled by default (most community items are all-day)
+     - Disable to set specific start/end times
+
+   - **Start Date (Required)**
+     - The first occurrence date (or only date for one-time entries)
+
+   - **End Date (Optional)**
+     - For multi-day one-time entries only
+
+3. **Configure Recurrence (Optional)**
+
+   Toggle **"Recurring"** to enable recurrence settings:
+
+   - **Frequency (Required when recurring)**
+     - **Daily:** Every day
+     - **Weekly:** Same day every week (e.g., every Tuesday)
+     - **Every 2 Weeks:** Alternating weeks (e.g., recycling every other Wednesday)
+     - **Monthly:** Once a month on a specific day or weekday
+     - **Quarterly:** Four times a year (Jan, Apr, Jul, Oct)
+     - **Yearly:** Once a year on a specific date
+
+   - **Day of Week**
+     - Available for Weekly, Biweekly, and Monthly frequencies
+     - Select which day (Sunday through Saturday)
+
+   - **Week of Month**
+     - Available for Monthly frequency when a day of week is selected
+     - Choose: First, Second, Third, Fourth, or Last
+     - Example: "First Thursday" for monthly board meetings
+
+   - **Day of Month**
+     - Available for Monthly, Quarterly, and Yearly when no day of week is set
+     - Example: Day 1 for quarterly dues deadlines
+
+   - **Month**
+     - Available for Yearly frequency
+     - Select the specific month
+
+   - **Seasonal Bounds (Optional)**
+     - Set **Active From** and **Active Until** months
+     - Entry only appears during these months
+     - Example: Yard waste collection March through November
+
+   - **Recurrence End Date (Optional)**
+     - When the recurrence should stop
+     - Leave empty for entries that continue indefinitely
+
+4. **Review and Create**
+   - Verify all settings
+   - Click **"Create"**
+   - The entry appears on the Community Calendar immediately
+
+### Recurrence Examples
+
+| Scenario | Frequency | Day of Week | Week of Month | Day of Month | Season |
+|----------|-----------|-------------|---------------|--------------|--------|
+| Trash every Tuesday | Weekly | Tuesday | - | - | - |
+| Recycling every other Wednesday | Every 2 Weeks | Wednesday | - | - | - |
+| Yard waste, 1st Monday, Mar-Nov | Monthly | Monday | First | - | Mar - Nov |
+| Board meeting, 1st Thursday | Monthly | Thursday | First | - | - |
+| Dues deadline (quarterly) | Quarterly | - | - | 1 | - |
+| Annual meeting, June 15 | Yearly | - | - | 15 | June |
+
+### Editing Calendar Entries
+
+1. **Find the entry** in the table
+2. **Click the Edit button** (pencil icon)
+3. **Modify any field** — all the same options as creation
+4. **Preview panel** shows the next 5 upcoming occurrences to verify your changes
+5. **Click "Update"** to save
+
+### Managing Exceptions
+
+Exceptions let you skip or move a specific occurrence of a recurring entry. Common scenarios include holidays causing trash pickup to shift by a day.
+
+1. **Click the Exceptions button** (calendar-X icon) on a recurring entry
+2. **View existing exceptions** — listed with date, status (cancelled or moved), and notes
+
+#### Skipping a Date
+
+1. Select the **Original Date** to skip
+2. Leave the **"Move to a different date"** toggle off
+3. Add an optional **note** (e.g., "No pickup — Christmas Day")
+4. Click **"Skip Date"**
+
+#### Moving a Date
+
+Use this when an occurrence shifts to a different day (e.g., trash moves from Tuesday to Wednesday due to a holiday):
+
+1. Select the **Original Date** (the date being replaced)
+2. Toggle on **"Move to a different date"**
+3. Select the **Move To Date** (the replacement date)
+4. Add an optional **note** (e.g., "Moved due to Christmas — pickup on Wednesday instead of Tuesday")
+5. Click **"Move Occurrence"**
+
+The original date disappears from the calendar, and the item appears on the new date with your note visible to members.
+
+#### Removing an Exception
+
+Click the delete button next to any exception to restore the original occurrence.
+
+### Deleting Calendar Entries
+
+1. **Click the Delete button** (trash icon) on an entry
+2. **Confirm deletion** — this permanently removes the entry and all its exceptions
+3. The entry is immediately removed from the Community Calendar
+
+### Audit Logging
+
+All calendar entry operations are logged in the audit system:
+- `calendar_entry_create` — new entry created
+- `calendar_entry_update` — entry modified
+- `calendar_entry_delete` — entry deleted
+- `calendar_exception_create` — exception added
+- `calendar_exception_delete` — exception removed
+
+### Calendar Entry Best Practices
+
+1. **Set Up Community Basics First**
+   - Trash and recycling schedules
+   - Regular board meeting dates
+   - Dues deadlines
+   - These recurring entries save members from having to remember schedules
+
+2. **Use Seasonal Bounds**
+   - Set yard waste collection to only show during active months
+   - Avoids cluttering the winter calendar with irrelevant items
+
+3. **Use Exceptions Proactively**
+   - Add holiday skip exceptions at the start of each year
+   - Include notes explaining alternative dates
+   - Members will see the note on the calendar
+
+4. **Choose Meaningful Colors**
+   - Stick to the default category colors for consistency
+   - Members learn to quickly identify item types by color
+
+5. **Keep Descriptions Helpful**
+   - Include practical details: "Place bins at curb by 7:00 AM"
+   - Note any special instructions for the community
 
 ---
 
