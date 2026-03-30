@@ -92,6 +92,7 @@ function expandDaily(start, end, entry, dates) {
 
 function expandWeekly(start, end, entry, dates) {
   const dow = entry.day_of_week;
+  if (dow === null || dow === undefined) return;
   const current = new Date(start);
   // Advance to first matching day of week
   while (current.getDay() !== dow && current <= end) {
@@ -105,6 +106,7 @@ function expandWeekly(start, end, entry, dates) {
 
 function expandBiweekly(start, end, entry, dates) {
   const dow = entry.day_of_week;
+  if (dow === null || dow === undefined) return;
   // Anchor biweekly from the entry's start_date
   const anchor = parseDate(entry.start_date);
   while (anchor.getDay() !== dow) {
@@ -123,16 +125,20 @@ function expandBiweekly(start, end, entry, dates) {
 }
 
 function expandMonthly(start, end, entry, dates) {
+  // Need either day_of_week+week_of_month or day_of_month to know which day
+  const hasDayOfWeek = entry.day_of_week !== null && entry.day_of_week !== undefined;
+  const hasWeekOfMonth = entry.week_of_month !== null && entry.week_of_month !== undefined;
+  const hasDayOfMonth = entry.day_of_month;
+  if (!((hasDayOfWeek && hasWeekOfMonth) || hasDayOfMonth)) return;
+
   const current = new Date(start.getFullYear(), start.getMonth(), 1);
 
   while (current <= end) {
     let date = null;
 
-    if (entry.day_of_week !== null && entry.day_of_week !== undefined && entry.week_of_month !== null && entry.week_of_month !== undefined) {
-      // "Nth weekday of month" (e.g., first Thursday)
+    if (hasDayOfWeek && hasWeekOfMonth) {
       date = getNthWeekdayOfMonth(current.getFullYear(), current.getMonth(), entry.day_of_week, entry.week_of_month);
-    } else if (entry.day_of_month) {
-      // Specific day of month
+    } else if (hasDayOfMonth) {
       const day = Math.min(entry.day_of_month, daysInMonth(current.getFullYear(), current.getMonth()));
       date = new Date(current.getFullYear(), current.getMonth(), day);
     }
